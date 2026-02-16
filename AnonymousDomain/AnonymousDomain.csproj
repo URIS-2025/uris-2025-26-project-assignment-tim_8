@@ -48,6 +48,9 @@
     <Compile Include="Models\Organization\Organization.cs" />
     <Compile Include="Models\Organization\User.cs" />
     <Compile Include="Models\Organization\UserRole.cs" />
+    <Compile Include="Models\Subscription\Payment.cs" />
+    <Compile Include="Models\Subscription\Subscription.cs" />
+    <Compile Include="Models\Subscription\SubscriptionPlan.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
