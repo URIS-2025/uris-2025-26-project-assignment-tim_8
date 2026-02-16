@@ -41,6 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\AnonymousUser\AnonymousUser.cs" />
+    <Compile Include="Models\AnonymousUser\BoxAccessLink.cs" />
+    <Compile Include="Models\BillingNotification\BillingNotification.cs" />
+    <Compile Include="Models\BillingNotification\Payment.cs" />
     <Compile Include="Models\Organization\Organization.cs" />
     <Compile Include="Models\Organization\User.cs" />
     <Compile Include="Models\Organization\UserRole.cs" />
