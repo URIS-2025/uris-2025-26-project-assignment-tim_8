@@ -14,6 +14,8 @@ namespace AnonymousDomain.Models.Subscription
 
         public DateTime CreatedAt { get; set; }
 
+        public Guid SubscriptionId { get; set; }
+
 
     }
 }
