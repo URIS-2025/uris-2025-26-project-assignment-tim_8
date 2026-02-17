@@ -16,5 +16,7 @@ namespace AnonymousDomain.Models.Problem
         public DateTime CreatedAt { get; set; }
         public Guid ProblemBoxId { get; set; }
         public ProblemSuggestionStatus Status {  get; set; }
+        public ProblemPriority Priority { get; set; }
+
     }
 }

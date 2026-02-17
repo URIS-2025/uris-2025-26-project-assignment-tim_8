@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums\ProblemPriority.cs" />
     <Compile Include="Enums\ProblemSuggestionStatus.cs" />
     <Compile Include="Models\AnonymousUser\AnonymousUser.cs" />
     <Compile Include="Models\AnonymousUser\BoxAccessLink.cs" />
