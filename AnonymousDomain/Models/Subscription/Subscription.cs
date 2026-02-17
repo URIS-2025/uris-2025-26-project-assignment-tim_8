@@ -15,7 +15,7 @@ namespace AnonymousDomain.Models.Subscription
 
         public Guid SubscriptionPlanId { get; set; }
 
-        public Guid PaymentId { get; set; }
+        public Guid OrganizationId { get; set; }
 
 
     }
