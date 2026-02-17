@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AnonymousDomain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Policy;
@@ -14,6 +15,6 @@ namespace AnonymousDomain.Models.Problem
         public string Description { get; set; }
         public DateTime CreatedAt { get; set; }
         public Guid ProblemBoxId { get; set; }
-
+        public ProblemSuggestionStatus Status {  get; set; }
     }
 }
