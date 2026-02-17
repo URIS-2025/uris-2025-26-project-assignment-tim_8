@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AnonymousDomain.Enums;
 
 namespace AnonymousDomain.Models.ProblemBox
 {
@@ -16,6 +17,7 @@ namespace AnonymousDomain.Models.ProblemBox
         public string Password { get; set; }
         public Guid OrganizationId { get; set; }
         public Guid BoxAccessLinkId { get; set; }
+        public ProblemSuggestionStatus Status { get; set; }
 
     }
 }
