@@ -48,6 +48,10 @@
     <Compile Include="Models\Organization\Organization.cs" />
     <Compile Include="Models\Organization\User.cs" />
     <Compile Include="Models\Organization\UserRole.cs" />
+    <Compile Include="Models\ProblemBox\ProblemBox.cs" />
+    <Compile Include="Models\Problem\Problem.cs" />
+    <Compile Include="Models\Problem\ProblemCategory.cs" />
+    <Compile Include="Models\Problem\ProblemComment.cs" />
     <Compile Include="Models\Subscription\Payment.cs" />
     <Compile Include="Models\Subscription\Subscription.cs" />
     <Compile Include="Models\Subscription\SubscriptionPlan.cs" />
