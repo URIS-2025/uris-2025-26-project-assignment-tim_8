@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AnonymousDomain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,6 +25,7 @@ namespace AnonymousDomain.Models.SystemNotification
 
         public Guid SuggestionCommentId { get; set; }
 
+        public TypeStatus Type {  get; set; }
 
     }
 }

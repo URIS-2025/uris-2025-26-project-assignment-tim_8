@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AnonymousDomain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,6 +19,7 @@ namespace AnonymousDomain.Models.BillingNotification
 
         public Guid PaymentId { get; set; }
 
+        public TypeStatus Type {  get; set; }
         
     }
 }
