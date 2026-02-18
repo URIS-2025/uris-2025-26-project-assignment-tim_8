@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AnonymousDomain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace AnonymousDomain.Models.Subscription
     {
-    internal class Payment
+    public class Payment
     {
         public Guid Id { get; set; }
 
@@ -15,6 +16,10 @@ namespace AnonymousDomain.Models.Subscription
         public DateTime CreatedAt { get; set; }
 
         public Guid SubscriptionId { get; set; }
+
+        public PaymentStatus Status { get; set; }
+        public Currency Currency { get; set; }
+        public PaymentMethod PaymentMethod { get; set; }
 
 
     }
