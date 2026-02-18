@@ -41,6 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums\Currency.cs" />
+    <Compile Include="Enums\PaymentMethod.cs" />
+    <Compile Include="Enums\PaymentStatus.cs" />
+    <Compile Include="Enums\ProblemPriority.cs" />
+    <Compile Include="Enums\ProblemSuggestionStatus.cs" />
     <Compile Include="Models\AnonymousUser\AnonymousUser.cs" />
     <Compile Include="Models\AnonymousUser\BoxAccessLink.cs" />
     <Compile Include="Models\Attachment\Attachment.cs" />
@@ -49,10 +54,19 @@
     <Compile Include="Models\Organization\Organization.cs" />
     <Compile Include="Models\Organization\User.cs" />
     <Compile Include="Models\Organization\UserRole.cs" />
+    <Compile Include="Models\ProblemBox\ProblemBox.cs" />
+    <Compile Include="Models\Problem\Problem.cs" />
+    <Compile Include="Models\Problem\ProblemCategory.cs" />
+    <Compile Include="Models\Problem\ProblemComment.cs" />
     <Compile Include="Models\Subscription\Payment.cs" />
     <Compile Include="Models\Subscription\Subscription.cs" />
     <Compile Include="Models\Subscription\SubscriptionPlan.cs" />
     <Compile Include="Models\SuggestionBox\SuggestionBox.cs" />
+    <Compile Include="Models\Suggestion\Suggestion.cs" />
+    <Compile Include="Models\Suggestion\SuggestionCategory.cs" />
+    <Compile Include="Models\Suggestion\SuggestionCategories.cs" />
+    <Compile Include="Models\Suggestion\SuggestionComment.cs" />
+    <Compile Include="Models\Suggestion\Vote.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

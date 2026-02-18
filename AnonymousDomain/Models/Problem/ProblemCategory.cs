@@ -4,14 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AnonymousDomain.Models.Subscription
+namespace AnonymousDomain.Models.Problem
 {
-    public class SubscriptionPlan
-    {
+    public class ProblemCategory
+    {   
         public Guid Id { get; set; }
-
         public string Title { get; set; }
+        public string Description { get; set; }
 
-       public string Description { get; set; }
     }
 }
