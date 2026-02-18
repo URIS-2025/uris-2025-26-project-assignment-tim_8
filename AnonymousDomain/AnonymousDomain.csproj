@@ -48,6 +48,7 @@
     <Compile Include="Enums\ProblemSuggestionStatus.cs" />
     <Compile Include="Models\AnonymousUser\AnonymousUser.cs" />
     <Compile Include="Models\AnonymousUser\BoxAccessLink.cs" />
+    <Compile Include="Models\Attachment\Attachment.cs" />
     <Compile Include="Models\BillingNotification\BillingNotification.cs" />
     <Compile Include="Models\BillingNotification\Payment.cs" />
     <Compile Include="Models\Organization\Organization.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="Models\Subscription\Payment.cs" />
     <Compile Include="Models\Subscription\Subscription.cs" />
     <Compile Include="Models\Subscription\SubscriptionPlan.cs" />
+    <Compile Include="Models\SuggestionBox\SuggestionBox.cs" />
     <Compile Include="Models\Suggestion\Suggestion.cs" />
     <Compile Include="Models\Suggestion\SuggestionCategory.cs" />
     <Compile Include="Models\Suggestion\SuggestionCategories.cs" />
@@ -67,5 +69,6 @@
     <Compile Include="Models\Suggestion\Vote.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
