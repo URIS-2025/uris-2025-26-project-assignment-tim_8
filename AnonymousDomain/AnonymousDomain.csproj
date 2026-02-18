@@ -41,6 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums\Currency.cs" />
+    <Compile Include="Enums\PaymentMethod.cs" />
+    <Compile Include="Enums\PaymentStatus.cs" />
+    <Compile Include="Enums\ProblemSuggestionStatus.cs" />
     <Compile Include="Models\AnonymousUser\AnonymousUser.cs" />
     <Compile Include="Models\AnonymousUser\BoxAccessLink.cs" />
     <Compile Include="Models\BillingNotification\BillingNotification.cs" />

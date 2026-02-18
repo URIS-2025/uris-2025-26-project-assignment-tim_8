@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AnonymousDomain.Models.Subscription
 {
-    internal class SubscriptionPlan
+    public class SubscriptionPlan
     {
         public Guid Id { get; set; }
 
