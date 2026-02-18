@@ -17,7 +17,7 @@ namespace AnonymousDomain.Models.Attachment
         public DateTime UploadedAt { get; set; }
 
         public Guid ProblemId { get; set; }
-        public Guid SuggestionID { get; set; }
+        public Guid SuggestionId { get; set; }
 
 
     }

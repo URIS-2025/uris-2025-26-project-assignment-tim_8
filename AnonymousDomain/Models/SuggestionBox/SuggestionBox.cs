@@ -8,7 +8,7 @@ namespace AnonymousDomain.Models.SuggestionBox
 {
     public class SuggestionBox
     {
-        public Guid id { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
 
@@ -20,6 +20,6 @@ namespace AnonymousDomain.Models.SuggestionBox
 
         public string CreatedBy { get; set; }
 
-        public Guid OrganizationID { get; set; }
+        public Guid OrganizationId { get; set; }
     }
 }
