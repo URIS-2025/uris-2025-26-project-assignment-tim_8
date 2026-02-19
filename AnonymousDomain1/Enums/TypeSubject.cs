@@ -10,6 +10,6 @@ namespace AnonymousDomain.Enums
     public enum TypeSubject
     {
         SystemNotification = 0,
-        BilingNotification = 1
+        BillingNotification = 1
     }
 }

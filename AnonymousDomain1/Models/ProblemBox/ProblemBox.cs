@@ -18,6 +18,5 @@ namespace AnonymousDomain.Models.ProblemBox
         public Guid OrganizationId { get; set; }
         public Guid BoxAccessLinkId { get; set; }
         public ProblemSuggestionStatus Status { get; set; }
-
     }
 }
