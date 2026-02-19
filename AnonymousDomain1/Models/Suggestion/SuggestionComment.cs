@@ -13,8 +13,8 @@ namespace AnonymousDomain.Models.Suggestion
         public bool IsAnonymous {  get; set; }
         public string CreatedBy {  get; set; }
         public DateTime CreatedAt {  get; set; }
-        public Guid SuggestionCommentId { get; set; }
-        public Guid SuggestionId {  get; set; }
+        public Guid? SuggestionCommentId { get; set; }
+        public Guid? SuggestionId {  get; set; }
         public Guid CommentAuthorId {  get; set; }
     }
 }

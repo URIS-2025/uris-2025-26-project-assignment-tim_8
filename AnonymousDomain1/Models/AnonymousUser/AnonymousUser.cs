@@ -9,9 +9,7 @@ namespace AnonymousDomain.Models.AnonymousUser
     public class AnonymousUser
     {
         public Guid Id { get; set; }
-
         public DateTime CreatedAt { get; set; }
-
         public Guid BoxAccessLinkId { get; set; }
     }
 }
