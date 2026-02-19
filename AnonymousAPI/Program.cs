@@ -1,4 +1,10 @@
+using AnonymousInfrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<AnonDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AppDB")));
 
 // Add services to the container.
 
