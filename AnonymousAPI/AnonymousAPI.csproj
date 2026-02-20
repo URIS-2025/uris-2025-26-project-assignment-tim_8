@@ -17,10 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\AnonymousInfrastructure1\AnonymousInfrastructure.csproj" />
     <ProjectReference Include="..\AnonymousDomain1\AnonymousDomain.csproj" />
     <ProjectReference Include="..\AnonymousApplication1\AnonymousApplication.csproj" />
