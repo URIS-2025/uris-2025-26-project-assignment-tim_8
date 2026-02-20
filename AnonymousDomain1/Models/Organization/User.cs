@@ -16,7 +16,6 @@ namespace AnonymousDomain.Models.Organization
         public string Username { get; set; }
         public DateTime CreatedAt { get; set; }
         public Guid RoleId { get; set; }
-        public Guid OrganizationId { get; set; }
-
+        public Guid? OrganizationId { get; set; }
     }
 }
