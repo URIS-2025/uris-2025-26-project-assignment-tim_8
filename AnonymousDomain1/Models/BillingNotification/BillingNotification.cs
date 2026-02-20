@@ -19,7 +19,7 @@ namespace AnonymousDomain.Models.BillingNotification
 
         public Guid PaymentId { get; set; }
 
-        public TypeStatus Type {  get; set; }
+        public TypeSubject Type {  get; set; }
         
     }
 }
