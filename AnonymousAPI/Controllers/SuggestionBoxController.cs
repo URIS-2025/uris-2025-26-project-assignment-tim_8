@@ -56,7 +56,13 @@ namespace AnonymousAPI.Controllers
             return null; // TODO skloniti kada se urade servisi 
         }
 
+        [HttpDelete("organization/{id}")]
+        public IActionResult DeleteSuggestionBoxByOrganizationId(Guid id)
+        {
+            // _suggestionBoxService.Delete(id);
+            // return NoContent();
+            return null; // TODO skloniti kada se urade servisi 
+        }
 
-        //deleeteBySuggestionId da li treba da se radi i kako bi izgledao...
     }
 }

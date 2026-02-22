@@ -1,4 +1,5 @@
 ﻿using AnonymousDomain.Models.Attachment;
+using AnonymousDomain.Models.Suggestion;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AnonymousAPI.Controllers
@@ -24,6 +25,21 @@ namespace AnonymousAPI.Controllers
             return null; // TODO skloniti kada se urade servisi
         }
 
+        [HttpPost]
+        public ActionResult<Attachment> CreateAttachment([FromBody] Attachment attachment) //TODO Promeniti povratnu vrednost na DTO, promeniti prosledjenu vrednost na DTO
+        {
+            // var result = _attachmentService.Create(suggestion);
+            // return Created("", result);
+            return null; // TODO skloniti kada se urade servisi
+        }
+
+        [HttpPut]
+        public ActionResult<Attachment> UpdateAttachment([FromBody] Attachment attachment) //TODO Promeniti povratnu vrednost na DTO, promeniti prosledjenu vrednost na DTO
+        {
+            // var result = _attachmentService.Update(attachment);
+            // return Ok(result);
+            return null; // TODO skloniti kada se urade servisi
+        }
 
 
         [HttpGet("suggestion/{id}")]
