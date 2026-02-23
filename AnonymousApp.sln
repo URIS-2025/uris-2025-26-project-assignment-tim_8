@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnonymousDomain", "Anonymou
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnonymousInfrastructure", "AnonymousInfrastructure1\AnonymousInfrastructure.csproj", "{8B7E3E8D-40DB-4AB6-BAE7-7C13A8F6FD03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrganizationService", "OrganizationService\OrganizationService.csproj", "{5C180370-5176-49CD-AACD-3F3E0FA42ECD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{8B7E3E8D-40DB-4AB6-BAE7-7C13A8F6FD03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B7E3E8D-40DB-4AB6-BAE7-7C13A8F6FD03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B7E3E8D-40DB-4AB6-BAE7-7C13A8F6FD03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C180370-5176-49CD-AACD-3F3E0FA42ECD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C180370-5176-49CD-AACD-3F3E0FA42ECD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C180370-5176-49CD-AACD-3F3E0FA42ECD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C180370-5176-49CD-AACD-3F3E0FA42ECD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
