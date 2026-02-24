@@ -28,8 +28,7 @@ namespace AnonymousInfrastructure.Persistence.Configurations
             builder.Property(b => b.PaymentId)
                 .IsRequired();
 
-            builder.Property(b => b.Type)
-                .IsRequired();
+
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using AnonymousDomain.Enums;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,8 +14,6 @@ namespace AnonymousDomain.Models.BillingNotification
         public bool IsRead {  get; set; }
         public Guid OrganizationId { get; set; }
         public Guid PaymentId { get; set; }
-
-     
         
     }
 }
