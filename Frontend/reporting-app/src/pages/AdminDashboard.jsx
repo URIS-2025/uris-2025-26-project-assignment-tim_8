@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Building2,
     MessageSquareWarning,
@@ -8,8 +8,9 @@ import {
     ChevronRight,
     Plus
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
+import { OrganizationService } from '../services/organizationService';
 import './AdminDashboard.css';
 
 // Mock data for initial UI build
@@ -29,6 +30,54 @@ const recentActivity = [
 
 const AdminDashboard = () => {
     const [isOrgModalOpen, setOrgModalOpen] = useState(false);
+    const [organizations, setOrganizations] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Form state for creating organization
+    const [newOrg, setNewOrg] = useState({ name: '', themeColor: '#000000', customLogoUrl: '' });
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        fetchOrganizations();
+    }, []);
+
+    const fetchOrganizations = async () => {
+        try {
+            setIsLoading(true);
+            const data = await OrganizationService.getAll();
+            setOrganizations(data);
+        } catch (error) {
+            console.error("Failed to fetch organizations", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCreateOrganization = async () => {
+        if (!newOrg.name.trim()) return;
+        try {
+            const created = await OrganizationService.create({
+                name: newOrg.name,
+                themeColor: newOrg.themeColor || '#6366f1',
+                customLogoUrl: newOrg.customLogoUrl || null,
+            });
+            setOrgModalOpen(false);
+            setNewOrg({ name: '', themeColor: '#000000', customLogoUrl: '' });
+            fetchOrganizations();
+            navigate(`/admin/organizations/${created.id}`);
+        } catch (error) {
+            console.error("Failed to create organization", error);
+            alert("Failed to create organization");
+        }
+    };
+
+    const displayStats = [
+        { label: 'Total Organizations', value: isLoading ? '...' : organizations.length.toString(), icon: Building2, color: 'var(--accent-primary)' },
+        { label: 'Active Suggestion Boxes', value: '48', icon: MessageSquareWarning, color: 'var(--success)' },
+        { label: 'Active Problem Boxes', value: '24', icon: AlertOctagon, color: 'var(--warning)' },
+        { label: 'Total Submissions', value: '1,284', icon: TrendingUp, color: '#a855f7' },
+    ];
 
     return (
         <div className="dashboard-container animate-fade-in">
@@ -46,7 +95,7 @@ const AdminDashboard = () => {
 
             {/* Stats Grid */}
             <div className="stats-grid">
-                {stats.map((stat, index) => (
+                {displayStats.map((stat, index) => (
                     <div key={index} className="stat-card glass-panel delay-100">
                         <div className="stat-icon-wrapper" style={{ backgroundColor: `${stat.color}15`, color: stat.color }}>
                             <stat.icon size={24} />
@@ -60,29 +109,34 @@ const AdminDashboard = () => {
             </div>
 
             <div className="dashboard-content-grid">
-                {/* Recent Activity Feed */}
+                {/* Organizations List */}
                 <div className="dashboard-panel glass-panel delay-200">
                     <div className="panel-header">
-                        <h3>Recent Submissions</h3>
-                        <Link to="/admin/suggestions" className="view-all-link">View all <ChevronRight size={16} /></Link>
+                        <h3>Organizations</h3>
                     </div>
                     <div className="activity-list">
-                        {recentActivity.map((activity) => (
-                            <div key={activity.id} className="activity-item">
-                                <div className={`activity-icon ${activity.type}`}>
-                                    {activity.type === 'problem' ? <AlertOctagon size={18} /> : <MessageSquareWarning size={18} />}
-                                </div>
-                                <div className="activity-details">
-                                    <p className="activity-title">
-                                        New {activity.type} in <strong>{activity.box}</strong>
-                                    </p>
-                                    <p className="activity-meta">
-                                        {activity.org} &bull; <Clock size={12} className="meta-icon" /> {activity.time}
-                                    </p>
-                                </div>
-                                <div className={`status-dot ${activity.status}`}></div>
-                            </div>
-                        ))}
+                        {isLoading ? (
+                            <p className="p-4 text-center">Loading...</p>
+                        ) : organizations.length === 0 ? (
+                            <p className="p-4 text-center">No organizations found.</p>
+                        ) : (
+                            organizations.slice(0, 5).map((org) => (
+                                <Link to={`/admin/organizations/${org.id}`} key={org.id} className="activity-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <div className="activity-icon suggestion">
+                                        <Building2 size={18} />
+                                    </div>
+                                    <div className="activity-details">
+                                        <p className="activity-title">
+                                            <strong>{org.name}</strong>
+                                        </p>
+                                        <p className="activity-meta">
+                                            Organization ID: {org.id}
+                                        </p>
+                                    </div>
+                                    <ChevronRight size={16} style={{ opacity: 0.5 }} />
+                                </Link>
+                            ))
+                        )}
                     </div>
                 </div>
 
@@ -121,25 +175,43 @@ const AdminDashboard = () => {
                 footer={
                     <>
                         <button className="btn btn-ghost" onClick={() => setOrgModalOpen(false)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={() => setOrgModalOpen(false)}>Create Organization</button>
+                        <button className="btn btn-primary" onClick={handleCreateOrganization}>Create Organization</button>
                     </>
                 }
             >
                 <div className="form-group">
-                    <label>Organization Name</label>
-                    <input type="text" className="form-control" placeholder="e.g. Acme Corp" />
+                    <label>Organization Name *</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Acme Corp"
+                        value={newOrg.name}
+                        onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
+                        required
+                    />
                 </div>
                 <div className="form-group">
-                    <label>Primary Contact Email</label>
-                    <input type="email" className="form-control" placeholder="admin@acme.com" />
+                    <label>Theme Color</label>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="color"
+                            className="form-control"
+                            style={{ width: '60px', padding: '0 4px', height: '40px' }}
+                            value={newOrg.themeColor}
+                            onChange={(e) => setNewOrg({ ...newOrg, themeColor: e.target.value })}
+                        />
+                        <span className="text-sm opacity-70">{newOrg.themeColor}</span>
+                    </div>
                 </div>
                 <div className="form-group">
-                    <label>Billing Plan</label>
-                    <select className="form-control">
-                        <option value="Basic">Basic ($49/mo)</option>
-                        <option value="Pro">Pro ($199/mo)</option>
-                        <option value="Enterprise">Enterprise ($499/mo)</option>
-                    </select>
+                    <label>Logo URL (Optional)</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="https://..."
+                        value={newOrg.customLogoUrl}
+                        onChange={(e) => setNewOrg({ ...newOrg, customLogoUrl: e.target.value })}
+                    />
                 </div>
             </Modal>
         </div>

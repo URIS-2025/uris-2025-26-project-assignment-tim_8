@@ -108,15 +108,6 @@ const Login = () => {
                     </button>
                 </form>
 
-                <div className="auth-divider">
-                    <span>OR</span>
-                </div>
-
-                <button className="btn btn-ghost btn-full oauth-btn glass-panel">
-                    <Github size={20} />
-                    Continue with GitHub
-                </button>
-
                 <div className="auth-footer">
                     <p>
                         {mode === 'login' ? "Don't have an account? " : "Already have an account? "}

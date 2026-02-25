@@ -1,20 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Shield, UserPlus, Lock } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
-
-// Mock Data matching the aggregates
-const mockSystemUsers = [
-    { id: 'U-001', name: 'Eleanor SystemAdmin', email: 'eleanor@platform.com', role: 'Global Admin', entity: 'Platform', status: 'Active', lastLogin: '1 hour ago' },
-    { id: 'U-002', name: 'Alice Walker', email: 'alice@techcorp.com', role: 'Head Manager', entity: 'Tech Corp International', status: 'Active', lastLogin: '2 days ago' },
-    { id: 'U-003', name: 'Bob Smith', email: 'bob@techcorp.com', role: 'Manager', entity: 'Tech Corp International', status: 'Offline', lastLogin: '1 week ago' },
-    { id: 'U-004', name: 'Charlie Davis', email: 'charlie@designstudio.com', role: 'Billing Manager', entity: 'Design Studio LLC', status: 'Active', lastLogin: '5 mins ago' },
-    { id: 'U-005', name: 'Diana Prince', email: 'diana@platform.com', role: 'Admin', entity: 'Platform', status: 'Suspended', lastLogin: '1 month ago' }
-];
+import { SystemUserService } from '../services/systemUserService';
+import { OrganizationService } from '../services/organizationService';
 
 const UserManagement = () => {
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [organizations, setOrganizations] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const [inviteData, setInviteData] = useState({ email: '', role: 'manager', organizationId: '' });
+
+    // Manage Role Modal States
+    const [isRoleModalOpen, setRoleModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [newRole, setNewRole] = useState('');
+
+    useEffect(() => {
+        fetchUsers();
+        fetchOrganizations();
+    }, []);
+
+    const fetchUsers = async () => {
+        try {
+            setIsLoading(true);
+            const data = await SystemUserService.getAll();
+            setUsers(data);
+        } catch (error) {
+            console.error("Failed to fetch users", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchOrganizations = async () => {
+        try {
+            const data = await OrganizationService.getAll();
+            setOrganizations(data);
+        } catch (error) {
+            console.error("Failed to fetch organizations", error);
+        }
+    };
+
+    const handleInviteUser = async () => {
+        if (!inviteData.email) return;
+        try {
+            await SystemUserService.invite({
+                email: inviteData.email,
+                role: inviteData.role,
+                organizationId: inviteData.organizationId || null
+            });
+            setInviteModalOpen(false);
+            setInviteData({ email: '', role: 'manager', organizationId: '' });
+            fetchUsers();
+            alert("User invited successfully!");
+        } catch (error) {
+            console.error("Failed to invite user", error);
+            alert("Failed to invite user");
+        }
+    };
+
+    const openRoleModal = (user) => {
+        setSelectedUser(user);
+        setNewRole(user.role || 'manager');
+        setRoleModalOpen(true);
+    };
+
+    const handleUpdateRole = async () => {
+        if (!selectedUser) return;
+        try {
+            await SystemUserService.updateRole(selectedUser.id, { role: newRole });
+            setRoleModalOpen(false);
+            fetchUsers();
+            alert("User role updated successfully!");
+        } catch (error) {
+            console.error("Failed to update user role", error);
+            alert("Failed to update user role");
+        }
+    };
 
     const columns = [
         { header: 'User', accessor: 'name', render: (row) => <strong>{row.name}</strong> },
@@ -40,7 +106,7 @@ const UserManagement = () => {
             header: 'Actions',
             accessor: 'actions',
             render: (row) => (
-                <button className="btn btn-ghost icon-btn small" title="Security Settings">
+                <button className="btn btn-ghost icon-btn small" title="Security Settings" onClick={() => openRoleModal(row)}>
                     <Lock size={16} />
                 </button>
             )
@@ -60,12 +126,16 @@ const UserManagement = () => {
             </div>
 
             <div className="table-wrapper">
-                <DataTable
-                    title="All System Users"
-                    data={mockSystemUsers}
-                    columns={columns}
-                    searchPlaceholder="Search users by name, email, or entity..."
-                />
+                {isLoading ? (
+                    <p className="p-4 text-center">Loading users...</p>
+                ) : (
+                    <DataTable
+                        title="All System Users"
+                        data={users.length > 0 ? users : []} // Fallback to empty if no users yet
+                        columns={columns}
+                        searchPlaceholder="Search users by name, email, or entity..."
+                    />
+                )}
             </div>
 
             <Modal
@@ -75,17 +145,28 @@ const UserManagement = () => {
                 footer={
                     <>
                         <button className="btn btn-ghost" onClick={() => setInviteModalOpen(false)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={() => setInviteModalOpen(false)}>Send Invitation</button>
+                        <button className="btn btn-primary" onClick={handleInviteUser}>Send Invitation</button>
                     </>
                 }
             >
                 <div className="form-group">
                     <label>Email Address</label>
-                    <input type="email" className="form-control" placeholder="user@example.com" />
+                    <input
+                        type="email"
+                        className="form-control"
+                        placeholder="user@example.com"
+                        value={inviteData.email}
+                        onChange={(e) => setInviteData({ ...inviteData, email: e.target.value })}
+                        required
+                    />
                 </div>
                 <div className="form-group">
                     <label>System Role</label>
-                    <select className="form-control">
+                    <select
+                        className="form-control"
+                        value={inviteData.role}
+                        onChange={(e) => setInviteData({ ...inviteData, role: e.target.value })}
+                    >
                         <option value="manager">Organization Manager</option>
                         <option value="head_manager">Head Organization Manager</option>
                         <option value="billing">Billing Manager</option>
@@ -94,13 +175,53 @@ const UserManagement = () => {
                 </div>
                 <div className="form-group">
                     <label>Assign to Organization (if applicable)</label>
-                    <select className="form-control">
+                    <select
+                        className="form-control"
+                        value={inviteData.organizationId}
+                        onChange={(e) => setInviteData({ ...inviteData, organizationId: e.target.value })}
+                        disabled={inviteData.role === 'admin'}
+                    >
                         <option value="">-- Select Organization --</option>
-                        <option value="ORG-001">Tech Corp International</option>
-                        <option value="ORG-002">Design Studio LLC</option>
+                        {organizations.map(org => (
+                            <option key={org.id} value={org.id}>{org.name}</option>
+                        ))}
                     </select>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Platform Admins do not need an assigned organization.</p>
                 </div>
+            </Modal>
+
+            <Modal
+                isOpen={isRoleModalOpen}
+                onClose={() => setRoleModalOpen(false)}
+                title="Manage User Role"
+                footer={
+                    <>
+                        <button className="btn btn-ghost" onClick={() => setRoleModalOpen(false)}>Cancel</button>
+                        <button className="btn btn-primary" onClick={handleUpdateRole}>Save Changes</button>
+                    </>
+                }
+            >
+                {selectedUser && (
+                    <>
+                        <div className="mb-4">
+                            <p><strong>User:</strong> {selectedUser.name}</p>
+                            <p><strong>Email:</strong> {selectedUser.email}</p>
+                        </div>
+                        <div className="form-group">
+                            <label>System Role *</label>
+                            <select
+                                className="form-control"
+                                value={newRole}
+                                onChange={(e) => setNewRole(e.target.value)}
+                            >
+                                <option value="manager">Organization Manager</option>
+                                <option value="head_manager">Head Organization Manager</option>
+                                <option value="billing">Billing Manager</option>
+                                <option value="admin">Platform Admin</option>
+                            </select>
+                        </div>
+                    </>
+                )}
             </Modal>
         </div>
     );
