@@ -10,10 +10,10 @@ namespace OrganizationService.Context
         private readonly IConfiguration _configuration;
 
         public OrganizationContext(
-            DbContextOptions options,
-            IConfiguration configuration) : base(options)
+            DbContextOptions options
+            /*,IConfiguration configuration*/) : base(options)
         {
-            _configuration = configuration;
+            /*_configuration = configuration;*/
         }
 
         public DbSet<Organization> Organizations { get; set; }
@@ -22,8 +22,8 @@ namespace OrganizationService.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(
-                _configuration.GetConnectionString("OrganizationDB"));
+           /* optionsBuilder.UseSqlServer(
+                _configuration.GetConnectionString("OrganizationDd"));*/
         }
 
         protected override void OnModelCreating(ModelBuilder builder)

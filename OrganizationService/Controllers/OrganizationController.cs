@@ -13,7 +13,7 @@ namespace AnonymousAPI.Controllers
     {
 
         private readonly IOrganizationRepository _organizationRepository;
-        private readonly IMapper _mapper;
+        private readonly IMapper _mapper; // ne koristimo maper u controlerima da li da ga izbacimo
         public OrganizationController(IOrganizationRepository organizationRepository, IMapper mapper)
         {
             _organizationRepository = organizationRepository;

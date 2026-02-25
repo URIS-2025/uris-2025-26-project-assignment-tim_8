@@ -4,6 +4,7 @@ using Azure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrganizationService.Data;
+using OrganizationService.Models.DTOs;
 
 namespace AnonymousAPI.Controllers
 {
@@ -14,7 +15,7 @@ namespace AnonymousAPI.Controllers
     {
 
         private readonly IUserRepository _userRepository;
-        private readonly IMapper _mapper;
+        private readonly IMapper _mapper; // ne koristimo maper u controlerima da li da ga izbacimo
         public UserController(IUserRepository userRepository, IMapper mapper)
         {
             _userRepository = userRepository;
@@ -22,28 +23,28 @@ namespace AnonymousAPI.Controllers
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<User>> GetAllUsers() //TODO Promeniti povratnu vrednost na DTO,
+        public ActionResult<IEnumerable<UserDTO>> GetAllUsers() 
         {
             var result = _userRepository.GetAllUsers();
             return Ok(result);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<User> GetUserById(Guid id) //TODO Promeniti povratnu vrednost na DTO
+        public ActionResult<UserDTO> GetUserById(Guid id) 
         {
             var result = _userRepository.GetUserById(id);
             return Ok(result);
         }
 
         [HttpPost]
-        public ActionResult<User> CreateUser([FromBody] User user ) //TODO Promeniti povratnu vrednost na DTO, promeniti prosledjenu vrednost na DTO
+        public ActionResult<UserCreatedDTO> CreateUser([FromBody] UserCreationDTO user ) 
         {
             var result = _userRepository.CreateUser(user);
             return Created("", result);
         }
 
         [HttpPut]
-        public ActionResult<User> UpdateUser([FromBody] User user ) //TODO Promeniti povratnu vrednost na DTO, promeniti prosledjenu vrednost na DTO
+        public ActionResult<UserCreatedDTO> UpdateUser([FromBody] UserDTO user ) 
         {
             var result = _userRepository.UpdateUser(user);
             return Ok(result);
@@ -54,6 +55,12 @@ namespace AnonymousAPI.Controllers
         {
             _userRepository.DeleteUser(id);
             return NoContent();
+        }
+        [HttpPost("login")]
+        public ActionResult<string> Login([FromBody] UserLoginDTO login)
+        {
+            var token = _userRepository.Login(login);
+            return Ok(token);
         }
     }
 }

@@ -21,12 +21,26 @@ namespace OrganizationService.Data
         }
         public OrganizationCreatedDTO CreateOrganization(OrganizationCreationDTO organization)
         {
-            throw new NotImplementedException();
+             var entity = _mapper.Map<Organization>(organization)!;
+             entity.Id = Guid.NewGuid();
+             entity.CreatedAt = DateTime.UtcNow;
+
+             _context.Organizations.Add(entity);
+             SaveChanges();
+
+             return _mapper.Map<OrganizationCreatedDTO>(entity);
+
+          
         }
 
         public void DeleteOrganization(Guid id)
         {
-            throw new NotImplementedException();
+            var organization = _context.Organizations.Find(id);
+            if (organization == null)
+                throw new KeyNotFoundException($"Organization with id {id} not found.");
+
+            _context.Organizations.Remove(organization);
+            SaveChanges();
         }
 
         public IEnumerable<OrganizationDTO> GetAllOrganizations()
@@ -45,12 +59,20 @@ namespace OrganizationService.Data
 
         public OrganizationDTO GetOrganizationById(Guid Id)
         {
-            throw new NotImplementedException();
+            var organization = _context.Organizations.Find(Id);
+            if (organization == null)
+                throw new KeyNotFoundException($"Organization with id {Id} not found.");
+
+            return _mapper.Map<OrganizationDTO>(organization);
         }
 
         public OrganizationCreatedDTO UpdateOrganization(OrganizationDTO organization)
         {
-            throw new NotImplementedException();
+            var existOrg = _context.Organizations.Find(organization.Id);
+            if (existOrg == null)
+                throw new KeyNotFoundException($"Organization with id {organization.Id} not found.");
+
+            return _mapper.Map<OrganizationCreatedDTO>(existOrg);
         }
     }
 }
