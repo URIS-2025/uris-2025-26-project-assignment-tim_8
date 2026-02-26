@@ -1,0 +1,6 @@
+@ProblemService_HostAddress = http://localhost:5012
+
+GET {{ProblemService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
