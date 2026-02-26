@@ -1,0 +1,80 @@
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--bg-primary);
+    position: relative;
+}
+
+.admin-main-wrapper {
+    flex: 1;
+    margin-left: 260px;
+    /* Same as sidebar width */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+    z-index: 10;
+}
+
+.admin-header {
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    border-radius: 0;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+}
+
+.header-breadcrumbs {
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+.admin-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.admin-ambient-light {
+    position: fixed;
+    top: 0;
+    left: 260px;
+    width: calc(100% - 260px);
+    height: 100%;
+    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Page Header Common Utility for Admin Views */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.page-description {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+@media (max-width: 1024px) {
+    /* For mobile, we would need a collapsible sidebar logic, assuming desktop focus initially */
+}
