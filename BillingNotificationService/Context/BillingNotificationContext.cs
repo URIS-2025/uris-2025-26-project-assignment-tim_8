@@ -43,8 +43,6 @@ namespace BillingNotificationService.Context
 
                 entity.Property(b => b.PaymentId)
                       .IsRequired();
-
-           
             });
         }
     }

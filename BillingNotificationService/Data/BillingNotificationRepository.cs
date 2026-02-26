@@ -2,7 +2,6 @@
 using AutoMapper;
 using BillingNotificationService.Context;
 using BillingNotificationService.Models.DTOs.BillingNotificationDTO;
-using BillingNotificationService.Validations;
 
 namespace BillingNotificationService.Data
 {
@@ -11,13 +10,11 @@ namespace BillingNotificationService.Data
 
         private readonly BillingNotificationContext _context;
         private readonly IMapper _mapper;
-        private readonly NotEmptyGuidAttribute _validation;
 
-        public BillingNotificationRepository(BillingNotificationContext context, IMapper mapper, NotEmptyGuidAttribute validation)
+        public BillingNotificationRepository(BillingNotificationContext context, IMapper mapper)
         {
             _mapper = mapper;
             _context = context;
-            _validation = validation;
         }
 
         public bool SaveChanges()
@@ -27,14 +24,6 @@ namespace BillingNotificationService.Data
 
         public BillingNotificationCreatedDTO CreateBillingNotification(BillingNotificationCreationDTO billingNotification)
         {
-            var paymentValidation = _validation.IsValid(billingNotification.PaymentId);
-            if (!paymentValidation)
-                throw new ArgumentException("PaymentId must be provided.");
-
-            var organizationValidation = _validation.IsValid(billingNotification.OrganizationId);
-            if (!organizationValidation)
-                throw new ArgumentException("OrganizationId must be provided.");
-
             var entity = _mapper.Map<BillingNotification>(billingNotification);
             _context.BillingNotifications.Add(entity);
             SaveChanges();
@@ -43,7 +32,12 @@ namespace BillingNotificationService.Data
 
         public void DeleteBillingNotification(Guid id)
         {
-            throw new NotImplementedException();
+            var billingNotification = _context.BillingNotifications.Find(id);
+            if (billingNotification != null)
+            {
+                _context.Remove(billingNotification);
+                _context.SaveChanges();
+            }
         }
 
         public IEnumerable<BillingNotificationDTO> GetAllBillingNotifications()
@@ -62,12 +56,23 @@ namespace BillingNotificationService.Data
 
         public BillingNotificationDTO GetBillingNotificationById(Guid id)
         {
-            throw new NotImplementedException();
+            var billingNotification = _context.BillingNotifications.Find(id);
+            if (billingNotification == null)
+            {
+                return null;
+            }
+            return _mapper.Map<BillingNotificationDTO>(billingNotification);
         }
 
         public BillingNotificationDTO UpdateBillingNotification(BillingNotificationUpdateDTO billingNotification)
         {
-            throw new NotImplementedException();
+            var existingBillingNotification = _context.BillingNotifications.Find(billingNotification.Id);
+            if (existingBillingNotification != null)
+            {
+                _mapper.Map(billingNotification, existingBillingNotification);
+                _context.SaveChanges();
+            }
+            return _mapper.Map<BillingNotificationDTO>(existingBillingNotification);
         }
     }
 }
