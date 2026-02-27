@@ -7,15 +7,6 @@ import { Building2, Users, MessageSquareWarning, AlertOctagon, ArrowLeft, Plus, 
 import { OrganizationService } from '../services/organizationService';
 import './OrganizationDetails.css';
 
-// Mock Data
-const mockOrg = {
-    id: 'ORG-001',
-    name: 'Tech Corp International',
-    created: 'Jan 15, 2023',
-    status: 'Active',
-    plan: 'Enterprise'
-};
-
 const mockManagers = [
     { id: 'M-101', name: 'Alice Walker', email: 'alice@techcorp.com', role: 'Head Manager', added: 'Feb 01, 2023' },
     { id: 'M-102', name: 'Bob Smith', email: 'bob@techcorp.com', role: 'Manager', added: 'Mar 15, 2023' },

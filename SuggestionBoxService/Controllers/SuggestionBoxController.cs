@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SuggestionBoxService.Data;
 using SuggestionBoxService.Models.DTOs;
+using SuggestionBoxService.Models.ExternalDTOs;
 
 namespace AnonymousAPI.Controllers
 {
@@ -15,7 +16,12 @@ namespace AnonymousAPI.Controllers
             _repository = repository;
         }
 
-        // GET: api/suggestionbox/{id}
+        [HttpGet]
+        public ActionResult<IEnumerable<SuggestionBoxDTO>> GetAllSuggestionBoxes()
+        {
+            var result = _repository.GetAll();
+            return Ok(result);
+        }
         [HttpGet("{id}")]
         public ActionResult<SuggestionBoxDTO> GetById(Guid id)
         {

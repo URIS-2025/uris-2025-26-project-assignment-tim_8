@@ -12,25 +12,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { OrganizationService } from '../services/organizationService';
 import './AdminDashboard.css';
-
-// Mock data for initial UI build
-const stats = [
-    { label: 'Total Organizations', value: '12', icon: Building2, color: 'var(--accent-primary)' },
-    { label: 'Active Suggestion Boxes', value: '48', icon: MessageSquareWarning, color: 'var(--success)' },
-    { label: 'Active Problem Boxes', value: '24', icon: AlertOctagon, color: 'var(--warning)' },
-    { label: 'Total Submissions', value: '1,284', icon: TrendingUp, color: '#a855f7' },
-];
-
-const recentActivity = [
-    { id: 1, type: 'problem', box: 'IT Support', org: 'Tech Corp', time: '10 mins ago', status: 'new' },
-    { id: 2, type: 'suggestion', box: 'Office Improvements', org: 'Design Studio', time: '1 hour ago', status: 'read' },
-    { id: 3, type: 'problem', box: 'HR Complaints', org: 'Tech Corp', time: '2 hours ago', status: 'resolved' },
-    { id: 4, type: 'suggestion', box: 'Product Ideas', org: 'Startup Inc', time: '3 hours ago', status: 'new' },
-];
+import { SuggestionBoxService } from '../services/suggestionBoxService';
 
 const AdminDashboard = () => {
     const [isOrgModalOpen, setOrgModalOpen] = useState(false);
     const [organizations, setOrganizations] = useState([]);
+    const [suggestionBoxes, setSuggestionBoxes] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     // Form state for creating organization
@@ -40,6 +27,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchOrganizations();
+        fetchSuggestionBoxes();
     }, []);
 
     const fetchOrganizations = async () => {
@@ -49,6 +37,18 @@ const AdminDashboard = () => {
             setOrganizations(data);
         } catch (error) {
             console.error("Failed to fetch organizations", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchSuggestionBoxes = async () => {
+        try {
+            setIsLoading(true);
+            const data = await SuggestionBoxService.getAll();
+            setSuggestionBoxes(data);
+        } catch (error) {
+            console.error("Failed to fetch suggestion boxes", error);
         } finally {
             setIsLoading(false);
         }
@@ -74,7 +74,7 @@ const AdminDashboard = () => {
 
     const displayStats = [
         { label: 'Total Organizations', value: isLoading ? '...' : organizations.length.toString(), icon: Building2, color: 'var(--accent-primary)' },
-        { label: 'Active Suggestion Boxes', value: '48', icon: MessageSquareWarning, color: 'var(--success)' },
+        { label: 'Active Suggestion Boxes', value: isLoading ? '...' : suggestionBoxes.length.toString(), icon: MessageSquareWarning, color: 'var(--success)' },
         { label: 'Active Problem Boxes', value: '24', icon: AlertOctagon, color: 'var(--warning)' },
         { label: 'Total Submissions', value: '1,284', icon: TrendingUp, color: '#a855f7' },
     ];
