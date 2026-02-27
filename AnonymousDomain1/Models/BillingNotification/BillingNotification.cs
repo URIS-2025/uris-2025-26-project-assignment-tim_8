@@ -15,7 +15,7 @@ namespace AnonymousDomain.Models.BillingNotification
         public Guid OrganizationId { get; set; }
         public Guid PaymentId { get; set; }
 
-        public TypeSubject Type {  get; set; }
+     
         
     }
 }

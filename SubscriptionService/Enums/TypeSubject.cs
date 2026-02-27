@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AnonymousDomain.Enums
+namespace SubscriptionService.Enums
 {
     public enum TypeSubject
     {

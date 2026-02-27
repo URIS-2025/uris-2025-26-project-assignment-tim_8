@@ -33,8 +33,6 @@ namespace AnonymousInfrastructure.Persistence.Configurations
 
             builder.Property(s => s.SuggestionCommentId);
 
-            builder.Property(s => s.Type)
-                .IsRequired();
         }
     }
 }

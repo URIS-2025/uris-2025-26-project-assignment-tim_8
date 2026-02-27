@@ -17,7 +17,7 @@ namespace AnonymousDomain.Models.SystemNotification
         public Guid? AnonymousUserId { get; set; }
         public Guid? ProblemCommentId { get; set; }
         public Guid? SuggestionCommentId { get; set; }
-        public TypeSubject Type {  get; set; }
+
 
     }
 }
