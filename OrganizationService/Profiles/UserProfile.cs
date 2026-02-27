@@ -13,6 +13,11 @@ namespace OrganizationService.Profiles
                 .ReverseMap();
             CreateMap<User, UserCreatedDTO>()
                 .ReverseMap();
+            CreateMap<UserUpdateDTO, User>()
+                .ForMember(dest => dest.Password, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.Email, opt => opt.Ignore())
+                .ReverseMap();
         }
     }
 }

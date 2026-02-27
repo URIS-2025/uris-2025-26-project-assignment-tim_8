@@ -7,24 +7,17 @@ namespace OrganizationService.Context
 {
     public class OrganizationContext : DbContext
     {
-        private readonly IConfiguration _configuration;
+        
 
-        public OrganizationContext(
-            DbContextOptions options
-            /*,IConfiguration configuration*/) : base(options)
+        public OrganizationContext(DbContextOptions options) : base(options)
         {
-            /*_configuration = configuration;*/
         }
 
         public DbSet<Organization> Organizations { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-           /* optionsBuilder.UseSqlServer(
-                _configuration.GetConnectionString("OrganizationDd"));*/
-        }
+        
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

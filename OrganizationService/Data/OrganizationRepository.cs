@@ -72,6 +72,9 @@ namespace OrganizationService.Data
             if (existOrg == null)
                 throw new KeyNotFoundException($"Organization with id {organization.Id} not found.");
 
+            _mapper.Map(organization, existOrg);
+            SaveChanges();
+
             return _mapper.Map<OrganizationCreatedDTO>(existOrg);
         }
     }

@@ -67,7 +67,7 @@ namespace OrganizationService.Data
             return _mapper.Map<UserDTO>(user);
         }
 
-        public UserCreatedDTO UpdateUser(UserDTO user)
+        public UserCreatedDTO UpdateUser(UserUpdateDTO user)
         {
             var existUser = _context.Users.Find(user.Id);
             if (existUser == null)

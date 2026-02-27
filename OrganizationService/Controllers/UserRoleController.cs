@@ -15,11 +15,11 @@ namespace AnonymousAPI.Controllers
     {
 
         private readonly IUserRoleRepository _userRoleRepository;
-        private readonly IMapper _mapper; // ne koristimo maper u controlerima da li da ga izbacimo
-        public UserRoleController(IUserRoleRepository userRoleRepository, IMapper mapper)
+        
+        public UserRoleController(IUserRoleRepository userRoleRepository)
         {
             _userRoleRepository = userRoleRepository;
-            _mapper = mapper;
+           
         }
 
         [HttpGet]
@@ -37,14 +37,14 @@ namespace AnonymousAPI.Controllers
         }
 
         [HttpPost]
-        public ActionResult<UserRoleCreatedDTO> CreateUserRole([FromBody] UserRoleCreationDTO userRole) //TODO Promeniti povratnu vrednost na DTO, promeniti prosledjenu vrednost na DTO
+        public ActionResult<UserRoleCreatedDTO> CreateUserRole([FromBody] UserRoleCreationDTO userRole) 
         {
             var result = _userRoleRepository.CreateUserRole(userRole);
             return Created("", result);
         }
 
         [HttpPut]
-        public ActionResult<UserRoleCreatedDTO> UpdateUserRole([FromBody] UserRoleDTO userRole) //TODO Promeniti povratnu vrednost na DTO, promeniti prosledjenu vrednost na DTO
+        public ActionResult<UserRoleCreatedDTO> UpdateUserRole([FromBody] UserRoleDTO userRole) 
         {
             var result = _userRoleRepository.UpdateUserRole(userRole);
             return Ok(result);

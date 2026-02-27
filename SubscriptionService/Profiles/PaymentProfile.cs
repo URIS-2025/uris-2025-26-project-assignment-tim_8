@@ -9,7 +9,9 @@ namespace SubscriptionService.Profiles
         public PaymentProfile()
         {
             CreateMap<PaymentCreationDTO, Payment>().ReverseMap();
-            CreateMap<Payment, PaymentDTO>().ReverseMap();
+            CreateMap<PaymentDTO, Payment>()
+               .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ReverseMap();
             CreateMap<Payment, PaymentCreatedDTO>().ReverseMap();
         }
     }

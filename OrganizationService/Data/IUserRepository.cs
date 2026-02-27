@@ -9,7 +9,7 @@ namespace OrganizationService.Data
         IEnumerable<UserDTO> GetAllUsers();
         UserDTO GetUserById(Guid id);
         UserCreatedDTO CreateUser(UserCreationDTO user);
-        UserCreatedDTO UpdateUser(UserDTO user);
+        UserCreatedDTO UpdateUser(UserUpdateDTO user);
         void DeleteUser(Guid id);
         string Login (UserLoginDTO login);
     }

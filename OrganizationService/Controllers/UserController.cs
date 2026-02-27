@@ -15,11 +15,10 @@ namespace AnonymousAPI.Controllers
     {
 
         private readonly IUserRepository _userRepository;
-        private readonly IMapper _mapper; // ne koristimo maper u controlerima da li da ga izbacimo
-        public UserController(IUserRepository userRepository, IMapper mapper)
+        public UserController(IUserRepository userRepository)
         {
             _userRepository = userRepository;
-            _mapper = mapper;
+          
         }
 
         [HttpGet]
