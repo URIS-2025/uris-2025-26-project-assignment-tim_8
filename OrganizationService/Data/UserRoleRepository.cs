@@ -1,6 +1,7 @@
 ﻿using AnonymousDomain.Models.Organization;
 using AutoMapper;
 using OrganizationService.Context;
+using OrganizationService.Models.DTOs;
 
 namespace OrganizationService.Data
 {
@@ -18,29 +19,58 @@ namespace OrganizationService.Data
         {
             return _context.SaveChanges() > 0;
         }
-        public UserRole CreateUserRole(UserRole userRole)
+        public UserRoleCreatedDTO CreateUserRole(UserRoleCreationDTO userRole)
         {
-            throw new NotImplementedException();
+            var entity = _mapper.Map<UserRole>(userRole)!;
+            entity.Id = Guid.NewGuid();
+            _context.UserRoles.Add(entity);
+            SaveChanges();
+            return _mapper.Map<UserRoleCreatedDTO>(entity);
         }
 
         public void DeleteUserRole(Guid id)
         {
-            throw new NotImplementedException();
+            var userRole = _context.UserRoles.Find(id);
+            if (userRole == null)
+                throw new KeyNotFoundException($"UserRole with id {id} not found.");
+
+            _context.UserRoles.Remove(userRole);
+            SaveChanges();
         }
 
-        public IEnumerable<UserRole> GetAllUserRoles()
+        public IEnumerable<UserRoleDTO> GetAllUserRoles()
         {
-            throw new NotImplementedException();
+
+            var userRoles = _context.UserRoles.ToList();
+            var userRoleResult = new List<UserRoleDTO>();
+
+            foreach (var userRole in userRoles)
+            {
+                var dto = _mapper.Map<UserRoleDTO>(userRole);
+                userRoleResult.Add(dto);
+            }
+
+            return userRoleResult;
         }
 
-        public UserRole GetUserRoleById(Guid id)
+        public UserRoleDTO GetUserRoleById(Guid id)
         {
-            throw new NotImplementedException();
+            var userRole = _context.UserRoles.Find(id);
+            if (userRole == null)
+                throw new KeyNotFoundException($"UserRole with id {id} not found.");
+
+            return _mapper.Map<UserRoleDTO>(userRole);
         }
 
-        public UserRole UpdateUserRole(UserRole userRole)
+        public UserRoleCreatedDTO UpdateUserRole(UserRoleDTO userRole)
         {
-            throw new NotImplementedException();
+            var existRole = _context.UserRoles.Find(userRole.Id);
+            if (existRole == null)
+                throw new KeyNotFoundException($"UserRole with id {userRole.Id} not found.");
+
+            _mapper.Map(userRole, existRole);
+            SaveChanges();
+            return _mapper.Map<UserRoleCreatedDTO>(existRole);
         }
     }
 }
