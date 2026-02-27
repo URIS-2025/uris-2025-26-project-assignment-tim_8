@@ -1,14 +1,15 @@
 ﻿using AnonymousDomain.Models.Organization;
 using Microsoft.AspNetCore.Mvc;
+using OrganizationService.Models.DTOs;
 
 namespace OrganizationService.Data
 {
     public interface IUserRoleRepository
     {
-        IEnumerable<UserRole> GetAllUserRoles();
-        UserRole GetUserRoleById(Guid id);
-        UserRole CreateUserRole(UserRole userRole);
-        UserRole UpdateUserRole(UserRole userRole);
+        IEnumerable<UserRoleDTO> GetAllUserRoles();
+        UserRoleDTO GetUserRoleById(Guid id);
+        UserRoleCreatedDTO CreateUserRole(UserRoleCreationDTO userRole);
+        UserRoleCreatedDTO UpdateUserRole(UserRoleDTO userRole);
         void DeleteUserRole(Guid id);
     }
 }

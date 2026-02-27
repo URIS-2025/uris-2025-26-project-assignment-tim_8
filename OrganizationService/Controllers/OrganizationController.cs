@@ -13,11 +13,11 @@ namespace AnonymousAPI.Controllers
     {
 
         private readonly IOrganizationRepository _organizationRepository;
-        private readonly IMapper _mapper;
-        public OrganizationController(IOrganizationRepository organizationRepository, IMapper mapper)
+       
+        public OrganizationController(IOrganizationRepository organizationRepository)
         {
             _organizationRepository = organizationRepository;
-             _mapper = mapper;
+          
         }
 
         [HttpGet]

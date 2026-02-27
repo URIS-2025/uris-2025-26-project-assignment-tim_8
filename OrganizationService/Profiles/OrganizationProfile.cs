@@ -10,9 +10,10 @@ namespace OrganizationService.Profiles
         {
             CreateMap<OrganizationCreationDTO, Organization>()
                .ReverseMap();
-            CreateMap<Organization, OrganizationDTO>()
-                .ReverseMap();
             CreateMap<Organization, OrganizationCreatedDTO>()
+                .ReverseMap();
+            CreateMap<OrganizationDTO, Organization>()
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ReverseMap();
         }
     }
