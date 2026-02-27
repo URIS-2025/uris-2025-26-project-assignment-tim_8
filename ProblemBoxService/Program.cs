@@ -12,8 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ProblemBoxContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ProblemBoxDB")));
 
-builder.Services.AddDbContext<ProblemBoxContext>();
-
 builder.Services.AddScoped<IProblemBoxRepository, ProblemBoxRepository>();
 
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
@@ -24,6 +22,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IProblemService, ProblemService>();
 
+builder.Services.AddHttpClient("ProblemService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:ProblemService"]); // PORT BillingService
+});
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -32,8 +40,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 

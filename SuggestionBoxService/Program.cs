@@ -16,17 +16,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:3000")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        });
-});
-
 // ?? DbContext
 builder.Services.AddDbContext<SuggestionBoxContext>();
 
@@ -39,11 +28,16 @@ builder.Services.AddScoped<ISuggestionBoxRepository, SuggestionBoxRepository>();
 // ?? HttpClient za OrganizationService (ako validiraš OrganizationId)
 builder.Services.AddHttpClient("OrganizationService", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:5001"); // port OrganizationService
+    client.BaseAddress = new Uri(builder.Configuration["Services:OrganizationService"]); // PORT OrganizationService
 });
 
 // ?? Service Call DI
 builder.Services.AddScoped<OrganizationServiceCall>();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080);
+});
 
 var app = builder.Build();
 
@@ -57,11 +51,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
-app.UseCors("AllowFrontend");
 
 app.MapControllers();
 
