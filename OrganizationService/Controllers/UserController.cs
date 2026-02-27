@@ -43,7 +43,7 @@ namespace AnonymousAPI.Controllers
         }
 
         [HttpPut]
-        public ActionResult<UserCreatedDTO> UpdateUser([FromBody] UserDTO user ) 
+        public ActionResult<UserCreatedDTO> UpdateUser([FromBody] UserUpdateDTO user ) 
         {
             var result = _userRepository.UpdateUser(user);
             return Ok(result);
