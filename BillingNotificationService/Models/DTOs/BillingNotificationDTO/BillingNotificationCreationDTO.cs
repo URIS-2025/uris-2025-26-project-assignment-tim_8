@@ -1,5 +1,4 @@
-﻿using BillingNotificationService.Validations;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace BillingNotificationService.Models.DTOs.BillingNotificationDTO
 {
