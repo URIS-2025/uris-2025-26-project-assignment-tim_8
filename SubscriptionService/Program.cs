@@ -31,12 +31,17 @@ builder.Services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanReposito
 // 🔹 HttpClient za mikroservise
 builder.Services.AddHttpClient("OrganizationService", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:5001"); // PORT OrganizationService
+    client.BaseAddress = new Uri(builder.Configuration["Services:OrganizationService"]); // PORT OrganizationService
 });
 
 builder.Services.AddHttpClient("BillingService", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:5002"); // PORT BillingService
+    client.BaseAddress = new Uri(builder.Configuration["Services:BillingService"]); // PORT BillingService
+});
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080);
 });
 
 // 🔹 Service Calls DI
@@ -54,8 +59,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 

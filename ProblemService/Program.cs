@@ -9,8 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ProblemContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ProblemDB")));
 
-builder.Services.AddDbContext<ProblemContext>();
-
 builder.Services.AddScoped<IProblemRepository, ProblemRepository>();
 builder.Services.AddScoped<IProblemCommentRepository, ProblemCommentRepository>();
 builder.Services.AddScoped<IProblemCategoryRepository, ProblemCategoryRepository>();
@@ -24,6 +22,22 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 builder.Services.AddScoped<IProblemCommentAuthorUserService, ProblemCommentAuthorUserService>();
 
+builder.Services.AddHttpClient("AttachmentService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:AttachmentService"]); // PORT OrganizationService
+});
+
+builder.Services.AddHttpClient("UserService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:UserService"]); // PORT BillingService
+});
+
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -32,8 +46,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
