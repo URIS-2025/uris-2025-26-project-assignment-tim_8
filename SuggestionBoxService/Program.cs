@@ -17,7 +17,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // ?? DbContext
-builder.Services.AddDbContext<SuggestionBoxContext>();
+builder.Services.AddDbContext<SuggestionBoxContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("SuggestionBoxDB")));
 
 // ?? AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -40,6 +42,12 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SuggestionBoxContext>();
+    db.Database.Migrate();
+}
 
 // ===============================
 // Configure the HTTP request pipeline.

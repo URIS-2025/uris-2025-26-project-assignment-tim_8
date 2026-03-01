@@ -7,7 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 
-builder.Services.AddDbContext<SystemNotificationContext>();
+builder.Services.AddDbContext<SystemNotificationContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SystemNotificationDB")));
 
 builder.Services.AddScoped<ISystemNotificationRepository,SystemNotificationRepository>();
 
@@ -25,6 +26,12 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SystemNotificationContext>();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

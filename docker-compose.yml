@@ -1,0 +1,156 @@
+services:
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=tim8urisPassword!
+    volumes:
+      - sql-data:/var/opt/mssql
+    ports:
+      - "1433:1433"
+    restart: always
+
+  gateway:
+    image: nginx:stable-alpine
+    container_name: api-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./Gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /dev/null:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - anonymous-user-service
+      - organization-service
+      - problem-service
+      - problem-box-service
+      - subscription-service
+      - suggestion-service
+      - suggestion-box-service
+      - billing-notification-service
+      - system-notification-service
+      - attachment-service
+    restart: always
+
+  anonymous-user-service:
+    build: ./AnonymousUserService
+    container_name: anonymous-user-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__AnonymousUserDB=Server=sql-server;Database=AnonymousUserDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  organization-service:
+    build: ./OrganizationService
+    container_name: organization-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__OrganizationDb=Server=sql-server;Database=OrganizationDb;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  problem-service:
+    build: ./ProblemService
+    container_name: problem-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__ProblemDB=Server=sql-server;Database=ProblemDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  problem-box-service:
+    build: ./ProblemBoxService
+    container_name: problem-box-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__ProblemBoxDB=Server=sql-server;Database=ProblemBoxDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  subscription-service:
+    build: ./SubscriptionService
+    container_name: subscription-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SubscriptionDB=Server=sql-server;Database=SubscriptionDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  suggestion-service:
+    build: ./SuggestionService
+    container_name: suggestion-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SuggestionDB=Server=sql-server;Database=SuggestionDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  suggestion-box-service:
+    build: ./SuggestionBoxService
+    container_name: suggestion-box-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SuggestionBoxDB=Server=sql-server;Database=SuggestionBoxDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  billing-notification-service:
+    build: ./BillingNotificationService
+    container_name: billing-notification-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__BillingNotificationDB=Server=sql-server;Database=BillingNotificationDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  system-notification-service:
+    build: ./SystemNotificationService
+    container_name: system-notification-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SystemNotificationDB=Server=sql-server;Database=SystemNotificationDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  attachment-service:
+    build: ./AttachmentService
+    container_name: attachment-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__AttachmentDB=Server=sql-server;Database=AttachmentDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+volumes:
+  sql-data:
