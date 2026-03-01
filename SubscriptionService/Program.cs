@@ -21,7 +21,7 @@ builder.Services.AddDbContext<SubscriptionContext>(options =>
         builder.Configuration.GetConnectionString("SubscriptionDB")));
 
 // 🔹 AutoMapper
-builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 
 // 🔹 Repository DI
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
@@ -49,6 +49,12 @@ builder.Services.AddScoped<OrganizationServiceCall>();
 builder.Services.AddScoped<BillingServiceCall>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SubscriptionContext>();
+    db.Database.Migrate();
+}
 
 // ===============================
 // Configure the HTTP request pipeline.
