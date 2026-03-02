@@ -16,12 +16,13 @@ namespace AnonymousUserService.Context
         }
 
         public DbSet<AnonymousUser> AnonymousUsers { get; set; }
-        public DbSet<BoxAccessLink> BoxAccessLinks { get; set; }    
+        public DbSet<BoxAccessLink> BoxAccessLinks { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(
-                _configuration.GetConnectionString("AnonymousUserDB"));
+            if (!optionsBuilder.IsConfigured)
+                optionsBuilder.UseSqlServer(
+                    _configuration.GetConnectionString("AnonymousUserDB"));
         }
 
         protected override void OnModelCreating(ModelBuilder builder)

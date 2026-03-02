@@ -29,6 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubscriptionServiceTests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuggestionBoxTests", "SuggestionBoxTests\SuggestionBoxTests.csproj", "{902D813A-0894-46C6-8C9C-133106C6C51A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnonymousUserServiceTest", "AnonymousUserServiceTest\AnonymousUserServiceTest.csproj", "{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}"
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProblemServiceTests", "ProblemServiceTests\ProblemServiceTests.csproj", "{5E7D3425-07D0-4736-BAB4-99E96093D50F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{09F09006-188E-4E01-B01F-B07E6FEDE0CA} = {09F09006-188E-4E01-B01F-B07E6FEDE0CA}
@@ -96,6 +97,10 @@ Global
 		{902D813A-0894-46C6-8C9C-133106C6C51A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{902D813A-0894-46C6-8C9C-133106C6C51A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{902D813A-0894-46C6-8C9C-133106C6C51A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5E7D3425-07D0-4736-BAB4-99E96093D50F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5E7D3425-07D0-4736-BAB4-99E96093D50F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E7D3425-07D0-4736-BAB4-99E96093D50F}.Release|Any CPU.ActiveCfg = Release|Any CPU
