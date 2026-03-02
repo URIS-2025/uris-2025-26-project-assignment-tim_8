@@ -19,8 +19,9 @@ namespace BillingNotificationService.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(
-                _configuration.GetConnectionString("BillingNotificationDB"));
+            if (!optionsBuilder.IsConfigured)
+                optionsBuilder.UseSqlServer(
+                    _configuration.GetConnectionString("BillingNotificationDB"));
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
