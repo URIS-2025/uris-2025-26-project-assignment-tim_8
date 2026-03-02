@@ -7,17 +7,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrganizationService", "Orga
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SubscriptionService", "SubscriptionService\SubscriptionService.csproj", "{33E67675-45A9-49A5-9C04-7746895BCE41}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SuggestionBoxService", "SuggestionBoxService\SuggestionBoxService.csproj", "{74DBE1BE-3319-4E7D-8251-E791710D16FC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuggestionBoxService", "SuggestionBoxService\SuggestionBoxService.csproj", "{74DBE1BE-3319-4E7D-8251-E791710D16FC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BillingNotificationService", "BillingNotificationService\BillingNotificationService.csproj", "{9543FBE3-1739-4E9F-B190-25A679FD2D40}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BillingNotificationService", "BillingNotificationService\BillingNotificationService.csproj", "{9543FBE3-1739-4E9F-B190-25A679FD2D40}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemNotificationService", "SystemNotificationService\SystemNotificationService.csproj", "{83C4690E-0A81-403A-80E1-E8307B9B6436}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SystemNotificationService", "SystemNotificationService\SystemNotificationService.csproj", "{83C4690E-0A81-403A-80E1-E8307B9B6436}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AnonymousUserService", "AnonymousUserService\AnonymousUserService.csproj", "{E80EB597-98F3-4C25-BEF9-5626CCB66F9F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnonymousUserService", "AnonymousUserService\AnonymousUserService.csproj", "{E80EB597-98F3-4C25-BEF9-5626CCB66F9F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProblemService", "ProblemService\ProblemService.csproj", "{09F09006-188E-4E01-B01F-B07E6FEDE0CA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProblemService", "ProblemService\ProblemService.csproj", "{09F09006-188E-4E01-B01F-B07E6FEDE0CA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProblemBoxService", "ProblemBoxService\ProblemBoxService.csproj", "{C958D32D-9720-4D4B-BF2E-9CA7AA57DF9C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProblemBoxService", "ProblemBoxService\ProblemBoxService.csproj", "{C958D32D-9720-4D4B-BF2E-9CA7AA57DF9C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttachmentService", "AttachmentService\AttachmentService.csproj", "{799FB9F7-C7F5-8D6B-CF9D-541B6ABF4E10}"
 EndProject
@@ -30,6 +30,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuggestionBoxTests", "SuggestionBoxTests\SuggestionBoxTests.csproj", "{902D813A-0894-46C6-8C9C-133106C6C51A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnonymousUserServiceTest", "AnonymousUserServiceTest\AnonymousUserServiceTest.csproj", "{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProblemServiceTests", "ProblemServiceTests\ProblemServiceTests.csproj", "{5E7D3425-07D0-4736-BAB4-99E96093D50F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{09F09006-188E-4E01-B01F-B07E6FEDE0CA} = {09F09006-188E-4E01-B01F-B07E6FEDE0CA}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProblemBoxServiceTests", "ProblemBoxTests\ProblemBoxServiceTests.csproj", "{60ED2E82-5F73-4394-8DF6-D704E32B8798}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SystemNotificationServiceTests", "SystemNotificationServiceTests\SystemNotificationServiceTests.csproj", "{6854C9F5-788D-4B33-8956-313D310170A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -93,6 +101,18 @@ Global
 		{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E7D3425-07D0-4736-BAB4-99E96093D50F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E7D3425-07D0-4736-BAB4-99E96093D50F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E7D3425-07D0-4736-BAB4-99E96093D50F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E7D3425-07D0-4736-BAB4-99E96093D50F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60ED2E82-5F73-4394-8DF6-D704E32B8798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60ED2E82-5F73-4394-8DF6-D704E32B8798}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60ED2E82-5F73-4394-8DF6-D704E32B8798}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60ED2E82-5F73-4394-8DF6-D704E32B8798}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6854C9F5-788D-4B33-8956-313D310170A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6854C9F5-788D-4B33-8956-313D310170A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6854C9F5-788D-4B33-8956-313D310170A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6854C9F5-788D-4B33-8956-313D310170A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
