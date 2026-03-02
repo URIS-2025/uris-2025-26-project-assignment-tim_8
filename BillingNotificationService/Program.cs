@@ -1,4 +1,5 @@
 using BillingNotificationService.Context;
+using BillingNotificationService.Data;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -10,16 +11,11 @@ builder.Services.AddDbContext<BillingNotificationContext>(options =>
 
 
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
-
+builder.Services.AddScoped<IBillingNotificationRepository, BillingNotificationRepository>();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-builder.Services.AddHttpClient("OrganizationService", client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["Services:OrganizationService"]); // PORT BillingService
-});
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -27,6 +23,12 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<BillingNotificationContext>();
+    db.Database.Migrate();
+}
 
 
 // Configure the HTTP request pipeline.

@@ -22,6 +22,12 @@ namespace AnonymousAPI.Controllers
             _mapper = mapper;
         }
 
+        [HttpGet]
+        public ActionResult<IEnumerable<SystemNotificationCreatedDTO>> GetNotifications()
+        {
+            return Ok(new List<SystemNotificationCreatedDTO>());
+        }
+
         [HttpPost] 
         public ActionResult<SystemNotificationCreatedDTO> CreateSystemNotification([FromBody] SystemNotificationCreationDTO notification)
         {

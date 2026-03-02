@@ -21,6 +21,13 @@ namespace AnonymousAPI.Controllers
             _mapper = mapper;
         }
 
+        [HttpGet]
+        public ActionResult<IEnumerable<VoteDTO>> GetVotes()
+        {
+            return Ok(new List<VoteDTO>());
+
+        }
+
         [HttpGet("suggestion/{id}")]
         public ActionResult<IEnumerable<VoteDTO>> GetVotesBySuggestionId(Guid id)
         {

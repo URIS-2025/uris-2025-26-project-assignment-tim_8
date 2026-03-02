@@ -20,6 +20,12 @@ namespace ProblemBoxService.Controllers
             _mapper = mapper;
         }
 
+        [HttpGet]
+        public ActionResult<IEnumerable<ProblemBoxDTO>> GetProblemBoxes()
+        {
+            return Ok(new List<ProblemBoxDTO>());
+        }
+
         [HttpGet("organization/{id}")]
         public ActionResult<IEnumerable<ProblemBoxDTO>> GetProblemBoxByOrganizationId(Guid id)
         {
