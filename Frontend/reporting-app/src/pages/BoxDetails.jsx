@@ -27,6 +27,7 @@ const BoxDetails = () => {
 
     useEffect(() => {
         fetchBoxData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [boxId]);
 
     const fetchBoxData = async () => {
@@ -66,7 +67,6 @@ const BoxDetails = () => {
         }
     };
 
-    // Define columns for DataTable
     const columns = [
         {
             header: 'Title',
@@ -176,11 +176,36 @@ const BoxDetails = () => {
                 <div>
                     <h1 className="page-title">{box?.name || 'Suggestion Box'}</h1>
                     <p className="page-description">
-                        Suggestion Box &bull; ID: {boxId?.substring(0, 8)}...
-                        {box?.description && <> &bull; {box.description}</>}
+                        {box?.description && <>{box.description} &bull; </>}
+                        Created by: {box?.createdBy || 'Unknown'}
+                        {box?.createdAt && <> &bull; {new Date(box.createdAt).toLocaleDateString()}</>}
                     </p>
                 </div>
             </div>
+
+            {/* Box info panel */}
+            {box && (
+                <div className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                    <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Box ID: </span>
+                        <code style={{ color: 'var(--text-secondary)' }}>{box.id}</code>
+                    </div>
+                    <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Organization ID: </span>
+                        <code style={{ color: 'var(--text-secondary)' }}>{box.organizationId}</code>
+                    </div>
+                    {box.boxAccessLinkId && box.boxAccessLinkId !== '00000000-0000-0000-0000-000000000000' && (
+                        <div>
+                            <span style={{ color: 'var(--text-muted)' }}>Access Link ID: </span>
+                            <code style={{ color: 'var(--accent-primary)' }}>{box.boxAccessLinkId}</code>
+                        </div>
+                    )}
+                    <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Theme: </span>
+                        <span>{box.isDarkTheme ? '🌙 Dark' : '☀️ Light'}</span>
+                    </div>
+                </div>
+            )}
 
             <div className="box-stats-row">
                 <div className="mini-stat glass-panel">

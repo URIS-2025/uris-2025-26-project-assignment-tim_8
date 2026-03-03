@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DataTable from '../components/DataTable';
-import StatusBadge from '../components/StatusBadge';
+// StatusBadge not needed on this page currently
 import Modal from '../components/Modal';
 import { Lightbulb, Plus, Loader2 } from 'lucide-react';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
@@ -14,14 +14,16 @@ const SuggestionBoxes = () => {
     const [error, setError] = useState(null);
     const [creating, setCreating] = useState(false);
 
-    // Form state for creating a new suggestion box
+    // Form state matching SuggestionBoxCreateDTO
     const [formData, setFormData] = useState({
         name: '',
         description: '',
+        isDarkTheme: false,
+        password: '',
+        createdBy: '',
         organizationId: ''
     });
 
-    // Fetch suggestion boxes on mount
     useEffect(() => {
         fetchSuggestionBoxes();
     }, []);
@@ -48,18 +50,30 @@ const SuggestionBoxes = () => {
             await SuggestionBoxService.create({
                 name: formData.name,
                 description: formData.description,
+                isDarkTheme: formData.isDarkTheme,
+                password: formData.password,
+                createdBy: formData.createdBy,
                 organizationId: formData.organizationId
             });
-            // Reset form and close modal
-            setFormData({ name: '', description: '', organizationId: '' });
+            setFormData({ name: '', description: '', isDarkTheme: false, password: '', createdBy: '', organizationId: '' });
             setBoxModalOpen(false);
-            // Refresh the list
             await fetchSuggestionBoxes();
         } catch (err) {
             console.error('Error creating suggestion box:', err);
             alert('Failed to create suggestion box. Please try again.');
         } finally {
             setCreating(false);
+        }
+    };
+
+    const handleDeleteBox = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this suggestion box?')) return;
+        try {
+            await SuggestionBoxService.delete(id);
+            setSuggestionBoxes((prev) => prev.filter((b) => b.id !== id));
+        } catch (err) {
+            console.error('Error deleting suggestion box:', err);
+            alert('Failed to delete suggestion box.');
         }
     };
 
@@ -70,14 +84,29 @@ const SuggestionBoxes = () => {
             render: (row) => <strong style={{ color: 'var(--text-primary)' }}>{row.name}</strong>
         },
         {
-            header: 'ID',
-            accessor: 'id',
-            render: (row) => <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{row.id?.substring(0, 8)}...</span>
-        },
-        {
             header: 'Description',
             accessor: 'description',
             render: (row) => <span>{row.description || '—'}</span>
+        },
+        {
+            header: 'Created By',
+            accessor: 'createdBy',
+            render: (row) => <span>{row.createdBy || '—'}</span>
+        },
+        {
+            header: 'Theme',
+            accessor: 'isDarkTheme',
+            render: (row) => (
+                <span style={{
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.8rem',
+                    background: row.isDarkTheme ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+                    color: row.isDarkTheme ? 'var(--accent-primary)' : 'var(--text-muted)'
+                }}>
+                    {row.isDarkTheme ? '🌙 Dark' : '☀️ Light'}
+                </span>
+            )
         },
         {
             header: 'Created At',
@@ -85,9 +114,21 @@ const SuggestionBoxes = () => {
             render: (row) => <span>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '—'}</span>
         },
         {
-            header: 'Status',
-            accessor: 'status',
-            render: (row) => <StatusBadge type="status" status={row.status === 'Active' || !row.status ? 'Resolved' : 'Closed'} />
+            header: 'Actions',
+            accessor: 'actions',
+            width: '100px',
+            render: (row) => (
+                <button
+                    className="btn btn-ghost"
+                    style={{ color: 'var(--danger)', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteBox(row.id);
+                    }}
+                >
+                    Delete
+                </button>
+            )
         }
     ];
 
@@ -158,7 +199,7 @@ const SuggestionBoxes = () => {
                 }
             >
                 <div className="form-group">
-                    <label>Box Name</label>
+                    <label>Box Name <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input
                         type="text"
                         className="form-control"
@@ -168,7 +209,7 @@ const SuggestionBoxes = () => {
                     />
                 </div>
                 <div className="form-group">
-                    <label>Organization ID</label>
+                    <label>Organization ID <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input
                         type="text"
                         className="form-control"
@@ -178,7 +219,17 @@ const SuggestionBoxes = () => {
                     />
                 </div>
                 <div className="form-group">
-                    <label>Description (Internal)</label>
+                    <label>Created By</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Admin User"
+                        value={formData.createdBy}
+                        onChange={(e) => setFormData({ ...formData, createdBy: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Description</label>
                     <textarea
                         className="form-control"
                         rows="3"
@@ -186,6 +237,26 @@ const SuggestionBoxes = () => {
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
+                </div>
+                <div className="form-group">
+                    <label>Password (Optional)</label>
+                    <input
+                        type="password"
+                        className="form-control"
+                        placeholder="Set a password for this box"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    />
+                </div>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <input
+                        type="checkbox"
+                        id="isDarkTheme"
+                        checked={formData.isDarkTheme}
+                        onChange={(e) => setFormData({ ...formData, isDarkTheme: e.target.checked })}
+                        style={{ width: 'auto' }}
+                    />
+                    <label htmlFor="isDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
                 </div>
             </Modal>
         </div>

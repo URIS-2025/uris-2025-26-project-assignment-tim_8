@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+// react-router-dom not needed on this page currently
 import { Shield, Send, ArrowRight, CheckCircle, ThumbsUp, MessageSquare, AlertTriangle, Loader2 } from 'lucide-react';
 import { SuggestionService } from '../services/suggestionService';
+import { SuggestionBoxService } from '../services/suggestionBoxService';
 import './PublicPortal.css';
 
+// Map numeric status to label
+const statusMap = { 0: 'New', 1: 'In Progress', 2: 'Reviewing', 3: 'Resolved', 4: 'Closed' };
+
 const PublicPortal = () => {
-    const [activeTab, setActiveTab] = useState('submit'); // 'submit' or 'browse'
+    const [activeTab, setActiveTab] = useState('submit');
     const [submissionType, setSubmissionType] = useState('suggestion');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState(null);
+    const [createdSuggestion, setCreatedSuggestion] = useState(null);
 
     // Browse tab state
     const [suggestions, setSuggestions] = useState([]);
     const [browsing, setBrowsing] = useState(false);
+
+    // Available suggestion boxes for the dropdown
+    const [suggestionBoxes, setSuggestionBoxes] = useState([]);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -21,6 +29,23 @@ const PublicPortal = () => {
         suggestionBoxId: '',
         anonymousUserId: ''
     });
+
+    // Fetch suggestion boxes for the dropdown on mount
+    useEffect(() => {
+        const fetchBoxes = async () => {
+            try {
+                const boxes = await SuggestionBoxService.getAll();
+                setSuggestionBoxes(boxes);
+                // Pre-select first box if available
+                if (boxes.length > 0) {
+                    setFormData(prev => ({ ...prev, suggestionBoxId: boxes[0].id }));
+                }
+            } catch (err) {
+                console.error('Error fetching suggestion boxes:', err);
+            }
+        };
+        fetchBoxes();
+    }, []);
 
     // Fetch suggestions when browse tab is active
     useEffect(() => {
@@ -58,7 +83,8 @@ const PublicPortal = () => {
                 categoryIds: []
             };
 
-            await SuggestionService.create(payload);
+            const result = await SuggestionService.create(payload);
+            setCreatedSuggestion(result);
             setIsSubmitted(true);
         } catch (err) {
             console.error('Error submitting suggestion:', err);
@@ -66,12 +92,6 @@ const PublicPortal = () => {
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    // Map numeric status to label
-    const getStatusLabel = (status) => {
-        const map = { 0: 'New', 1: 'In Progress', 2: 'Reviewing', 3: 'Resolved', 4: 'Closed' };
-        return map[status] || 'Unknown';
     };
 
     return (
@@ -111,20 +131,22 @@ const PublicPortal = () => {
                                 <div className="success-icon">
                                     <CheckCircle size={48} />
                                 </div>
-                                <h2>Successfully Submitted securely!</h2>
+                                <h2>Successfully Submitted!</h2>
                                 <p>Your suggestion has been sent to the organization administrators.</p>
-                                <div className="tracking-info">
-                                    <p>To check for updates or reply securely, save this tracking phrase:</p>
-                                    <div className="tracking-phrase">
-                                        <code>purple-elephant-jumping-high</code>
+                                {createdSuggestion && (
+                                    <div className="tracking-info">
+                                        <p>Your suggestion details:</p>
+                                        <div style={{ textAlign: 'left', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}>
+                                            <p><strong>ID:</strong> <code>{createdSuggestion.id}</code></p>
+                                            <p><strong>Title:</strong> {createdSuggestion.title}</p>
+                                            <p><strong>Status:</strong> {statusMap[createdSuggestion.status] || createdSuggestion.status}</p>
+                                        </div>
                                     </div>
-                                    <Link to="/track" className="btn btn-ghost mt-2" style={{ width: '100%', marginTop: '1rem' }}>
-                                        Go to tracking page <ArrowRight size={16} className="ml-2" style={{ marginLeft: '0.5rem' }} />
-                                    </Link>
-                                </div>
+                                )}
                                 <button className="btn btn-primary" onClick={() => {
-                                    setFormData({ title: '', content: '', suggestionBoxId: '', anonymousUserId: '' });
+                                    setFormData(prev => ({ title: '', content: '', suggestionBoxId: prev.suggestionBoxId, anonymousUserId: prev.anonymousUserId }));
                                     setIsSubmitted(false);
+                                    setCreatedSuggestion(null);
                                 }}>
                                     Submit Another
                                 </button>
@@ -150,6 +172,42 @@ const PublicPortal = () => {
 
                                 <form className="public-submit-form" onSubmit={handleSubmit}>
                                     <div className="form-group">
+                                        <label>Suggestion Box <span className="required">*</span></label>
+                                        {suggestionBoxes.length > 0 ? (
+                                            <select
+                                                className="portal-input"
+                                                value={formData.suggestionBoxId}
+                                                onChange={(e) => setFormData({ ...formData, suggestionBoxId: e.target.value })}
+                                            >
+                                                {suggestionBoxes.map(box => (
+                                                    <option key={box.id} value={box.id}>
+                                                        {box.name} {box.description ? `— ${box.description}` : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                className="portal-input"
+                                                placeholder="Enter Suggestion Box GUID"
+                                                value={formData.suggestionBoxId}
+                                                onChange={(e) => setFormData({ ...formData, suggestionBoxId: e.target.value })}
+                                            />
+                                        )}
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Anonymous User ID</label>
+                                        <input
+                                            type="text"
+                                            className="portal-input"
+                                            placeholder="Enter your anonymous user GUID (optional)"
+                                            value={formData.anonymousUserId}
+                                            onChange={(e) => setFormData({ ...formData, anonymousUserId: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
                                         <label>Title <span className="required">*</span></label>
                                         <input
                                             type="text"
@@ -170,28 +228,6 @@ const PublicPortal = () => {
                                             value={formData.content}
                                             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                                             required
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Suggestion Box ID</label>
-                                        <input
-                                            type="text"
-                                            className="portal-input"
-                                            placeholder="Enter the suggestion box GUID (optional)"
-                                            value={formData.suggestionBoxId}
-                                            onChange={(e) => setFormData({ ...formData, suggestionBoxId: e.target.value })}
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Anonymous User ID</label>
-                                        <input
-                                            type="text"
-                                            className="portal-input"
-                                            placeholder="Enter your anonymous user GUID (optional)"
-                                            value={formData.anonymousUserId}
-                                            onChange={(e) => setFormData({ ...formData, anonymousUserId: e.target.value })}
                                         />
                                     </div>
 
@@ -263,7 +299,9 @@ const PublicPortal = () => {
                                             <button className="vote-btn">
                                                 <ThumbsUp size={20} />
                                             </button>
-                                            <span className="vote-count">{getStatusLabel(suggestion.status)}</span>
+                                            <span className="vote-count">
+                                                {statusMap[suggestion.status] || 'New'}
+                                            </span>
                                         </div>
                                         <div className="suggestion-content">
                                             <h3 className="suggestion-title">{suggestion.title}</h3>
