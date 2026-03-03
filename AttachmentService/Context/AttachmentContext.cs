@@ -20,9 +20,9 @@ namespace AttachmentService.Context
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer(
-                    _configuration.GetConnectionString("AttachmentDB"));
-            }
+            optionsBuilder.UseSqlServer(
+                _configuration.GetConnectionString("AttachmentDB"));
+        }
         }
 
         protected override void OnModelCreating(ModelBuilder builder)

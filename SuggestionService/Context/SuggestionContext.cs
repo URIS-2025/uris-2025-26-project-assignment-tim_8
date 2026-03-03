@@ -27,16 +27,16 @@ public class SuggestionContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlServer(
-                _configuration.GetConnectionString("SuggestionDB"));
-        }
+        optionsBuilder.UseSqlServer(
+            _configuration.GetConnectionString("SuggestionDB"));
+    }
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
-
+        
 
         builder.Entity<SuggestionCategory>(entity =>
         {
