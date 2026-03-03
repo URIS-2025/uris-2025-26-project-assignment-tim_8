@@ -1,33 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Send, ArrowRight, CheckCircle, ThumbsUp, MessageSquare, AlertTriangle } from 'lucide-react';
+import { Shield, Send, ArrowRight, CheckCircle, ThumbsUp, MessageSquare, AlertTriangle, Loader2 } from 'lucide-react';
+import { SuggestionService } from '../services/suggestionService';
 import './PublicPortal.css';
-
-// Mock data
-const mockPublicSuggestions = [
-    { id: 'S-1', title: 'Start a 4-day work week trial', content: 'Many companies are seeing increased productivity with a 4-day work week. We should trial this for the engineering team.', votes: 142, comments: 12, time: '2 days ago' },
-    { id: 'S-2', title: 'More vegetarian options in the cafeteria', content: 'The current menu is very meat-heavy. We need more diverse plant-based options.', votes: 89, comments: 34, time: '1 week ago' },
-    { id: 'S-3', title: 'Quarterly Hackathons', content: 'We should host internal hackathons to foster innovation and cross-team collaboration.', votes: 56, comments: 8, time: '2 weeks ago' },
-];
 
 const PublicPortal = () => {
     const [activeTab, setActiveTab] = useState('submit'); // 'submit' or 'browse'
     const [submissionType, setSubmissionType] = useState('suggestion');
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
+
+    // Browse tab state
+    const [suggestions, setSuggestions] = useState([]);
+    const [browsing, setBrowsing] = useState(false);
 
     const [formData, setFormData] = useState({
         title: '',
-        content: ''
+        content: '',
+        suggestionBoxId: '',
+        anonymousUserId: ''
     });
 
-    const handleSubmit = (e) => {
+    // Fetch suggestions when browse tab is active
+    useEffect(() => {
+        if (activeTab === 'browse') {
+            fetchSuggestions();
+        }
+    }, [activeTab]);
+
+    const fetchSuggestions = async () => {
+        try {
+            setBrowsing(true);
+            const data = await SuggestionService.getAll();
+            setSuggestions(data);
+        } catch (err) {
+            console.error('Error fetching suggestions:', err);
+        } finally {
+            setBrowsing(false);
+        }
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.title || !formData.content) return;
 
-        // Simulate submission
-        setTimeout(() => {
+        try {
+            setIsSubmitting(true);
+            setSubmitError(null);
+
+            // Build the SuggestionCreationDTO
+            const payload = {
+                title: formData.title,
+                description: formData.content,
+                suggestionBoxId: formData.suggestionBoxId || '00000000-0000-0000-0000-000000000000',
+                anonymousUserId: formData.anonymousUserId || '00000000-0000-0000-0000-000000000000',
+                categoryIds: []
+            };
+
+            await SuggestionService.create(payload);
             setIsSubmitted(true);
-        }, 800);
+        } catch (err) {
+            console.error('Error submitting suggestion:', err);
+            setSubmitError('Failed to submit. Please make sure the backend is running and try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Map numeric status to label
+    const getStatusLabel = (status) => {
+        const map = { 0: 'New', 1: 'In Progress', 2: 'Reviewing', 3: 'Resolved', 4: 'Closed' };
+        return map[status] || 'Unknown';
     };
 
     return (
@@ -36,7 +80,7 @@ const PublicPortal = () => {
             <div className="portal-header">
                 <div className="portal-header-content glass-panel">
                     <div className="portal-org-meta">
-                        <span className="portal-org-name">Tech Corp International</span>
+                        <span className="portal-org-name">Anonymous Reporting</span>
                         <span className="portal-box-name">Employee Feedback Hub</span>
                     </div>
                     <h1>Speak up, safely.</h1>
@@ -68,7 +112,7 @@ const PublicPortal = () => {
                                     <CheckCircle size={48} />
                                 </div>
                                 <h2>Successfully Submitted securely!</h2>
-                                <p>Your report has been encrypted and sent to the organization administrators.</p>
+                                <p>Your suggestion has been sent to the organization administrators.</p>
                                 <div className="tracking-info">
                                     <p>To check for updates or reply securely, save this tracking phrase:</p>
                                     <div className="tracking-phrase">
@@ -79,7 +123,7 @@ const PublicPortal = () => {
                                     </Link>
                                 </div>
                                 <button className="btn btn-primary" onClick={() => {
-                                    setFormData({ title: '', content: '' });
+                                    setFormData({ title: '', content: '', suggestionBoxId: '', anonymousUserId: '' });
                                     setIsSubmitted(false);
                                 }}>
                                     Submit Another
@@ -129,6 +173,28 @@ const PublicPortal = () => {
                                         />
                                     </div>
 
+                                    <div className="form-group">
+                                        <label>Suggestion Box ID</label>
+                                        <input
+                                            type="text"
+                                            className="portal-input"
+                                            placeholder="Enter the suggestion box GUID (optional)"
+                                            value={formData.suggestionBoxId}
+                                            onChange={(e) => setFormData({ ...formData, suggestionBoxId: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Anonymous User ID</label>
+                                        <input
+                                            type="text"
+                                            className="portal-input"
+                                            placeholder="Enter your anonymous user GUID (optional)"
+                                            value={formData.anonymousUserId}
+                                            onChange={(e) => setFormData({ ...formData, anonymousUserId: e.target.value })}
+                                        />
+                                    </div>
+
                                     <div className="form-info-card privacy-card">
                                         <Shield size={20} className="text-success" />
                                         <div>
@@ -147,8 +213,22 @@ const PublicPortal = () => {
                                         </div>
                                     )}
 
-                                    <button type="submit" className="btn btn-primary btn-lg submit-btn bounce-hover">
-                                        <Send size={18} /> Submit Securely <ArrowRight size={18} />
+                                    {submitError && (
+                                        <div style={{ color: 'var(--danger)', padding: '0.75rem', background: 'rgba(255,0,0,0.1)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}>
+                                            {submitError}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary btn-lg submit-btn bounce-hover"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? (
+                                            <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Submitting...</>
+                                        ) : (
+                                            <><Send size={18} /> Submit Securely <ArrowRight size={18} /></>
+                                        )}
                                     </button>
                                 </form>
                             </div>
@@ -157,38 +237,51 @@ const PublicPortal = () => {
                 ) : (
                     <div className="browse-section fade-in">
                         <div className="board-filters">
-                            <h3>Popular Suggestions</h3>
+                            <h3>All Suggestions</h3>
                             <div className="filter-sort">
                                 <select className="portal-select">
-                                    <option>Most Voted</option>
                                     <option>Most Recent</option>
-                                    <option>Most Commented</option>
+                                    <option>Oldest First</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div className="suggestions-list">
-                            {mockPublicSuggestions.map(suggestion => (
-                                <div key={suggestion.id} className="public-suggestion-card glass-panel">
-                                    <div className="vote-column">
-                                        <button className="vote-btn">
-                                            <ThumbsUp size={20} />
-                                        </button>
-                                        <span className="vote-count">{suggestion.votes}</span>
-                                    </div>
-                                    <div className="suggestion-content">
-                                        <h3 className="suggestion-title">{suggestion.title}</h3>
-                                        <p className="suggestion-desc">{suggestion.content}</p>
-                                        <div className="suggestion-meta">
-                                            <span><MessageSquare size={14} /> {suggestion.comments} comments</span>
-                                            <span>&bull;</span>
-                                            <span>{suggestion.time}</span>
+                        {browsing ? (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
+                                <p>Loading suggestions...</p>
+                            </div>
+                        ) : suggestions.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                <p>No suggestions yet. Be the first to submit one!</p>
+                            </div>
+                        ) : (
+                            <div className="suggestions-list">
+                                {suggestions.map(suggestion => (
+                                    <div key={suggestion.id} className="public-suggestion-card glass-panel">
+                                        <div className="vote-column">
+                                            <button className="vote-btn">
+                                                <ThumbsUp size={20} />
+                                            </button>
+                                            <span className="vote-count">{getStatusLabel(suggestion.status)}</span>
+                                        </div>
+                                        <div className="suggestion-content">
+                                            <h3 className="suggestion-title">{suggestion.title}</h3>
+                                            <p className="suggestion-desc">{suggestion.description}</p>
+                                            <div className="suggestion-meta">
+                                                <span>
+                                                    <MessageSquare size={14} />
+                                                    {suggestion.categories?.length || 0} categories
+                                                </span>
+                                                <span>&bull;</span>
+                                                <span>{suggestion.createdAt ? new Date(suggestion.createdAt).toLocaleDateString() : '—'}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                        <button className="btn btn-ghost load-more-btn">Load More Ideas</button>
+                                ))}
+                            </div>
+                        )}
+                        <button className="btn btn-ghost load-more-btn" onClick={fetchSuggestions}>Refresh</button>
                     </div>
                 )}
             </div>
