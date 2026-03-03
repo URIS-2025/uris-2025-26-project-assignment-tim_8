@@ -1,57 +1,170 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { SuggestionBoxService } from '../services/suggestionBoxService';
+import { SuggestionService } from '../services/suggestionService';
 import './BoxDetails.css';
 
-// Mock data
-const mockSubmissions = [
-    { id: 'SUB-101', title: 'Coffee machine in breakroom is broken', author: 'Anonymous', date: 'Oct 24, 2023', status: 'New', priority: 'High' },
-    { id: 'SUB-102', title: 'Need better lighting in the parking lot', author: 'Anonymous', date: 'Oct 23, 2023', status: 'In Progress', priority: 'Medium' },
-    { id: 'SUB-103', title: 'Suggestion for flexible working hours', author: 'Jane Doe', date: 'Oct 20, 2023', status: 'Reviewing', priority: 'Low' },
-    { id: 'SUB-104', title: 'Water leak in 3rd floor bathroom', author: 'Anonymous', date: 'Oct 19, 2023', status: 'Resolved', priority: 'High' },
-    { id: 'SUB-105', title: 'Request for new monitor stands', author: 'John Smith', date: 'Oct 15, 2023', status: 'Closed', priority: 'Low' },
-];
+// Map numeric status to readable label
+const statusMap = {
+    0: 'New',
+    1: 'In Progress',
+    2: 'Reviewing',
+    3: 'Resolved',
+    4: 'Closed'
+};
 
 const BoxDetails = () => {
     const { boxId } = useParams();
     const navigate = useNavigate();
-    const [submissions, setSubmissions] = useState(mockSubmissions);
+
+    const [box, setBox] = useState(null);
+    const [suggestions, setSuggestions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchBoxData();
+    }, [boxId]);
+
+    const fetchBoxData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Fetch box details and all suggestions in parallel
+            const [boxData, allSuggestions] = await Promise.all([
+                SuggestionBoxService.getById(boxId),
+                SuggestionService.getAll()
+            ]);
+
+            setBox(boxData);
+
+            // Filter suggestions that belong to this suggestion box
+            const boxSuggestions = allSuggestions.filter(
+                (s) => s.suggestionBoxId === boxId
+            );
+            setSuggestions(boxSuggestions);
+        } catch (err) {
+            console.error('Error fetching box data:', err);
+            setError('Failed to load box details. Please check that the backend services are running.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteSuggestion = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this suggestion?')) return;
+        try {
+            await SuggestionService.delete(id);
+            setSuggestions((prev) => prev.filter((s) => s.id !== id));
+        } catch (err) {
+            console.error('Error deleting suggestion:', err);
+            alert('Failed to delete suggestion.');
+        }
+    };
 
     // Define columns for DataTable
     const columns = [
-        { header: 'ID', accessor: 'id', width: '100px' },
         {
-            header: 'Title / Subject',
+            header: 'Title',
             accessor: 'title',
             render: (row) => <span style={{ fontWeight: 500 }}>{row.title}</span>
         },
-        { header: 'Author', accessor: 'author', width: '150px' },
-        { header: 'Date', accessor: 'date', width: '120px' },
+        {
+            header: 'Description',
+            accessor: 'description',
+            render: (row) => (
+                <span style={{ color: 'var(--text-secondary)' }}>
+                    {row.description?.length > 60
+                        ? row.description.substring(0, 60) + '...'
+                        : row.description || '—'}
+                </span>
+            )
+        },
         {
             header: 'Status',
             accessor: 'status',
             width: '130px',
-            render: (row) => <StatusBadge type="status" status={row.status} />
+            render: (row) => {
+                const label = typeof row.status === 'number' ? statusMap[row.status] || 'Unknown' : row.status;
+                return <StatusBadge type="status" status={label} />;
+            }
         },
         {
-            header: 'Priority',
-            accessor: 'priority',
-            width: '120px',
-            render: (row) => <StatusBadge type="priority" status={row.priority} />
+            header: 'Created',
+            accessor: 'createdAt',
+            width: '140px',
+            render: (row) => <span>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '—'}</span>
+        },
+        {
+            header: 'Categories',
+            accessor: 'categories',
+            render: (row) => (
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    {row.categories && row.categories.length > 0
+                        ? row.categories.map((c) => c.name).join(', ')
+                        : '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Actions',
+            accessor: 'actions',
+            width: '100px',
+            render: (row) => (
+                <button
+                    className="btn btn-ghost"
+                    style={{ color: 'var(--danger)', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSuggestion(row.id);
+                    }}
+                >
+                    Delete
+                </button>
+            )
         }
     ];
 
     const handleRowClick = (row) => {
-        // Navigate to individual submission details
         navigate(`/admin/submissions/${row.id}`);
     };
 
-    const handleActionClick = (row) => {
-        // Open action menu (e.g. Delete, Assign Priority)
-        console.log('Action menu for:', row.id);
-    };
+    if (loading) {
+        return (
+            <div className="box-details-container animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
+                    <p>Loading box details...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="box-details-container animate-fade-in">
+                <div className="back-link" onClick={() => navigate(-1)}>
+                    <ArrowLeft size={16} /> Back to Boxes
+                </div>
+                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+                    <p>{error}</p>
+                    <button className="btn btn-ghost" onClick={fetchBoxData} style={{ marginTop: '1rem' }}>
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Compute stats from real data
+    const totalSuggestions = suggestions.length;
+    const newCount = suggestions.filter((s) => s.status === 0).length;
+    const resolvedCount = suggestions.filter((s) => s.status === 3).length;
+    const inProgressCount = suggestions.filter((s) => s.status === 1).length;
 
     return (
         <div className="box-details-container animate-fade-in">
@@ -61,38 +174,40 @@ const BoxDetails = () => {
 
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Facilities & Maintenance</h1>
-                    <p className="page-description">Problem Box &bull; ID: {boxId || 'BOX-123'} &bull; Tech Corp</p>
+                    <h1 className="page-title">{box?.name || 'Suggestion Box'}</h1>
+                    <p className="page-description">
+                        Suggestion Box &bull; ID: {boxId?.substring(0, 8)}...
+                        {box?.description && <> &bull; {box.description}</>}
+                    </p>
                 </div>
             </div>
 
             <div className="box-stats-row">
                 <div className="mini-stat glass-panel">
-                    <span className="mini-stat-label">Total Submissions</span>
-                    <span className="mini-stat-value">124</span>
+                    <span className="mini-stat-label">Total Suggestions</span>
+                    <span className="mini-stat-value">{totalSuggestions}</span>
                 </div>
                 <div className="mini-stat glass-panel">
-                    <span className="mini-stat-label">New / Unread</span>
-                    <span className="mini-stat-value" style={{ color: 'var(--accent-primary)' }}>12</span>
+                    <span className="mini-stat-label">New</span>
+                    <span className="mini-stat-value" style={{ color: 'var(--accent-primary)' }}>{newCount}</span>
                 </div>
                 <div className="mini-stat glass-panel">
-                    <span className="mini-stat-label">High Priority</span>
-                    <span className="mini-stat-value" style={{ color: 'var(--danger)' }}>3</span>
+                    <span className="mini-stat-label">In Progress</span>
+                    <span className="mini-stat-value" style={{ color: 'var(--warning)' }}>{inProgressCount}</span>
                 </div>
                 <div className="mini-stat glass-panel">
                     <span className="mini-stat-label">Resolved</span>
-                    <span className="mini-stat-value" style={{ color: 'var(--success)' }}>89</span>
+                    <span className="mini-stat-value" style={{ color: 'var(--success)' }}>{resolvedCount}</span>
                 </div>
             </div>
 
             <div className="table-wrapper">
                 <DataTable
-                    title="All Submissions"
-                    data={submissions}
+                    title="All Suggestions"
+                    data={suggestions}
                     columns={columns}
                     onRowClick={handleRowClick}
-                    onActionClick={handleActionClick}
-                    searchPlaceholder="Search by ID, title, or author..."
+                    searchPlaceholder="Search by title or description..."
                     showExport={true}
                 />
             </div>

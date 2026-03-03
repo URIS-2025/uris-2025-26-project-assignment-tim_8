@@ -1,10 +1,10 @@
 
-const API_BASE_URL = 'https://localhost:5163';
+const API_BASE_URL = 'http://localhost:80';
 
 export const SuggestionBoxService = {
 
     getAll: async () => {
-        const response = await fetch(`${API_BASE_URL}/api/SuggestionBox`);
+        const response = await fetch(`${API_BASE_URL}/api/SuggestionBox/`);
         if (!response.ok) throw new Error('Failed to fetch suggestion boxes');
         return await response.json();
     },
@@ -26,7 +26,7 @@ export const SuggestionBoxService = {
 
     // POST /api/SuggestionBox
     create: async (data) => {
-        const response = await fetch(`${API_BASE_URL}/api/SuggestionBox`, {
+        const response = await fetch(`${API_BASE_URL}/api/SuggestionBox/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ export const SuggestionBoxService = {
 
     // PUT /api/SuggestionBox
     update: async (data) => {
-        const response = await fetch(`${API_BASE_URL}/api/SuggestionBox`, {
+        const response = await fetch(`${API_BASE_URL}/api/SuggestionBox/`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
