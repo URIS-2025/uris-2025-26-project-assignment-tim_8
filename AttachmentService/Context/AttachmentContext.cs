@@ -18,8 +18,9 @@ namespace AttachmentService.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(
-                _configuration.GetConnectionString("AttachmentDB"));
+            if (!optionsBuilder.IsConfigured)
+                optionsBuilder.UseSqlServer(
+                    _configuration.GetConnectionString("AttachmentDB"));
         }
 
         protected override void OnModelCreating(ModelBuilder builder)

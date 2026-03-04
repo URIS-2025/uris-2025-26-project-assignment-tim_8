@@ -25,7 +25,8 @@ public class SuggestionContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlServer(
+        if (!optionsBuilder.IsConfigured)
+            optionsBuilder.UseSqlServer(
             _configuration.GetConnectionString("SuggestionDB"));
     }
 
