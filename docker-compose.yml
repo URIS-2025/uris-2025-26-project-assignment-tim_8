@@ -30,6 +30,7 @@ services:
       - billing-notification-service
       - system-notification-service
       - attachment-service
+      - logger-service
     restart: always
 
   anonymous-user-service:
@@ -148,6 +149,18 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__AttachmentDB=Server=sql-server;Database=AttachmentDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+    depends_on:
+      - sql-server
+    restart: always
+
+  logger-service:
+    build: ./LoggerService
+    container_name: logger-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__LoggerDB=Server=sql-server;Database=LoggerDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
     depends_on:
       - sql-server
     restart: always
