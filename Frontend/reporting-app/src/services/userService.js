@@ -60,6 +60,11 @@ export const UserService = {
             body: JSON.stringify(data),
         });
         if (!response.ok) throw new Error('Login failed');
-        return await response.json();
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch {
+            return text;
+        }
     }
 };
