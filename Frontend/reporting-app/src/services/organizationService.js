@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://localhost:80';
+const API_BASE_URL = 'http://localhost:80';
 
 export const OrganizationService = {
     // GET /api/Organization

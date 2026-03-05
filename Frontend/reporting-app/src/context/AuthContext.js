@@ -1,34 +1,50 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    // Mock initial state. Real app would check localStorage or a token.
     const [user, setUser] = useState(null);
 
-    const login = (role) => {
-        // Mock user objects based on role chosen
-        let mockUser = null;
-        if (role === 'admin') {
-            mockUser = { id: 'U-001', name: 'Eleanor SystemAdmin', email: 'eleanor@platform.com', role: 'admin' };
-        } else if (role === 'manager') {
-            mockUser = { id: 'U-002', name: 'Alice Walker', email: 'alice@techcorp.com', role: 'manager', orgId: 'ORG-001' };
-        } else if (role === 'billing') {
-            mockUser = { id: 'U-004', name: 'Charlie Davis', email: 'charlie@designstudio.com', role: 'billing', orgId: 'ORG-002' };
+    const login = (token) => {
+        try {
+            const decoded = jwtDecode(token);
+
+            // Map the token claims to our user object
+            // The Asp.Net Core standard identity claims
+            const nameIdentifier = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+            const emailIdentifier = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
+            const roleId = decoded['RoleId'] || decoded['role'];
+
+            // We default to some role names or fetch them if needed. 
+            // If the token only contains RoleId, we rely on the backend to tell us the string, but for UI purposes we might need to map it or we just store the roleId.
+            // Let's store the raw decoded data and the token.
+            const userData = {
+                id: nameIdentifier,
+                email: emailIdentifier,
+                name: emailIdentifier, // Since JWT currently only has email, not full name
+                roleId: roleId,
+                token: token
+            };
+
+            setUser(userData);
+            localStorage.setItem('authUser', JSON.stringify(userData));
+            localStorage.setItem('authToken', token);
+        } catch (error) {
+            console.error("Failed to decode token during login", error);
         }
-        setUser(mockUser);
-        localStorage.setItem('mockUser', JSON.stringify(mockUser));
     };
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem('mockUser');
+        localStorage.removeItem('authUser');
+        localStorage.removeItem('authToken');
     };
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('mockUser');
+        const storedUser = localStorage.getItem('authUser');
         if (storedUser) {
             try {
                 setUser(JSON.parse(storedUser));
