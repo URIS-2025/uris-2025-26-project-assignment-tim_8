@@ -27,8 +27,11 @@ namespace ProblemService.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(
-                _configuration.GetConnectionString("ProblemDB"));
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer(
+                    _configuration.GetConnectionString("ProblemDB"));
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
