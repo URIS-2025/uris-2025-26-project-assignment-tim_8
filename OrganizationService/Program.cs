@@ -21,6 +21,13 @@ builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 
+
+builder.Services.AddHttpClient("LoggerService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
+});
+builder.Services.AddScoped<OrganizationService.Clients.LoggerServiceClient>();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

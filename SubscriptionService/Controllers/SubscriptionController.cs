@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SubscriptionService.Clients;
 using SubscriptionService.Data;
-using SubscriptionService.Models.DTOs;
-using SubscriptionService.ServiceCalls;
-using SubscriptionService.Models.ExternalDTOs;
 using SubscriptionService.Enums;
+using SubscriptionService.Models.DTOs;
+using SubscriptionService.Models.ExternalDTOs;
+using SubscriptionService.ServiceCalls;
+using System.Text.Json;
 
 namespace AnonymousAPI.Controllers
 {
@@ -13,76 +15,145 @@ namespace AnonymousAPI.Controllers
     {
         private readonly ISubscriptionRepository _repository;
         private readonly BillingServiceCall _billingServiceCall;
+        private readonly LoggerServiceClient _loggerClient;
 
-        public SubscriptionController(
-            ISubscriptionRepository repository,
-            BillingServiceCall billingServiceCall)
+        public SubscriptionController(ISubscriptionRepository repository, BillingServiceCall billingServiceCall, LoggerServiceClient loggerClient)
         {
             _repository = repository;
             _billingServiceCall = billingServiceCall;
+            _loggerClient = loggerClient;
         }
 
-        // GET: api/subscription
         [HttpGet]
         public ActionResult<IEnumerable<SubscriptionDTO>> GetAll()
         {
             return Ok(_repository.GetAllSubscriptions());
         }
 
-        // GET: api/subscription/{id}
         [HttpGet("{id}")]
         public ActionResult<SubscriptionDTO> GetById(Guid id)
         {
             var result = _repository.GetSubscriptionById(id);
-
-            if (result == null)
-                return NotFound();
-
+            if (result == null) return NotFound();
             return Ok(result);
         }
 
-        // POST: api/subscription
         [HttpPost]
-        public async Task<ActionResult<SubscriptionCreatedDTO>> Create(
-            [FromBody] SubscriptionCreationDTO dto)
+        public async Task<ActionResult<SubscriptionCreatedDTO>> Create([FromBody] SubscriptionCreationDTO dto)
         {
-            var result = _repository.CreateSubscription(dto);
+            try
+            {
+                var result = _repository.CreateSubscription(dto);
 
-            // 🔥 Poziv BillingService
-            await _billingServiceCall.CreateBillingNotificationAsync(
-                new BillingNotificationCreateDTO
+                await _billingServiceCall.CreateBillingNotificationAsync(new BillingNotificationCreateDTO
                 {
                     Text = "Subscription successfully created.",
                     OrganizationId = dto.OrganizationId,
-                    PaymentId = Guid.NewGuid(), // ili pravi PaymentId ako postoji
+                    PaymentId = Guid.NewGuid(),
                     Type = TypeSubject.BillingNotification
                 });
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = result.Id },
-                result);
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "CREATE_SUBSCRIPTION",
+                    EntityName = "Subscription",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "POST"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "CREATE_SUBSCRIPTION",
+                    EntityName = "Subscription",
+                    IsSuccess = false,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "POST"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
-        // PUT: api/subscription
         [HttpPut]
-        public ActionResult<SubscriptionCreatedDTO> Update(
-            [FromBody] SubscriptionDTO dto)
+        public async Task<ActionResult<SubscriptionCreatedDTO>> Update([FromBody] SubscriptionDTO dto)
         {
-            var result = _repository.UpdateSubscription(dto);
+            try
+            {
+                var result = _repository.UpdateSubscription(dto);
+                if (result == null) return NotFound();
 
-            if (result == null)
-                return NotFound();
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_SUBSCRIPTION",
+                    EntityName = "Subscription",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
 
-            return Ok(result);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_SUBSCRIPTION",
+                    EntityName = "Subscription",
+                    IsSuccess = false,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
-        // DELETE: api/subscription/{id}
         [HttpDelete("{id}")]
-        public IActionResult Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            _repository.DeleteSubscription(id);
-            return NoContent();
+            try
+            {
+                _repository.DeleteSubscription(id);
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_SUBSCRIPTION",
+                    EntityName = "Subscription",
+                    OldValues = id.ToString(),
+                    IsSuccess = true,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_SUBSCRIPTION",
+                    EntityName = "Subscription",
+                    OldValues = id.ToString(),
+                    IsSuccess = false,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NotFound(new { error = ex.Message });
+            }
         }
     }
 }

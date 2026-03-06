@@ -12,6 +12,12 @@ builder.Services.AddDbContext<AttachmentContext>();
 builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 
+builder.Services.AddHttpClient("LoggerService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
+});
+builder.Services.AddScoped<AttachmentService.Clients.LoggerServiceClient>();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

@@ -16,6 +16,12 @@ builder.Services.AddScoped<IProblemBoxRepository, ProblemBoxRepository>();
 
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 
+builder.Services.AddHttpClient("LoggerService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
+});
+builder.Services.AddScoped<ProblemBoxService.Clients.LoggerServiceClient>();
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

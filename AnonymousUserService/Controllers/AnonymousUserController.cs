@@ -1,26 +1,26 @@
 ﻿using AnonymousDomain.Models.AnonymousUser;
+using AnonymousUserService.Clients;
 using AnonymousUserService.Data;
 using AnonymousUserService.Models.DTOs.AnonymousUser;
 using AutoMapper;
-using Azure.Identity;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace AnonymousAPI.Controllers
 {
-    //[Authorize] 
     [ApiController]
     [Route("api/[controller]")]
     public class AnonymousUserController : Controller
     {
-
         private readonly IAnonymousUserRepository _anonymousUserRepository;
         private readonly IMapper _mapper;
+        private readonly LoggerServiceClient _loggerClient;
 
-        public AnonymousUserController(IAnonymousUserRepository anonymousUserRepository, IMapper mapper)
+        public AnonymousUserController(IAnonymousUserRepository anonymousUserRepository, IMapper mapper, LoggerServiceClient loggerClient)
         {
-             _anonymousUserRepository = anonymousUserRepository;
-             _mapper = mapper;
+            _anonymousUserRepository = anonymousUserRepository;
+            _mapper = mapper;
+            _loggerClient = loggerClient;
         }
 
         [HttpGet]
@@ -38,10 +38,40 @@ namespace AnonymousAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteAnonymousUser(Guid id)
+        public async Task<IActionResult> DeleteAnonymousUser(Guid id)
         {
-            _anonymousUserRepository.DeleteAnonymousUser(id);
-            return NoContent();
+            try
+            {
+                _anonymousUserRepository.DeleteAnonymousUser(id);
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_ANONYMOUS_USER",
+                    EntityName = "AnonymousUser",
+                    OldValues = id.ToString(),
+                    IsSuccess = true,
+                    ServiceName = "AnonymousUserService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_ANONYMOUS_USER",
+                    EntityName = "AnonymousUser",
+                    OldValues = id.ToString(),
+                    IsSuccess = false,
+                    ServiceName = "AnonymousUserService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NotFound(new { error = ex.Message });
+            }
         }
     }
 }

@@ -19,6 +19,13 @@ builder.Services.AddScoped<ISuggestionRepository, SuggestionRepository>();
 builder.Services.AddScoped<ISuggestionCommentRepository, SuggestionCommentRepository>();
 builder.Services.AddScoped<ISuggestionCategoryRepository, SuggestionCategoryRepository>();
 builder.Services.AddScoped<IVoteRepository, VoteRepository>();
+builder.Services.AddScoped<SuggestionService.Clients.LoggerServiceClient>();
+
+builder.Services.AddHttpClient("LoggerService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
+});
+
 
 // Service Calls
 builder.Services.AddHttpClient<IUserServiceCall, UserServiceCall>();

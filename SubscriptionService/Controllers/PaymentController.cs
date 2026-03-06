@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SubscriptionService.Clients;
 using SubscriptionService.Data;
 using SubscriptionService.Models.DTOs;
+using System.Text.Json;
 
 namespace AnonymousAPI.Controllers
 {
@@ -9,70 +11,142 @@ namespace AnonymousAPI.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly IPaymentRepository _repository;
+        private readonly LoggerServiceClient _loggerClient;
 
-        public PaymentController(IPaymentRepository repository)
+        public PaymentController(IPaymentRepository repository, LoggerServiceClient loggerClient)
         {
             _repository = repository;
+            _loggerClient = loggerClient;
         }
 
-        // GET: api/payment
         [HttpGet]
         public ActionResult<IEnumerable<PaymentDTO>> GetAllPayments()
         {
             return Ok(_repository.GetAllPayments());
         }
 
-        // GET: api/payment/{id}
         [HttpGet("{id}")]
         public ActionResult<PaymentDTO> GetPaymentById(Guid id)
         {
             var result = _repository.GetPaymentById(id);
-
-            if (result == null)
-                return NotFound();
-
+            if (result == null) return NotFound();
             return Ok(result);
         }
 
-        // GET: api/payment/bySubscription/{subscriptionId}
         [HttpGet("bySubscription/{subscriptionId}")]
         public ActionResult<IEnumerable<PaymentDTO>> GetPaymentsBySubscriptionId(Guid subscriptionId)
         {
             return Ok(_repository.GetPaymentsBySubscriptionId(subscriptionId));
         }
 
-        // POST: api/payment
         [HttpPost]
-        public ActionResult<PaymentCreatedDTO> CreatePayment(
-            [FromBody] PaymentCreationDTO dto)
+        public async Task<ActionResult<PaymentCreatedDTO>> CreatePayment([FromBody] PaymentCreationDTO dto)
         {
-            var result = _repository.CreatePayment(dto);
+            try
+            {
+                var result = _repository.CreatePayment(dto);
 
-            return CreatedAtAction(
-                nameof(GetPaymentById),
-                new { id = result.Id },
-                result);
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "CREATE_PAYMENT",
+                    EntityName = "Payment",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "POST"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return CreatedAtAction(nameof(GetPaymentById), new { id = result.Id }, result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "CREATE_PAYMENT",
+                    EntityName = "Payment",
+                    IsSuccess = false,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "POST"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
-        // PUT: api/payment
         [HttpPut]
-        public ActionResult<PaymentCreatedDTO> UpdatePayment(
-            [FromBody] PaymentDTO dto)
+        public async Task<ActionResult<PaymentCreatedDTO>> UpdatePayment([FromBody] PaymentDTO dto)
         {
-            var result = _repository.UpdatePayment(dto);
+            try
+            {
+                var result = _repository.UpdatePayment(dto);
+                if (result == null) return NotFound();
 
-            if (result == null)
-                return NotFound();
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_PAYMENT",
+                    EntityName = "Payment",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
 
-            return Ok(result);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_PAYMENT",
+                    EntityName = "Payment",
+                    IsSuccess = false,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
-        // DELETE: api/payment/{id}
         [HttpDelete("{id}")]
-        public IActionResult DeletePayment(Guid id)
+        public async Task<IActionResult> DeletePayment(Guid id)
         {
-            _repository.DeletePayment(id);
-            return NoContent();
+            try
+            {
+                _repository.DeletePayment(id);
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_PAYMENT",
+                    EntityName = "Payment",
+                    OldValues = id.ToString(),
+                    IsSuccess = true,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_PAYMENT",
+                    EntityName = "Payment",
+                    OldValues = id.ToString(),
+                    IsSuccess = false,
+                    ServiceName = "SubscriptionService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NotFound(new { error = ex.Message });
+            }
         }
     }
 }
