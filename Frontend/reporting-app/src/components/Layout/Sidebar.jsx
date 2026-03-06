@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     Building2,
@@ -12,19 +12,18 @@ import {
     ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 
 const Sidebar = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
-    // Default to admin if user isn't loaded yet to avoid crash during flash
-    const role = user?.role || 'admin';
+    // Use the role name directly from AuthContext
+    const role = user?.role || 'user';
+
     // Navigation items based on role (Admin, Manager, Billing)
     const navItems = [
-        { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard, roles: ['admin', 'manager'] },
-        { name: 'Organizations', path: '/admin/organizations', icon: Building2, roles: ['admin', 'manager', 'billing'] },
+        { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard, roles: ['admin'] },
         { name: 'Suggestion Boxes', path: '/admin/suggestions', icon: MessageSquareWarning, roles: ['admin', 'manager'] },
         { name: 'Problem Boxes', path: '/admin/problems', icon: AlertOctagon, roles: ['admin', 'manager'] },
         { name: 'Users', path: '/admin/users', icon: Users, roles: ['admin'] },
@@ -47,7 +46,7 @@ const Sidebar = () => {
                     {user?.name?.charAt(0).toUpperCase() || 'A'}
                 </div>
                 <div className="user-info">
-                    <p className="user-name">{user?.name || 'System Admin'}</p>
+                    <p className="user-name">{user?.name || 'User'}</p>
                     <p className="user-role">{role.toUpperCase()}</p>
                 </div>
             </div>

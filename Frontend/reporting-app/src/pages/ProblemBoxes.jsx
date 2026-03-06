@@ -16,6 +16,7 @@ const mockProblemBoxes = [
 const ProblemBoxes = () => {
     const navigate = useNavigate();
     const [isBoxModalOpen, setBoxModalOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
 
     const columns = [
         { header: 'Box Name', accessor: 'name', render: (row) => <strong style={{ color: 'var(--text-primary)' }}>{row.name}</strong> },
@@ -63,10 +64,15 @@ const ProblemBoxes = () => {
             <div className="table-wrapper">
                 <DataTable
                     title="All Problem Boxes"
-                    data={mockProblemBoxes}
+                    data={mockProblemBoxes.filter(box =>
+                        box.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+                        box.organization?.toLowerCase().includes(searchValue.toLowerCase())
+                    )}
                     columns={columns}
                     onRowClick={handleRowClick}
                     searchPlaceholder="Search by box name or organization..."
+                    searchValue={searchValue}
+                    onSearchChange={setSearchValue}
                 />
             </div>
 

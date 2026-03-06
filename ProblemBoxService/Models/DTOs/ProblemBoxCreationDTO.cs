@@ -8,8 +8,7 @@ namespace ProblemBoxService.Models.DTOs
         public string Description { get; set; }
         public bool IsDarkTheme { get; set; }
         public string Password { get; set; }
+        public string CreatedBy { get; set; }
         public Guid OrganizationId { get; set; }
-        public Guid BoxAccessLinkId { get; set; }
-        public ProblemSuggestionStatus Status { get; set; }
     }
 }

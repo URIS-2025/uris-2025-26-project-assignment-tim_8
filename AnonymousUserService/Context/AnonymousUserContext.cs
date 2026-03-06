@@ -35,6 +35,8 @@ namespace AnonymousUserService.Context
                       .IsRequired();
                 entity.Property(a => a.BoxAccessLinkId)
                       .IsRequired();
+                entity.Property(a=>a.Password)
+                      .IsRequired();
             });
         }
     }

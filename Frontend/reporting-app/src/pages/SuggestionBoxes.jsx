@@ -13,6 +13,7 @@ const SuggestionBoxes = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [creating, setCreating] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
 
     // Form state matching SuggestionBoxCreateDTO
     const [formData, setFormData] = useState({
@@ -173,10 +174,15 @@ const SuggestionBoxes = () => {
                 <div className="table-wrapper">
                     <DataTable
                         title="All Suggestion Boxes"
-                        data={suggestionBoxes}
+                        data={suggestionBoxes.filter(box =>
+                            box.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+                            box.description?.toLowerCase().includes(searchValue.toLowerCase())
+                        )}
                         columns={columns}
                         onRowClick={handleRowClick}
-                        searchPlaceholder="Search by box name..."
+                        searchPlaceholder="Search by box name or description..."
+                        searchValue={searchValue}
+                        onSearchChange={setSearchValue}
                     />
                 </div>
             )}

@@ -10,7 +10,7 @@ export const UserRoleService = {
 
     // GET /api/UserRole/{id}
     getById: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/api/UserRole/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/UserRole/${id}/`);
         if (!response.ok) throw new Error('Failed to fetch user role');
         return await response.json();
     },

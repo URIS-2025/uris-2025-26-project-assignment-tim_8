@@ -3,21 +3,21 @@ const API_BASE_URL = 'http://localhost:80';
 export const OrganizationService = {
     // GET /api/Organization
     getAll: async () => {
-        const response = await fetch(`${API_BASE_URL}/api/Organization`);
+        const response = await fetch(`${API_BASE_URL}/api/Organization/`);
         if (!response.ok) throw new Error('Failed to fetch organizations');
         return await response.json();
     },
 
     // GET /api/Organization/{id}
     getById: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/api/Organization/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/Organization/${id}/`);
         if (!response.ok) throw new Error('Failed to fetch organization details');
         return await response.json();
     },
 
     // POST /api/Organization
     create: async (data) => {
-        const response = await fetch(`${API_BASE_URL}/api/Organization`, {
+        const response = await fetch(`${API_BASE_URL}/api/Organization/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ export const OrganizationService = {
 
     // PUT /api/Organization
     update: async (data) => {
-        const response = await fetch(`${API_BASE_URL}/api/Organization`, {
+        const response = await fetch(`${API_BASE_URL}/api/Organization/`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -43,7 +43,7 @@ export const OrganizationService = {
 
     // DELETE /api/Organization/{id}
     delete: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/api/Organization/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/Organization/${id}/`, {
             method: 'DELETE',
         });
         if (!response.ok) throw new Error('Failed to delete organization');

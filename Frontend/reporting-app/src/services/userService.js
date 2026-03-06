@@ -66,5 +66,31 @@ export const UserService = {
         } catch {
             return text;
         }
+    },
+
+    // POST /api/User/invite
+    invite: async (data) => {
+        const response = await fetch(`${API_BASE_URL}/api/User/invite/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Failed to invite user');
+        return await response.json();
+    },
+
+    // PUT /api/User/{id}/role
+    updateRole: async (id, roleData) => {
+        const response = await fetch(`${API_BASE_URL}/api/User/${id}/role/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(roleData),
+        });
+        if (!response.ok) throw new Error('Failed to update user role');
+        return await response.json();
     }
 };

@@ -8,6 +8,7 @@ namespace AnonymousUserService.Data
     {
         IEnumerable<AnonymousUserDTO> GetAllAnonymousUsers();
         AnonymousUserDTO GetAnonymousUserById(Guid id);
+        AnonymousUserDTO CreateUser(AnonymousUserCreationDTO user);
         void DeleteAnonymousUser(Guid id);
     }
 }

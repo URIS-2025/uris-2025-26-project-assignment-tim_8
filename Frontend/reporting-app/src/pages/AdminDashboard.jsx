@@ -4,30 +4,38 @@ import {
     MessageSquareWarning,
     AlertOctagon,
     TrendingUp,
-    Clock,
     ChevronRight,
     Plus
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { OrganizationService } from '../services/organizationService';
+import { useAuth } from '../context/AuthContext';
 import './AdminDashboard.css';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
+import { ProblemBoxService } from '../services/problemBoxService';
+import { SuggestionService } from '../services/suggestionService';
 
 const AdminDashboard = () => {
+    const { user } = useAuth();
     const [isOrgModalOpen, setOrgModalOpen] = useState(false);
     const [organizations, setOrganizations] = useState([]);
     const [suggestionBoxes, setSuggestionBoxes] = useState([]);
+    const [problemBoxes, setProblemBoxes] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const role = user?.role || 'user';
 
     // Form state for creating organization
-    const [newOrg, setNewOrg] = useState({ name: '', themeColor: '#000000', customLogoUrl: '' });
+    const [newOrg, setNewOrg] = useState({ name: '' });
 
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchOrganizations();
         fetchSuggestionBoxes();
+        fetchProblemBoxes();
+        fetchSuggestions();
     }, []);
 
     const fetchOrganizations = async () => {
@@ -54,16 +62,41 @@ const AdminDashboard = () => {
         }
     };
 
+    const fetchProblemBoxes = async () => {
+        try {
+            setIsLoading(true);
+            const data = await ProblemBoxService.getAll();
+            setProblemBoxes(data);
+        } catch (error) {
+            console.error("Failed to fetch suggestion boxes", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchSuggestions = async () => {
+        try {
+            setIsLoading(true);
+            const data = await SuggestionBoxService.getAll();
+            setSuggestions(data);
+        } catch (error) {
+            console.error("Failed to fetch suggestion boxes", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleCreateOrganization = async () => {
         if (!newOrg.name.trim()) return;
         try {
             const created = await OrganizationService.create({
                 name: newOrg.name,
-                themeColor: newOrg.themeColor || '#6366f1',
-                customLogoUrl: newOrg.customLogoUrl || null,
+                themeColor: '#6366f1', // Default theme color
+                customLogoUrl: null,
+                adminId: user?.id || null // Automatically add adminId from localstorage user
             });
             setOrgModalOpen(false);
-            setNewOrg({ name: '', themeColor: '#000000', customLogoUrl: '' });
+            setNewOrg({ name: '' });
             fetchOrganizations();
             navigate(`/admin/organizations/${created.id}`);
         } catch (error) {
@@ -75,8 +108,8 @@ const AdminDashboard = () => {
     const displayStats = [
         { label: 'Total Organizations', value: isLoading ? '...' : organizations.length.toString(), icon: Building2, color: 'var(--accent-primary)' },
         { label: 'Active Suggestion Boxes', value: isLoading ? '...' : suggestionBoxes.length.toString(), icon: MessageSquareWarning, color: 'var(--success)' },
-        { label: 'Active Problem Boxes', value: '24', icon: AlertOctagon, color: 'var(--warning)' },
-        { label: 'Total Submissions', value: '1,284', icon: TrendingUp, color: '#a855f7' },
+        { label: 'Active Problem Boxes', value: isLoading ? '...' : problemBoxes.length.toString(), icon: AlertOctagon, color: 'var(--warning)' },
+        { label: 'Total Submissions', value: isLoading ? '...' : suggestions.length.toString(), icon: TrendingUp, color: '#a855f7' },
     ];
 
     return (
@@ -87,9 +120,11 @@ const AdminDashboard = () => {
                     <p className="page-description">Welcome back! Here's what's happening across your organizations.</p>
                 </div>
                 <div className="header-actions">
-                    <button className="btn btn-primary" onClick={() => setOrgModalOpen(true)}>
-                        <Plus size={18} className="mr-2" /> Create Organization
-                    </button>
+                    {role === 'admin' && (
+                        <button className="btn btn-primary" onClick={() => setOrgModalOpen(true)}>
+                            <Plus size={18} className="mr-2" /> Create Organization
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -146,12 +181,14 @@ const AdminDashboard = () => {
                         <h3>Quick Actions</h3>
                     </div>
                     <div className="quick-actions-grid">
-                        <button className="action-btn" onClick={() => setOrgModalOpen(true)}>
-                            <div className="action-icon" style={{ color: 'var(--accent-primary)', backgroundColor: 'rgba(99, 102, 241, 0.1)' }}>
-                                <Building2 size={24} />
-                            </div>
-                            <span>Add Organization</span>
-                        </button>
+                        {role === 'admin' && (
+                            <button className="action-btn" onClick={() => setOrgModalOpen(true)}>
+                                <div className="action-icon" style={{ color: 'var(--accent-primary)', backgroundColor: 'rgba(99, 102, 241, 0.1)' }}>
+                                    <Building2 size={24} />
+                                </div>
+                                <span>Add Organization</span>
+                            </button>
+                        )}
                         <button className="action-btn">
                             <div className="action-icon" style={{ color: 'var(--success)', backgroundColor: 'rgba(34, 197, 94, 0.1)' }}>
                                 <MessageSquareWarning size={24} />
@@ -186,31 +223,8 @@ const AdminDashboard = () => {
                         className="form-control"
                         placeholder="e.g. Acme Corp"
                         value={newOrg.name}
-                        onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
+                        onChange={(e) => setNewOrg({ name: e.target.value })}
                         required
-                    />
-                </div>
-                <div className="form-group">
-                    <label>Theme Color</label>
-                    <div className="flex items-center gap-3">
-                        <input
-                            type="color"
-                            className="form-control"
-                            style={{ width: '60px', padding: '0 4px', height: '40px' }}
-                            value={newOrg.themeColor}
-                            onChange={(e) => setNewOrg({ ...newOrg, themeColor: e.target.value })}
-                        />
-                        <span className="text-sm opacity-70">{newOrg.themeColor}</span>
-                    </div>
-                </div>
-                <div className="form-group">
-                    <label>Logo URL (Optional)</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        placeholder="https://..."
-                        value={newOrg.customLogoUrl}
-                        onChange={(e) => setNewOrg({ ...newOrg, customLogoUrl: e.target.value })}
                     />
                 </div>
             </Modal>

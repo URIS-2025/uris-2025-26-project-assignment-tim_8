@@ -3,13 +3,15 @@ import { Users, Shield, UserPlus, Lock } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
-import { SystemUserService } from '../services/systemUserService';
 import { OrganizationService } from '../services/organizationService';
+import { UserService } from '../services/userService';
+import { UserRoleService } from '../services/userRoleService';
 
 const UserManagement = () => {
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
     const [users, setUsers] = useState([]);
     const [organizations, setOrganizations] = useState([]);
+    const [roles, setRoles] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [inviteData, setInviteData] = useState({ email: '', role: 'manager', organizationId: '' });
@@ -19,15 +21,18 @@ const UserManagement = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [newRole, setNewRole] = useState('');
 
+    const [searchValue, setSearchValue] = useState('');
+
     useEffect(() => {
         fetchUsers();
         fetchOrganizations();
+        fetchRoles();
     }, []);
 
     const fetchUsers = async () => {
         try {
             setIsLoading(true);
-            const data = await SystemUserService.getAll();
+            const data = await UserService.getAll();
             setUsers(data);
         } catch (error) {
             console.error("Failed to fetch users", error);
@@ -45,10 +50,19 @@ const UserManagement = () => {
         }
     };
 
+    const fetchRoles = async () => {
+        try {
+            const data = await UserRoleService.getAll();
+            setRoles(data);
+        } catch (error) {
+            console.error("Failed to fetch roles", error);
+        }
+    };
+
     const handleInviteUser = async () => {
         if (!inviteData.email) return;
         try {
-            await SystemUserService.invite({
+            await UserService.invite({
                 email: inviteData.email,
                 role: inviteData.role,
                 organizationId: inviteData.organizationId || null
@@ -72,7 +86,7 @@ const UserManagement = () => {
     const handleUpdateRole = async () => {
         if (!selectedUser) return;
         try {
-            await SystemUserService.updateRole(selectedUser.id, { role: newRole });
+            await UserService.updateRole(selectedUser.id, { role: newRole });
             setRoleModalOpen(false);
             fetchUsers();
             alert("User role updated successfully!");
@@ -83,17 +97,22 @@ const UserManagement = () => {
     };
 
     const columns = [
+        { header: 'Id', accessor: 'id' },
         { header: 'User', accessor: 'name', render: (row) => <strong>{row.name}</strong> },
         { header: 'Email', accessor: 'email' },
         {
             header: 'Role',
             accessor: 'role',
-            render: (row) => (
-                <span className="flex items-center gap-2">
-                    {row.role.includes('Admin') ? <Shield size={14} className="text-secondary" /> : <Users size={14} className="text-muted" />}
-                    {row.role}
-                </span>
-            )
+            render: (row) => {
+                // If the backend returns a roleId instead of a role name string
+                const roleName = row.role || roles.find(r => r.id === row.roleId)?.title || 'User';
+                return (
+                    <span className="flex items-center gap-2">
+                        {roleName?.toLowerCase().includes('admin') ? <Shield size={14} className="text-secondary" /> : <Users size={14} className="text-muted" />}
+                        {roleName}
+                    </span>
+                );
+            }
         },
         { header: 'Assigned Entity', accessor: 'entity' },
         {
@@ -131,9 +150,14 @@ const UserManagement = () => {
                 ) : (
                     <DataTable
                         title="All System Users"
-                        data={users.length > 0 ? users : []} // Fallback to empty if no users yet
+                        data={users.filter(user =>
+                            user.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+                            user.email?.toLowerCase().includes(searchValue.toLowerCase())
+                        )}
                         columns={columns}
-                        searchPlaceholder="Search users by name, email, or entity..."
+                        searchPlaceholder="Search users by name or email..."
+                        searchValue={searchValue}
+                        onSearchChange={setSearchValue}
                     />
                 )}
             </div>

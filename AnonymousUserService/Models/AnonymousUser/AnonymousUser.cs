@@ -11,5 +11,6 @@ namespace AnonymousDomain.Models.AnonymousUser
         public Guid Id { get; set; }
         public DateTime CreatedAt { get; set; }
         public Guid BoxAccessLinkId { get; set; }
+        public string Password { get; set; }
     }
 }

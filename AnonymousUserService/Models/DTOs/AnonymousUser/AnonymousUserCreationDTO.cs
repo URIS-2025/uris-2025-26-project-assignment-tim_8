@@ -2,6 +2,7 @@
 {
     public class AnonymousUserCreationDTO
     {
-        public Guid BoxAccessLinkId { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
 }

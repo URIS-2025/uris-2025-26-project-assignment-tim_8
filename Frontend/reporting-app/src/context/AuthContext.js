@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { UserRoleService } from '../services/userRoleService';
 
 const AuthContext = createContext();
 
@@ -8,24 +9,31 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
 
-    const login = (token) => {
+    const login = async (token) => {
         try {
             const decoded = jwtDecode(token);
 
             // Map the token claims to our user object
-            // The Asp.Net Core standard identity claims
             const nameIdentifier = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
             const emailIdentifier = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
-            const roleId = decoded['RoleId'] || decoded['role'];
+            const roleId = decoded['RoleId'] || decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
 
-            // We default to some role names or fetch them if needed. 
-            // If the token only contains RoleId, we rely on the backend to tell us the string, but for UI purposes we might need to map it or we just store the roleId.
-            // Let's store the raw decoded data and the token.
+            let roleName = 'user';
+            if (roleId) {
+                try {
+                    const roleData = await UserRoleService.getById(roleId);
+                    roleName = roleData.title ? roleData.title.toLowerCase() : 'user';
+                } catch (err) {
+                    console.error("Failed to fetch role name during login", err);
+                }
+            }
+
             const userData = {
                 id: nameIdentifier,
                 email: emailIdentifier,
-                name: emailIdentifier, // Since JWT currently only has email, not full name
+                name: emailIdentifier,
                 roleId: roleId,
+                role: roleName, // Store the actual role name for ProtectedRoute
                 token: token
             };
 
@@ -44,14 +52,32 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('authUser');
-        if (storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch (e) {
-                console.error('Failed to parse user', e);
+        const initializeAuth = async () => {
+            const storedUser = localStorage.getItem('authUser');
+            if (storedUser) {
+                try {
+                    const parsedUser = JSON.parse(storedUser);
+
+                    // If the stored user is missing the 'role' field, fetch it now
+                    if (parsedUser.roleId && !parsedUser.role) {
+                        try {
+                            const roleData = await UserRoleService.getById(parsedUser.roleId);
+                            parsedUser.role = roleData.title ? roleData.title.toLowerCase() : 'user';
+                            localStorage.setItem('authUser', JSON.stringify(parsedUser));
+                        } catch (err) {
+                            console.error("Failed to fetch role during rehydration", err);
+                            parsedUser.role = 'user'; // default fallback
+                        }
+                    }
+
+                    setUser(parsedUser);
+                } catch (e) {
+                    console.error('Failed to parse user', e);
+                }
             }
-        }
+        };
+
+        initializeAuth();
     }, []);
 
     return (

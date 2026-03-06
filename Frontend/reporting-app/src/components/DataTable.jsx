@@ -9,7 +9,9 @@ const DataTable = ({
     onRowClick,
     onActionClick,
     searchPlaceholder = 'Search...',
-    showExport = false
+    showExport = false,
+    searchValue = '',
+    onSearchChange
 }) => {
     return (
         <div className="data-table-container glass-panel animate-fade-in">
@@ -24,6 +26,8 @@ const DataTable = ({
                             type="text"
                             placeholder={searchPlaceholder}
                             className="table-search-input"
+                            value={searchValue}
+                            onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
                         />
                     </div>
                     <button className="btn btn-ghost icon-btn" title="Filter">
