@@ -31,7 +31,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AnonymousUserContext>();
-    db.Database.Migrate();
+    if (!app.Environment.IsEnvironment("Testing"))
+        db.Database.Migrate();
 }
 
 // Configure the HTTP request pipeline.
@@ -46,3 +47,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+public partial class Program { }
