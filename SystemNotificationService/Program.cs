@@ -30,7 +30,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<SystemNotificationContext>();
-    db.Database.Migrate();
+    if (!app.Environment.IsEnvironment("Testing"))
+        db.Database.Migrate();
 }
 
 // Configure the HTTP request pipeline.
@@ -41,7 +42,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAuthorization();
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsync("Internal Server Error");
+    });
+});
 
 app.MapControllers();
 
 app.Run();
+public partial class Program { }

@@ -18,7 +18,8 @@ namespace SystemNotificationService.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(
+            if (!optionsBuilder.IsConfigured)
+                optionsBuilder.UseSqlServer(
                 _configuration.GetConnectionString("SystemNotificationDB"));
         }
 
@@ -40,17 +41,8 @@ namespace SystemNotificationService.Context
                 entity.Property(s => s.CreatedAt)
                       .IsRequired();
 
-                entity.Property(s => s.OrganizationId)
-                      .IsRequired();
+               
 
-                entity.Property(s => s.AnonymousUserId)
-                      .IsRequired();
-
-                entity.Property(s => s.ProblemCommentId)
-                      .IsRequired();
-
-                entity.Property(s => s.SuggestionCommentId)
-                      .IsRequired();
             });
         }
     }

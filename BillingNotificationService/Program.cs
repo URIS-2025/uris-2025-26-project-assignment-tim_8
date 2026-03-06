@@ -27,7 +27,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BillingNotificationContext>();
-    db.Database.Migrate();
+    if (!app.Environment.IsEnvironment("Testing"))
+        db.Database.Migrate();
 }
 
 
@@ -43,3 +44,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+public partial class Program { }
