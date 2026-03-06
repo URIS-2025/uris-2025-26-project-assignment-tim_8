@@ -7,6 +7,10 @@
         public Guid SuggestionId { get; set; }
         public Guid? SuggestionCommentId { get; set; } // null ako nije reply
         public Guid CommentAuthorId { get; set; }
+        public string CreatedBy { get; set; }
+
+
+
 
     }
 }

@@ -21,8 +21,9 @@ namespace SubscriptionService.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(
-                _configuration.GetConnectionString("SubscriptionDB"));
+            if (!optionsBuilder.IsConfigured)
+                optionsBuilder.UseSqlServer(
+                    _configuration.GetConnectionString("SubscriptionDB"));
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
