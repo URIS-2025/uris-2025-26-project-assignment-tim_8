@@ -22,7 +22,7 @@ builder.Services.AddDbContext<SuggestionBoxContext>(options =>
         builder.Configuration.GetConnectionString("SuggestionBoxDB")));
 
 // ?? AutoMapper
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 // ?? Repository DI
 builder.Services.AddScoped<ISuggestionBoxRepository, SuggestionBoxRepository>();
@@ -46,7 +46,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<SuggestionBoxContext>();
-    db.Database.Migrate();
+    if (db.Database.IsRelational())
+    {
+        db.Database.Migrate();
+    }
 }
 
 // ===============================
@@ -64,3 +67,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }
