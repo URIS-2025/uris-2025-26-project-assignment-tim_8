@@ -18,9 +18,13 @@ namespace SuggestionBoxService.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer(
                 _configuration.GetConnectionString("SuggestionBoxDB"));
-        }
+            }
+            }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
