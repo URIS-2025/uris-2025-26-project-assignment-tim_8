@@ -37,6 +37,13 @@ namespace AnonymousAPI.Controllers
             return Ok(result);
         }
 
+        [HttpPost]
+        public ActionResult<AnonymousUserDTO> Create([FromBody] AnonymousUserCreationDTO anonUser)
+        {
+            var result = _anonymousUserRepository.CreateUser(anonUser);
+            return Created("", result);
+        }
+
         [HttpDelete("{id}")]
         public IActionResult DeleteAnonymousUser(Guid id)
         {

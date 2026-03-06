@@ -5,35 +5,54 @@ import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 import { Building2, Users, MessageSquareWarning, AlertOctagon, ArrowLeft, Plus, Settings } from 'lucide-react';
 import { OrganizationService } from '../services/organizationService';
+import { SuggestionBoxService } from '../services/suggestionBoxService';
+import { ProblemBoxService } from '../services/problemBoxService';
+import { UserService } from '../services/userService';
 import './OrganizationDetails.css';
+import { useAuth } from '../context/AuthContext';
 
 const mockManagers = [
     { id: 'M-101', name: 'Alice Walker', email: 'alice@techcorp.com', role: 'Head Manager', added: 'Feb 01, 2023' },
     { id: 'M-102', name: 'Bob Smith', email: 'bob@techcorp.com', role: 'Manager', added: 'Mar 15, 2023' },
 ];
 
-const mockBoxes = [
-    { id: 'BOX-201', name: 'Facilities & Maintenance', type: 'Problem', status: 'Active', count: 124 },
-    { id: 'BOX-202', name: 'HR / Employee Relations', type: 'Suggestion', status: 'Active', count: 45 },
-    { id: 'BOX-203', name: 'IT Infrastructure Issues', type: 'Problem', status: 'Paused', count: 89 },
-];
-
 const OrganizationDetails = () => {
     const { orgId } = useParams();
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     const [organization, setOrganization] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Modal states
+    const [suggestionBoxes, setSuggestionBoxes] = useState([]);
+    const [problemBoxes, setProblemBoxes] = useState([]);
     const [isManagerModalOpen, setManagerModalOpen] = useState(false);
     const [isBoxModalOpen, setBoxModalOpen] = useState(false);
     const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
     const [editOrg, setEditOrg] = useState({ name: '', themeColor: '', customLogoUrl: '' });
-    const [activeTab, setActiveTab] = useState('boxes'); // 'boxes' or 'managers'
+    const [activeTab, setActiveTab] = useState('boxes');
+    const [managers, setManagers] = useState([]);
+
+    const [newBox, setNewBox] = useState({
+        name: '',
+        type: 'suggestion',
+        description: '',
+        password: '',
+        isDarkTheme: false
+    });
+
+    const [boxSearch, setBoxSearch] = useState('');
+    const [managerSearch, setManagerSearch] = useState('');
+
+    const [newManager, setNewManager] = useState({
+        id: ''
+    });
 
     useEffect(() => {
+        fetchSuggestionBoxes();
         fetchOrganization();
+        fetchManagers();
     }, [orgId]);
 
     const fetchOrganization = async () => {
@@ -53,14 +72,38 @@ const OrganizationDetails = () => {
         }
     };
 
+    const fetchSuggestionBoxes = async () => {
+        try {
+            setIsLoading(true);
+            const data = await SuggestionBoxService.getByOrganizationId(orgId);
+            setSuggestionBoxes(data);
+        } catch (error) {
+            console.error("Failed to fetch suggestion boxes", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchManagers = async () => {
+        try {
+            setIsLoading(true);
+            const data = await UserService.getAll();
+            const filteredManagers = data.filter(u => u.organizationId === orgId);
+            setManagers(filteredManagers);
+        } catch (error) {
+            console.error("Failed to fetch managers", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleUpdateOrganization = async () => {
         if (!editOrg.name.trim()) return;
         try {
             await OrganizationService.update({
                 id: orgId,
                 name: editOrg.name,
-                themeColor: editOrg.themeColor,
-                customLogoUrl: editOrg.customLogoUrl
+                adminId: user.id
             });
             setSettingsModalOpen(false);
             fetchOrganization();
@@ -79,6 +122,66 @@ const OrganizationDetails = () => {
                 console.error("Failed to delete organization", error);
                 alert("Failed to delete organization");
             }
+        }
+    };
+
+    const handleCreateBox = async () => {
+        if (!newBox.name.trim() || !newBox.password.trim()) {
+            alert("Name and password are required.");
+            return;
+        }
+
+        try {
+            if (newBox.type === 'suggestion') {
+                await SuggestionBoxService.create({
+                    name: newBox.name,
+                    description: newBox.description,
+                    isDarkTheme: newBox.isDarkTheme,
+                    password: newBox.password,
+                    createdBy: user?.id,
+                    organizationId: orgId
+                });
+            } else {
+                await ProblemBoxService.create({
+                    name: newBox.name,
+                    description: newBox.description,
+                    isDarkTheme: newBox.isDarkTheme,
+                    password: newBox.password,
+                    organizationId: orgId,
+                    createdAt: new Date().toISOString()
+                });
+            }
+
+            setBoxModalOpen(false);
+            setNewBox({ name: '', type: 'suggestion', description: '', password: '', isDarkTheme: false });
+            fetchSuggestionBoxes();
+            //fetchProblemBoxes();
+            // In a real app we would call fetchBoxes() here
+            alert(`${newBox.type} box created successfully!`);
+        } catch (error) {
+            console.error(`Failed to create ${newBox.type} box`, error);
+            alert(`Failed to create ${newBox.type} box`);
+        }
+    };
+
+    const handleCreateManager = async () => {
+        try {
+            if (!newManager.id.trim()) {
+                alert("Please provide a Manager ID");
+                return;
+            }
+
+            const userToUpdate = await UserService.getById(newManager.id.trim());
+            userToUpdate.organizationId = orgId;
+            await UserService.update(userToUpdate);
+
+            setManagerModalOpen(false);
+            setNewManager({ id: '' });
+            fetchManagers();
+            alert("Manager assigned successfully!");
+        } catch (error) {
+            console.error("Failed to assign manager", error);
+            alert("Failed to assign manager. Please check the ID.");
         }
     };
 
@@ -179,10 +282,15 @@ const OrganizationDetails = () => {
                             </button>
                         </div>
                         <DataTable
-                            data={mockBoxes}
+                            data={suggestionBoxes.filter(box =>
+                                box.name?.toLowerCase().includes(boxSearch.toLowerCase()) ||
+                                box.description?.toLowerCase().includes(boxSearch.toLowerCase())
+                            )}
                             columns={boxColumns}
                             onRowClick={(row) => navigate(`/admin/boxes/${row.id}`)}
                             searchPlaceholder="Search boxes..."
+                            searchValue={boxSearch}
+                            onSearchChange={setBoxSearch}
                         />
                     </div>
                 ) : (
@@ -194,10 +302,15 @@ const OrganizationDetails = () => {
                             </button>
                         </div>
                         <DataTable
-                            data={mockManagers}
+                            data={managers.filter(m =>
+                                m.name?.toLowerCase().includes(managerSearch.toLowerCase()) ||
+                                m.email?.toLowerCase().includes(managerSearch.toLowerCase())
+                            )}
                             columns={managerColumns}
                             onActionClick={(row) => console.log('Manager action', row.id)}
                             searchPlaceholder="Search managers by name or email..."
+                            searchValue={managerSearch}
+                            onSearchChange={setManagerSearch}
                         />
                     </div>
                 )}
@@ -211,20 +324,20 @@ const OrganizationDetails = () => {
                 footer={
                     <>
                         <button className="btn btn-ghost" onClick={() => setManagerModalOpen(false)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={() => setManagerModalOpen(false)}>Send Invite</button>
+                        <button className="btn btn-primary" onClick={handleCreateManager}>Send Invite</button>
                     </>
                 }
             >
                 <div className="form-group">
-                    <label>Manager Email Address</label>
-                    <input type="email" className="form-control" placeholder="manager@organization.com" />
-                </div>
-                <div className="form-group">
-                    <label>Role / Permissions</label>
-                    <select className="form-control">
-                        <option>Standard Manager</option>
-                        <option>Head Manager (Can invite others)</option>
-                    </select>
+                    <label>Manager Id</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="user id, from user sidebar"
+                        value={newManager.id}
+                        onChange={(e) => setNewManager({ id: e.target.value })}
+                        required
+                    />
                 </div>
             </Modal>
 
@@ -236,24 +349,64 @@ const OrganizationDetails = () => {
                 footer={
                     <>
                         <button className="btn btn-ghost" onClick={() => setBoxModalOpen(false)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={() => setBoxModalOpen(false)}>Create Box</button>
+                        <button className="btn btn-primary" onClick={handleCreateBox}>Create Box</button>
                     </>
                 }
             >
                 <div className="form-group">
-                    <label>Box Name</label>
-                    <input type="text" className="form-control" placeholder="e.g. Facilities Feedback" />
+                    <label>Box Name *</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Facilities Feedback"
+                        value={newBox.name}
+                        onChange={(e) => setNewBox({ ...newBox, name: e.target.value })}
+                        required
+                    />
                 </div>
                 <div className="form-group">
-                    <label>Box Type</label>
-                    <select className="form-control">
+                    <label>Box Type *</label>
+                    <select
+                        className="form-control"
+                        value={newBox.type}
+                        onChange={(e) => setNewBox({ ...newBox, type: e.target.value })}
+                    >
                         <option value="suggestion">Suggestion Box (General feedback & ideas)</option>
                         <option value="problem">Problem Box (Reporting concrete issues)</option>
                     </select>
                 </div>
                 <div className="form-group">
+                    <label>Box Password * (Used by users to access)</label>
+                    <input
+                        type="password"
+                        className="form-control"
+                        placeholder="Enter access password"
+                        value={newBox.password}
+                        onChange={(e) => setNewBox({ ...newBox, password: e.target.value })}
+                        required
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Theme</label>
+                    <div className="flex items-center gap-2 mt-2">
+                        <input
+                            type="checkbox"
+                            id="darkThemeCheck"
+                            checked={newBox.isDarkTheme}
+                            onChange={(e) => setNewBox({ ...newBox, isDarkTheme: e.target.checked })}
+                        />
+                        <label htmlFor="darkThemeCheck" className="text-sm m-0">Enable Dark Theme on Public View</label>
+                    </div>
+                </div>
+                <div className="form-group mt-3">
                     <label>Description (Optional)</label>
-                    <textarea className="form-control" rows="3" placeholder="Brief context for users..."></textarea>
+                    <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="Brief context for users..."
+                        value={newBox.description}
+                        onChange={(e) => setNewBox({ ...newBox, description: e.target.value })}
+                    ></textarea>
                 </div>
             </Modal>
 
@@ -280,29 +433,6 @@ const OrganizationDetails = () => {
                         value={editOrg.name}
                         onChange={(e) => setEditOrg({ ...editOrg, name: e.target.value })}
                         required
-                    />
-                </div>
-                <div className="form-group">
-                    <label>Theme Color</label>
-                    <div className="flex items-center gap-3">
-                        <input
-                            type="color"
-                            className="form-control"
-                            style={{ width: '60px', padding: '0 4px', height: '40px' }}
-                            value={editOrg.themeColor}
-                            onChange={(e) => setEditOrg({ ...editOrg, themeColor: e.target.value })}
-                        />
-                        <span className="text-sm opacity-70">{editOrg.themeColor}</span>
-                    </div>
-                </div>
-                <div className="form-group">
-                    <label>Logo URL (Optional)</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        placeholder="https://..."
-                        value={editOrg.customLogoUrl}
-                        onChange={(e) => setEditOrg({ ...editOrg, customLogoUrl: e.target.value })}
                     />
                 </div>
             </Modal>

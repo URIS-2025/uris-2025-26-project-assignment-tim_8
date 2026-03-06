@@ -1,6 +1,8 @@
-﻿using AnonymousUserService.Context;
+﻿using AnonymousDomain.Models.AnonymousUser;
+using AnonymousUserService.Context;
 using AnonymousUserService.Models.DTOs.AnonymousUser;
 using AutoMapper;
+using BCrypt.Net;
 
 namespace AnonymousUserService.Data
 {
@@ -42,6 +44,18 @@ namespace AnonymousUserService.Data
             }
 
             return userResult;
+        }
+
+        public AnonymousUserDTO CreateUser(AnonymousUserCreationDTO user)
+        {
+            var entity = _mapper.Map<AnonymousUser>(user)!;
+            entity.Id = Guid.NewGuid();
+            entity.CreatedAt = DateTime.UtcNow;
+            entity.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+
+            _context.AnonymousUsers.Add(entity);
+            SaveChanges();
+            return _mapper.Map<AnonymousUserDTO>(entity);
         }
 
         public AnonymousUserDTO GetAnonymousUserById(Guid id)
