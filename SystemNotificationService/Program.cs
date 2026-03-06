@@ -11,9 +11,15 @@ builder.Services.AddDbContext<SystemNotificationContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("SystemNotificationDB")));
 
 builder.Services.AddScoped<ISystemNotificationRepository,SystemNotificationRepository>();
+builder.Services.AddScoped<SystemNotificationService.Clients.LoggerServiceClient>();
+
 
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 
+builder.Services.AddHttpClient("LoggerService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

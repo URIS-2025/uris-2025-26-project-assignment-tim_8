@@ -21,15 +21,22 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 builder.Services.AddScoped<IProblemCommentAuthorUserService, ProblemCommentAuthorUserService>();
+builder.Services.AddScoped<ProblemService.Clients.LoggerServiceClient>();
+
+
+builder.Services.AddHttpClient("LoggerService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
+});
 
 builder.Services.AddHttpClient("AttachmentService", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:AttachmentService"]); // PORT OrganizationService
 });
 
-builder.Services.AddHttpClient("UserService", client =>
+builder.Services.AddHttpClient("OrganizationService", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Services:UserService"]); // PORT BillingService
+    client.BaseAddress = new Uri(builder.Configuration["Services:OrganizationService"]); // PORT BillingService
 });
 
 

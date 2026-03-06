@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SuggestionBoxService.Clients;
 using SuggestionBoxService.Data;
 using SuggestionBoxService.Models.DTOs;
-using SuggestionBoxService.Models.ExternalDTOs;
+using System.Text.Json;
 
 namespace AnonymousAPI.Controllers
 {
@@ -10,76 +11,179 @@ namespace AnonymousAPI.Controllers
     public class SuggestionBoxController : ControllerBase
     {
         private readonly ISuggestionBoxRepository _repository;
+        private readonly LoggerServiceClient _loggerClient;
 
-        public SuggestionBoxController(ISuggestionBoxRepository repository)
+        public SuggestionBoxController(ISuggestionBoxRepository repository, LoggerServiceClient loggerClient)
         {
             _repository = repository;
+            _loggerClient = loggerClient;
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<SuggestionBoxDTO>> GetAllSuggestionBoxes()
         {
-            var result = _repository.GetAll();
-            return Ok(result);
+            return Ok(_repository.GetAll());
         }
+
         [HttpGet("{id}")]
         public ActionResult<SuggestionBoxDTO> GetById(Guid id)
         {
             var result = _repository.GetById(id);
-
-            if (result == null)
-                return NotFound();
-
+            if (result == null) return NotFound();
             return Ok(result);
         }
 
-        // GET: api/suggestionbox/organization/{organizationId}
         [HttpGet("organization/{organizationId}")]
         public ActionResult<IEnumerable<SuggestionBoxDTO>> GetByOrganizationId(Guid organizationId)
         {
-            var result = _repository.GetByOrganizationId(organizationId);
-            return Ok(result);
+            return Ok(_repository.GetByOrganizationId(organizationId));
         }
 
-        // POST: api/suggestionbox
         [HttpPost]
-        public ActionResult<SuggestionBoxDTO> Create(
-            [FromBody] SuggestionBoxCreateDTO dto)
+        public async Task<ActionResult<SuggestionBoxDTO>> Create([FromBody] SuggestionBoxCreateDTO dto)
         {
-            var result = _repository.Create(dto);
+            try
+            {
+                var result = _repository.Create(dto);
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = result.Id },
-                result);
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "CREATE_SUGGESTION_BOX",
+                    EntityName = "SuggestionBox",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "POST"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "CREATE_SUGGESTION_BOX",
+                    EntityName = "SuggestionBox",
+                    IsSuccess = false,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "POST"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
-        // PUT: api/suggestionbox
         [HttpPut]
-        public ActionResult<SuggestionBoxDTO> Update(
-            [FromBody] SuggestionBoxUpdateDTO dto)
+        public async Task<ActionResult<SuggestionBoxDTO>> Update([FromBody] SuggestionBoxUpdateDTO dto)
         {
-            var result = _repository.Update(dto);
+            try
+            {
+                var result = _repository.Update(dto);
+                if (result == null) return NotFound();
 
-            if (result == null)
-                return NotFound();
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_SUGGESTION_BOX",
+                    EntityName = "SuggestionBox",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
 
-            return Ok(result);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_SUGGESTION_BOX",
+                    EntityName = "SuggestionBox",
+                    IsSuccess = false,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
-        // DELETE: api/suggestionbox/{id}
         [HttpDelete("{id}")]
-        public IActionResult Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            _repository.Delete(id);
-            return NoContent();
+            try
+            {
+                _repository.Delete(id);
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_SUGGESTION_BOX",
+                    EntityName = "SuggestionBox",
+                    OldValues = id.ToString(),
+                    IsSuccess = true,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_SUGGESTION_BOX",
+                    EntityName = "SuggestionBox",
+                    OldValues = id.ToString(),
+                    IsSuccess = false,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NotFound(new { error = ex.Message });
+            }
         }
-        // DELETE: api/suggestionbox/organization/{organizationId}
+
         [HttpDelete("organization/{organizationId}")]
-        public IActionResult DeleteByOrganizationId(Guid organizationId)
+        public async Task<IActionResult> DeleteByOrganizationId(Guid organizationId)
         {
-            _repository.DeleteByOrganizationId(organizationId);
-            return NoContent();
+            try
+            {
+                _repository.DeleteByOrganizationId(organizationId);
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_SUGGESTION_BOX_BY_ORGANIZATION",
+                    EntityName = "SuggestionBox",
+                    OldValues = organizationId.ToString(),
+                    IsSuccess = true,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "DELETE_SUGGESTION_BOX_BY_ORGANIZATION",
+                    EntityName = "SuggestionBox",
+                    OldValues = organizationId.ToString(),
+                    IsSuccess = false,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "DELETE"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return NotFound(new { error = ex.Message });
+            }
         }
     }
 }

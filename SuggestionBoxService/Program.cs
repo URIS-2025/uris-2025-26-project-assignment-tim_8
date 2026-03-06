@@ -26,11 +26,18 @@ builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 // ?? Repository DI
 builder.Services.AddScoped<ISuggestionBoxRepository, SuggestionBoxRepository>();
+builder.Services.AddScoped<SuggestionBoxService.Clients.LoggerServiceClient>();
+
 
 // ?? HttpClient za OrganizationService (ako validiraš OrganizationId)
 builder.Services.AddHttpClient("OrganizationService", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:OrganizationService"]); // PORT OrganizationService
+});
+
+builder.Services.AddHttpClient("LoggerService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
 });
 
 // ?? Service Call DI

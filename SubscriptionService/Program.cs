@@ -28,15 +28,23 @@ builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
 
+builder.Services.AddScoped<SubscriptionService.Clients.LoggerServiceClient>();
+
+
 // 🔹 HttpClient za mikroservise
 builder.Services.AddHttpClient("OrganizationService", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:OrganizationService"]); // PORT OrganizationService
 });
 
-builder.Services.AddHttpClient("BillingService", client =>
+builder.Services.AddHttpClient("BillingNotificationService", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Services:BillingService"]); // PORT BillingService
+    client.BaseAddress = new Uri(builder.Configuration["Services:BillingNotificationService"]); // PORT BillingService
+});
+
+builder.Services.AddHttpClient("LoggerService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
 });
 
 builder.WebHost.ConfigureKestrel(options =>
