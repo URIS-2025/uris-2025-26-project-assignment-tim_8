@@ -33,7 +33,7 @@ namespace AnonymousUserService.Context
                 entity.HasKey(a => a.Id);
                 entity.Property(a => a.CreatedAt)
                       .IsRequired();
-                entity.Property(a => a.BoxAccessLinkId)
+                entity.Property(a => a.Username)
                       .IsRequired();
                 entity.Property(a=>a.Password)
                       .IsRequired();

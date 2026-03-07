@@ -48,6 +48,7 @@
 .text-gradient {
     background: linear-gradient(135deg, var(--accent-primary), #a855f7);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     display: inline-block;
 }
@@ -59,9 +60,32 @@
     margin-bottom: 2.5rem;
 }
 
-.hero-actions {
+.hero-actions-container {
     display: flex;
-    gap: 1rem;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.auth-portal-section {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.auth-portal-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.text-gradient-icon {
+    color: var(--accent-primary);
+}
+
+@media (max-width: 768px) {
+    .hero-actions-container {
+        flex-direction: column;
+    }
 }
 
 .btn-lg {

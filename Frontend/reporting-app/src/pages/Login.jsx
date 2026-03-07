@@ -69,10 +69,20 @@ const Login = () => {
         const fetchData = async () => {
             try {
                 const fetchedRoles = await UserRoleService.getAll();
-                // Filter to only wanted roles or use all
+
+                // Roles to exclude from regular signup as they have separate flows or aren't for regular users
+                const excludedRoles = ['AnonymousUser', 'Reporter'];
+                const baseRoles = fetchedRoles.filter(r =>
+                    !excludedRoles.includes(r.name) && !excludedRoles.includes(r.title)
+                );
+
+                // Target roles for specific highlight, otherwise show all non-excluded
                 const targetRoles = ['Admin', 'Manager', 'BillingManager'];
-                const filteredRoles = fetchedRoles.filter(r => targetRoles.includes(r.name));
-                setRoles(filteredRoles.length > 0 ? filteredRoles : fetchedRoles);
+                const filteredRoles = baseRoles.filter(r =>
+                    targetRoles.includes(r.name) || targetRoles.includes(r.title)
+                );
+
+                setRoles(filteredRoles.length > 0 ? filteredRoles : baseRoles);
 
                 const fetchedOrgs = await OrganizationService.getAll();
                 setOrganizations(fetchedOrgs);
@@ -92,7 +102,7 @@ const Login = () => {
         setSelectedRoleId(newRoleId);
 
         const selectedRoleObj = roles.find(r => String(r.id) === String(newRoleId));
-        const roleName = selectedRoleObj?.name?.toLowerCase() || '';
+        const roleName = (selectedRoleObj?.name || selectedRoleObj?.title || '').toLowerCase();
 
         if (roleName === 'manager') {
             setIsManagerRoleSelected(true);
