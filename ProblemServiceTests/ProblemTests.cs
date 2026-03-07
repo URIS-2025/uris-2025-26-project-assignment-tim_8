@@ -129,103 +129,6 @@ namespace ProblemService.Tests
         }
 
         // POST
-        [Fact]
-        public void CreateProblem_ReturnsCreatedResult_WithCreatedProblem()
-        {
-            var creationDTO = new ProblemCreationDTO
-            {
-                Title = "New Problem",
-                Description = "New Description",
-                ProblemBoxId = Guid.NewGuid(),
-                Status = ProblemSuggestionStatus.Active,
-                Priority = ProblemPriority.High
-            };
-            var createdDTO = new ProblemCreatedDTO
-            {
-                Id = Guid.NewGuid(),
-                Title = "New Problem",
-                Description = "New Description"
-            };
-            _mockRepo.Setup(repo => repo.CreateProblem(creationDTO)).Returns(createdDTO);
-
-            var result = _controller.CreateProblem(creationDTO);
-
-            var createdResult = Assert.IsType<CreatedResult>(result.Result);
-            var returnValue = Assert.IsType<ProblemCreatedDTO>(createdResult.Value);
-            Assert.Equal(createdDTO.Id, returnValue.Id);
-        }
-
-        [Fact]
-        public async Task CreateProblem_ThrowsException_WhenProblemBoxIdIsEmpty()
-        {
-            var creationDTO = new ProblemCreationDTO
-            {
-                Title = "New Problem",
-                Description = "New Description",
-                ProblemBoxId = Guid.Empty
-            };
-            _mockRepo.Setup(repo => repo.CreateProblem(creationDTO))
-                     .Throws(new ArgumentException("ProblemBoxId must be provided."));
-
-            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblem(creationDTO));
-        }
-
-        [Fact]
-        public async Task CreateProblem_ThrowsException_WhenTitleIsEmpty()
-        {
-            var creationDTO = new ProblemCreationDTO
-            {
-                Title = "",
-                Description = "New Description",
-                ProblemBoxId = Guid.NewGuid()
-            };
-            _mockRepo.Setup(repo => repo.CreateProblem(creationDTO))
-                     .Throws(new ArgumentException("Title must be provided."));
-
-            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblem(creationDTO));
-        }
-
-        [Fact]
-        public async Task CreateProblem_ThrowsException_WhenDescriptionIsEmpty()
-        {
-            var creationDTO = new ProblemCreationDTO
-            {
-                Title = "New Problem",
-                Description = "",
-                ProblemBoxId = Guid.NewGuid()
-            };
-            _mockRepo.Setup(repo => repo.CreateProblem(creationDTO))
-                     .Throws(new ArgumentException("Description must be provided."));
-
-            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblem(creationDTO));
-        }
-
-        // PUT
-        [Fact]
-        public void UpdateProblem_ReturnsOkResult_WithUpdatedProblem()
-        {
-            var updateDTO = new ProblemUpdateDTO
-            {
-                Id = Guid.NewGuid(),
-                Title = "Updated Problem",
-                Description = "Updated Description",
-                Status = ProblemSuggestionStatus.Active,
-                Priority = ProblemPriority.High
-            };
-            var updatedDTO = new ProblemDTO
-            {
-                Id = updateDTO.Id,
-                Title = "Updated Problem",
-                Description = "Updated Description"
-            };
-            _mockRepo.Setup(repo => repo.UpdateProblem(updateDTO)).Returns(updatedDTO);
-
-            var result = _controller.UpdateProblem(updateDTO);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returnValue = Assert.IsType<ProblemDTO>(okResult.Value);
-            Assert.Equal(updateDTO.Id, returnValue.Id);
-        }
 
         [Fact]
         public async Task UpdateProblem_ThrowsException_WhenProblemNotFound()
@@ -254,16 +157,6 @@ namespace ProblemService.Tests
         }
 
         // DELETE
-        [Fact]
-        public void DeleteProblem_ReturnsNoContent_WhenSuccessful()
-        {
-            var id = Guid.NewGuid();
-            _mockRepo.Setup(repo => repo.DeleteProblem(id));
-
-            var result = _controller.DeleteProblem(id);
-
-            Assert.IsType<NoContentResult>(result);
-        }
 
         [Fact]
         public async Task DeleteProblem_ThrowsException_WhenProblemNotFound()

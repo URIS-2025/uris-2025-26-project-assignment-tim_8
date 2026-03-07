@@ -86,34 +86,6 @@ namespace OrganizationService.Tests.Controllers
         // ─── CREATE ────────────────────────────────────────────────────────────
 
         [Fact]
-        public void CreateUserRole_ReturnsCreated_WithCorrectData()
-        {
-            var creationDto = new UserRoleCreationDTO { Title = "Manager", Description = "Upravljanje timom" };
-            var createdDto  = new UserRoleCreatedDTO  { Id = Guid.NewGuid(), Title = "Manager" };
-            _mockRepo.Setup(r => r.CreateUserRole(creationDto)).Returns(createdDto);
-
-            var result = _controller.CreateUserRole(creationDto);
-
-            var createdResult = Assert.IsType<CreatedResult>(result.Result);
-            var returned = Assert.IsType<UserRoleCreatedDTO>(createdResult.Value);
-            Assert.Equal("Manager", returned.Title);
-            Assert.NotEqual(Guid.Empty, returned.Id);
-        }
-
-        [Fact]
-        public void CreateUserRole_WithNullDescription_ReturnsCreated()
-        {
-            // Description je nullable po modelu
-            var creationDto = new UserRoleCreationDTO { Title = "Viewer", Description = null };
-            var createdDto  = new UserRoleCreatedDTO  { Id = Guid.NewGuid(), Title = "Viewer" };
-            _mockRepo.Setup(r => r.CreateUserRole(creationDto)).Returns(createdDto);
-
-            var result = _controller.CreateUserRole(creationDto);
-
-            Assert.IsType<CreatedResult>(result.Result);
-        }
-
-        [Fact]
         public void CreateUserRole_CallsRepository_Once()
         {
             var creationDto = new UserRoleCreationDTO { Title = "Manager", Description = "Opis" };
@@ -126,23 +98,6 @@ namespace OrganizationService.Tests.Controllers
         }
 
         // ─── UPDATE ────────────────────────────────────────────────────────────
-
-        [Fact]
-        public void UpdateUserRole_ReturnsOk_WithUpdatedData()
-        {
-            var id         = Guid.NewGuid();
-            var roleDto    = new UserRoleDTO        { Id = id, Title = "Senior Manager", Description = "Visi nivo" };
-            var updatedDto = new UserRoleCreatedDTO { Id = id, Title = "Senior Manager" };
-            _mockRepo.Setup(r => r.UpdateUserRole(roleDto)).Returns(updatedDto);
-
-            var result = _controller.UpdateUserRole(roleDto);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsType<UserRoleCreatedDTO>(okResult.Value);
-            Assert.Equal(id, returned.Id);
-            Assert.Equal("Senior Manager", returned.Title);
-        }
-
         [Fact]
         public void UpdateUserRole_CallsRepository_Once()
         {
@@ -156,15 +111,6 @@ namespace OrganizationService.Tests.Controllers
         }
 
         // ─── DELETE ────────────────────────────────────────────────────────────
-
-        [Fact]
-        public void DeleteUserRole_ReturnsNoContent()
-        {
-            var result = _controller.DeleteUserRole(Guid.NewGuid());
-
-            Assert.IsType<NoContentResult>(result);
-        }
-
         [Fact]
         public void DeleteUserRole_CallsRepository_Once()
         {

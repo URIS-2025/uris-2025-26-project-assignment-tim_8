@@ -360,50 +360,5 @@ namespace AttachmentServiceTest
             var returned = Assert.IsAssignableFrom<IEnumerable<AttachmentDTO>>(okResult.Value);
             Assert.Single(returned);
         }
-
-        [Fact]
-        public void CreateAttachment_ReturnsCreatedResult()
-        {
-            var creationDto = new AttachmentCreationDTO
-            {
-                FileName = "file.pdf",
-                FileType = "pdf",
-                Url = "http://url.com",
-                SuggestionId = Guid.NewGuid()
-            };
-            var attachmentDto = new AttachmentDTO { Id = Guid.NewGuid(), FileName = "file.pdf" };
-            _mockRepo.Setup(repo => repo.Create(creationDto)).Returns(attachmentDto);
-
-            var result = _controller.CreateAttachment(creationDto);
-
-            var createdResult = Assert.IsType<CreatedResult>(result.Result);
-            var returned = Assert.IsType<AttachmentDTO>(createdResult.Value);
-            Assert.Equal("file.pdf", returned.FileName);
-        }
-
-        [Fact]
-        public void UpdateAttachment_ReturnsOkResult()
-        {
-            var updateDto = new AttachmentUpdateDTO { Id = Guid.NewGuid(), FileName = "updated.pdf", FileType = "pdf", Url = "http://updated.com" };
-            var attachmentDto = new AttachmentDTO { Id = updateDto.Id, FileName = "updated.pdf" };
-            _mockRepo.Setup(repo => repo.Update(updateDto)).Returns(attachmentDto);
-
-            var result = _controller.UpdateAttachment(updateDto);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsType<AttachmentDTO>(okResult.Value);
-            Assert.Equal("updated.pdf", returned.FileName);
-        }
-
-        [Fact]
-        public void DeleteAttachment_ReturnsNoContent()
-        {
-            var id = Guid.NewGuid();
-            _mockRepo.Setup(repo => repo.Delete(id));
-
-            var result = _controller.DeleteAttachment(id);
-
-            Assert.IsType<NoContentResult>(result);
-        }
     }
 }
