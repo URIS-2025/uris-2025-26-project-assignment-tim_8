@@ -27,7 +27,7 @@ const Sidebar = () => {
         { name: 'Suggestion Boxes', path: '/admin/suggestions', icon: MessageSquareWarning, roles: ['admin', 'manager'] },
         { name: 'Problem Boxes', path: '/admin/problems', icon: AlertOctagon, roles: ['admin', 'manager'] },
         { name: 'Users', path: '/admin/users', icon: Users, roles: ['admin'] },
-        { name: 'Billing', path: '/admin/billing', icon: CreditCard, roles: ['billing'] },
+        { name: 'Billing', path: '/admin/billing', icon: CreditCard, roles: ['billingmanager'] },
     ];
 
     const visibleNavItems = navItems.filter(item => item.roles.includes(role));

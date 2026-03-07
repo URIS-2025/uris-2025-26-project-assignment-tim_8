@@ -10,7 +10,7 @@ namespace SubscriptionService.ServiceCalls
 
         public BillingServiceCall(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClientFactory.CreateClient("BillingService");
+            _httpClient = httpClientFactory.CreateClient("BillingNotificationService");
         }
 
         public async Task CreateBillingNotificationAsync(BillingNotificationCreateDTO dto)

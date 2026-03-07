@@ -40,8 +40,11 @@ export const AuthProvider = ({ children }) => {
             setUser(userData);
             localStorage.setItem('authUser', JSON.stringify(userData));
             localStorage.setItem('authToken', token);
+
+            return userData;
         } catch (error) {
             console.error("Failed to decode token during login", error);
+            throw error;
         }
     };
 
