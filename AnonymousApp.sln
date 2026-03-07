@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35527.113 d17.12
+VisualStudioVersion = 17.14.36930.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrganizationService", "OrganizationService\OrganizationService.csproj", "{5C180370-5176-49CD-AACD-3F3E0FA42ECD}"
 EndProject
@@ -36,9 +36,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnonymousUserServiceTest", "AnonymousUserServiceTest\AnonymousUserServiceTest.csproj", "{B2BDADB3-5B6C-42F9-BFEA-20B77DA2E067}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProblemServiceTests", "ProblemServiceTests\ProblemServiceTests.csproj", "{5E7D3425-07D0-4736-BAB4-99E96093D50F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{09F09006-188E-4E01-B01F-B07E6FEDE0CA} = {09F09006-188E-4E01-B01F-B07E6FEDE0CA}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProblemBoxServiceTests", "ProblemBoxTests\ProblemBoxServiceTests.csproj", "{60ED2E82-5F73-4394-8DF6-D704E32B8798}"
 EndProject

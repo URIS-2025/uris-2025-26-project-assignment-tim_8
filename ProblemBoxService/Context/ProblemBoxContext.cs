@@ -16,13 +16,16 @@ namespace ProblemBoxService.Context
 
             public DbSet<ProblemBox> ProblemBoxes { get; set; }
 
-            protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
             {
                 optionsBuilder.UseSqlServer(
                     _configuration.GetConnectionString("ProblemBoxDB"));
             }
+        }
 
-            protected override void OnModelCreating(ModelBuilder builder)
+        protected override void OnModelCreating(ModelBuilder builder)
             {
                 base.OnModelCreating(builder);
 

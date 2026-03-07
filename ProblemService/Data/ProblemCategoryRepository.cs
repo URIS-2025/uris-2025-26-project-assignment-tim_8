@@ -62,9 +62,13 @@ namespace ProblemService.Data
             if (entity == null)
                 throw new ArgumentException("ProblemCategory with that Id does not exist.");
 
+            if (string.IsNullOrWhiteSpace(category.Title))
+                throw new ArgumentException("Title must be provided.");
+            if (string.IsNullOrWhiteSpace(category.Description))
+                throw new ArgumentException("Description must be provided.");
+
             entity.Title = category.Title;
             entity.Description = category.Description;
-
             _context.ProblemCategories.Update(entity);
             SaveChanges();
             var dto = _mapper.Map<ProblemCategoryDTO>(entity);
