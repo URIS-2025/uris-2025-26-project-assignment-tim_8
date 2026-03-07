@@ -15,6 +15,19 @@ export const AnonymousUserService = {
         return await response.json();
     },
 
+    // POST /api/AnonymousUser
+    create: async (data) => {
+        const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Failed to create anonymous user');
+        return await response.json();
+    },
+
     // DELETE /api/AnonymousUser/{id}
     delete: async (id) => {
         const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/${id}`, {

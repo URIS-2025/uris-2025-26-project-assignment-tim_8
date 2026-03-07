@@ -4,6 +4,7 @@
     {
         public Guid Id { get; set; }
         public DateTime CreatedAt { get; set; }
-        public Guid BoxAccessLinkId { get; set; }
+
+        public string Username {  get; set; }
     }
 }

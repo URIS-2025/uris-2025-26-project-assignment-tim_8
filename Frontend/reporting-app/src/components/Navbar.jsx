@@ -5,7 +5,7 @@ import './Navbar.css';
 
 const Navbar = () => {
   const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname.startsWith('/anonymous/');
 
   return (
     <nav className="navbar glass-nav animate-fade-in">
@@ -16,7 +16,7 @@ const Navbar = () => {
           </div>
           <span className="logo-text">SecureReport</span>
         </Link>
-        
+
         {!isAuthPage && (
           <div className="navbar-actions">
             <Link to="/login" className="btn btn-ghost">

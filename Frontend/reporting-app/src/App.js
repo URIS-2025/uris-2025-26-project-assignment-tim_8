@@ -11,6 +11,9 @@ import BoxDetails from './pages/BoxDetails';
 import SubmissionDetails from './pages/SubmissionDetails';
 import BillingDashboard from './pages/BillingDashboard';
 import TrackReport from './pages/TrackReport';
+import AnonymousSignup from './pages/AnonymousSignup';
+import AnonymousLogin from './pages/AnonymousLogin';
+import AnonymousSubmit from './pages/AnonymousSubmit';
 import UserManagement from './pages/UserManagement';
 import BoxSettings from './pages/BoxSettings';
 import SubscriptionDetails from './pages/SubscriptionDetails';
@@ -55,6 +58,9 @@ function App() {
               <Route path="/signup" element={<Login />} />
               <Route path="/portal" element={<PublicPortal />} />
               <Route path="/track" element={<TrackReport />} />
+              <Route path="/anonymous/signup" element={<AnonymousSignup />} />
+              <Route path="/anonymous/login" element={<AnonymousLogin />} />
+              <Route path="/anonymous/submit" element={<AnonymousSubmit />} />
               <Route path="/organizations" element={<Navigate to="/portal" replace />} />
             </Route>
 
