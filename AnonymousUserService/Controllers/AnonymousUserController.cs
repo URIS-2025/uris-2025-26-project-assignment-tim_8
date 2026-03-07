@@ -44,6 +44,41 @@ namespace AnonymousAPI.Controllers
             return Created("", result);
         }
 
+        [HttpPost("login")]
+        public async Task<ActionResult<string>> Login([FromBody] AnonymousUserCreationDTO login)
+        {
+            try
+            {
+                var token = _anonymousUserRepository.Login(login);
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = login.Username,
+                    Action = "LOGIN",
+                    EntityName = "AnonymousUser",
+                    IsSuccess = true,
+                    ServiceName = "AnonymousUserService",
+                    HttpMethod = "POST"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return Ok(token);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = login.Username,
+                    Action = "LOGIN",
+                    EntityName = "AnonymousUser",
+                    IsSuccess = false,
+                    ServiceName = "AnonymousUserService",
+                    HttpMethod = "POST"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return Unauthorized(new { error = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAnonymousUser(Guid id)
         {

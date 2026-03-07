@@ -16,6 +16,11 @@ namespace SubscriptionService.Data
             _mapper = mapper;
         }
 
+        public bool SaveChanges()
+        {
+            return _context.SaveChanges() > 0;
+        }
+
         public IEnumerable<SubscriptionPlanDTO> GetAllSubscriptionPlans()
         {
             var plans = _context.SubscriptionPlans.ToList();
@@ -30,6 +35,17 @@ namespace SubscriptionService.Data
                 return null;
 
             return _mapper.Map<SubscriptionPlanDTO>(plan);
+        }
+        public SubscriptionPlanDTO CreatePlan(SubscriptionPlanCreationDTO plan)
+        {
+            var entity = _mapper.Map<SubscriptionPlan>(plan)!;
+            entity.Id = Guid.NewGuid();
+            entity.Title = plan.Title;
+            entity.Description = plan.Description;
+
+            _context.SubscriptionPlans.Add(entity);
+            SaveChanges();
+            return _mapper.Map<SubscriptionPlanDTO>(entity);
         }
     }
 }

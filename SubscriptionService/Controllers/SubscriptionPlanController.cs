@@ -33,5 +33,12 @@ namespace AnonymousAPI.Controllers
 
             return Ok(result);
         }
+
+        [HttpPost]
+        public ActionResult<SubscriptionPlanDTO> Create([FromBody] SubscriptionPlanCreationDTO plan)
+        {
+            var result = _repository.CreatePlan(plan);
+            return Created("", result);
+        }
     }
 }
