@@ -21,7 +21,6 @@ public class SuggestionContext : DbContext
     public DbSet<SuggestionCategories> SuggestionCategoriesJoin { get; set; }
     public DbSet<Vote> Votes { get; set; }
     public DbSet<Attachment> Attachments { get; set; }
-    public DbSet<AnonymousUser> AnonymousUsers { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -33,8 +32,6 @@ public class SuggestionContext : DbContext
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
-        
 
         builder.Entity<SuggestionCategory>(entity =>
         {
@@ -48,7 +45,6 @@ public class SuggestionContext : DbContext
                   .HasMaxLength(500);
         });
 
-        // Many-to-many join table
         builder.Entity<SuggestionCategories>(entity =>
         {
             entity.HasKey(sc => new { sc.SuggestionId, sc.SuggestionCategoryId });
@@ -77,16 +73,14 @@ public class SuggestionContext : DbContext
 
             entity.Property(s => s.Status)
                   .IsRequired()
-                  .HasConversion<string>() // stores enum as string e.g. "Open", "Closed"
+                  .HasConversion<string>()
                   .HasMaxLength(50);
 
             entity.Property(s => s.CreatedAt)
                   .IsRequired();
 
-            entity.HasOne<AnonymousUser>()
-                  .WithMany()
-                  .HasForeignKey(s => s.AnonymousUserId)
-                  .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(s => s.AnonymousUserId)
+                  .IsRequired();
         });
 
         builder.Entity<SuggestionComment>(entity =>
@@ -116,10 +110,8 @@ public class SuggestionContext : DbContext
                   .HasForeignKey(sc => sc.SuggestionId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne<AnonymousUser>()
-                  .WithMany()
-                  .HasForeignKey(sc => sc.CommentAuthorId)
-                  .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(sc => sc.CommentAuthorId)
+                  .IsRequired(false);
         });
 
         builder.Entity<Vote>(entity =>
@@ -129,10 +121,8 @@ public class SuggestionContext : DbContext
             entity.Property(v => v.CreatedAt)
                   .IsRequired();
 
-            entity.HasOne<AnonymousUser>()
-                  .WithMany()
-                  .HasForeignKey(v => v.VoteAuthorId)
-                  .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(v => v.VoteAuthorId)
+                  .IsRequired();
 
             entity.HasOne<Suggestion>()
                   .WithMany()
@@ -163,19 +153,6 @@ public class SuggestionContext : DbContext
                   .WithMany()
                   .HasForeignKey(a => a.SuggestionId)
                   .OnDelete(DeleteBehavior.SetNull);
-        });
-
-        builder.Entity<AnonymousUser>(entity =>
-        {
-            entity.HasKey(au => au.Id);
-
-            entity.Property(au => au.CreatedAt)
-                  .IsRequired();
-
-            entity.HasOne<BoxAccessLink>()
-                  .WithMany()
-                  .HasForeignKey(au => au.BoxAccessLinkId)
-                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

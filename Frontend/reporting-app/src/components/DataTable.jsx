@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Filter, Download, ChevronLeft, ChevronRight, MoreVertical } from 'lucide-react';
 import './DataTable.css';
 
@@ -11,8 +11,44 @@ const DataTable = ({
     searchPlaceholder = 'Search...',
     showExport = false,
     searchValue = '',
-    onSearchChange
+    onSearchChange,
+    itemsPerPage = 10
 }) => {
+    const [currentPage, setCurrentPage] = useState(0);
+
+    // Reset to first page when data or search changes
+    const dataLength = data.length;
+    const [prevDataLength, setPrevDataLength] = useState(dataLength);
+    const [prevSearchValue, setPrevSearchValue] = useState(searchValue);
+
+    if (searchValue !== prevSearchValue) {
+        setPrevSearchValue(searchValue);
+        setCurrentPage(0);
+    }
+    if (dataLength !== prevDataLength) {
+        setPrevDataLength(dataLength);
+        if (currentPage > 0 && currentPage >= Math.ceil(dataLength / itemsPerPage)) {
+            setCurrentPage(0);
+        }
+    }
+
+    const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
+    const paginatedData = data.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+    const startEntry = data.length === 0 ? 0 : currentPage * itemsPerPage + 1;
+    const endEntry = Math.min((currentPage + 1) * itemsPerPage, data.length);
+
+    // Build page numbers to display (max 5 visible)
+    const pageNumbers = useMemo(() => {
+        const pages = [];
+        let start = Math.max(0, currentPage - 2);
+        let end = Math.min(totalPages - 1, start + 4);
+        start = Math.max(0, end - 4);
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+        return pages;
+    }, [currentPage, totalPages]);
+
     return (
         <div className="data-table-container glass-panel animate-fade-in">
             {/* Table Header Controls */}
@@ -55,8 +91,8 @@ const DataTable = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {data.length > 0 ? (
-                            data.map((row, rowIndex) => (
+                        {paginatedData.length > 0 ? (
+                            paginatedData.map((row, rowIndex) => (
                                 <tr
                                     key={row.id || rowIndex}
                                     onClick={() => onRowClick && onRowClick(row)}
@@ -90,17 +126,32 @@ const DataTable = ({
                 </table>
             </div>
 
-            {/* Pagination (Static UI for now) */}
+            {/* Pagination */}
             <div className="table-pagination">
-                <span className="pagination-info">Showing 1 to {Math.min(data.length, 10)} of {data.length} entries</span>
+                <span className="pagination-info">Showing {startEntry} to {endEntry} of {data.length} entries</span>
                 <div className="pagination-controls">
-                    <button className="btn btn-ghost icon-btn small" disabled>
+                    <button
+                        className="btn btn-ghost icon-btn small"
+                        disabled={currentPage === 0}
+                        onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                    >
                         <ChevronLeft size={16} />
                     </button>
-                    <span className="page-number active">1</span>
-                    <span className="page-number">2</span>
-                    <span className="page-number">3</span>
-                    <button className="btn btn-ghost icon-btn small">
+                    {pageNumbers.map((pageNum) => (
+                        <span
+                            key={pageNum}
+                            className={`page-number ${pageNum === currentPage ? 'active' : ''}`}
+                            onClick={() => setCurrentPage(pageNum)}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            {pageNum + 1}
+                        </span>
+                    ))}
+                    <button
+                        className="btn btn-ghost icon-btn small"
+                        disabled={currentPage >= totalPages - 1}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                    >
                         <ChevronRight size={16} />
                     </button>
                 </div>

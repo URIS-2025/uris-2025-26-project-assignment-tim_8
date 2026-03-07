@@ -24,6 +24,7 @@ const BoxDetails = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchValue, setSearchValue] = useState('');
 
     useEffect(() => {
         fetchBoxData();
@@ -229,10 +230,15 @@ const BoxDetails = () => {
             <div className="table-wrapper">
                 <DataTable
                     title="All Suggestions"
-                    data={suggestions}
+                    data={suggestions.filter(s =>
+                        s.title?.toLowerCase().includes(searchValue.toLowerCase()) ||
+                        s.description?.toLowerCase().includes(searchValue.toLowerCase())
+                    )}
                     columns={columns}
                     onRowClick={handleRowClick}
                     searchPlaceholder="Search by title or description..."
+                    searchValue={searchValue}
+                    onSearchChange={setSearchValue}
                     showExport={true}
                 />
             </div>
