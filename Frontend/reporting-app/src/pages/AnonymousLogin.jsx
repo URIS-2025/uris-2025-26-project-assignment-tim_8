@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, ArrowRight, Shield } from 'lucide-react';
 import { AnonymousUserService } from '../services/anonymousUserService';
+import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 const AnonymousLogin = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -22,25 +24,20 @@ const AnonymousLogin = () => {
         try {
             setIsSubmitting(true);
 
-            // Fetch all anonymous users and match by username
-            const allUsers = await AnonymousUserService.getAll();
-            const matchedUser = allUsers.find(
-                (u) => u.username?.toLowerCase() === username.toLowerCase()
-            );
+            // Call the real login endpoint
+            const token = await AnonymousUserService.login({
+                username,
+                password
+            });
 
-            if (!matchedUser) {
-                alert('Invalid username or password. Please try again.');
-                return;
+            if (!token) {
+                throw new Error('No token received from server');
             }
 
-            // Store anonymous user info in localStorage
-            localStorage.setItem('anonymousUser', JSON.stringify({
-                id: matchedUser.id,
-                username: matchedUser.username,
-                boxAccessLinkId: matchedUser.boxAccessLinkId,
-                createdAt: matchedUser.createdAt
-            }));
+            // Use AuthContext to store the login state
+            await login(token);
 
+            // Navigate to the next page
             navigate('/anonymous/submit');
         } catch (error) {
             console.error(error);
