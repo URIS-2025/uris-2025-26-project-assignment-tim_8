@@ -7,6 +7,8 @@ namespace AnonymousUserService.Clients
     {
         private readonly HttpClient _http;
 
+        public LoggerServiceClient() { }
+
         public LoggerServiceClient(IHttpClientFactory factory)
         {
             _http = factory.CreateClient("LoggerService");

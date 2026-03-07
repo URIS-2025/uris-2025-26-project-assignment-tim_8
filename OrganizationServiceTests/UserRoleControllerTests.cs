@@ -1,9 +1,11 @@
-using Moq;
-using Xunit;
+using AnonymousAPI.Controllers;
+using LoggerService.Data;
 using Microsoft.AspNetCore.Mvc;
+using Moq;
+using OrganizationService.Clients;
 using OrganizationService.Data;
 using OrganizationService.Models.DTOs;
-using AnonymousAPI.Controllers;
+using Xunit;
 
 namespace OrganizationService.Tests.Controllers
 {
@@ -11,11 +13,13 @@ namespace OrganizationService.Tests.Controllers
     {
         private readonly Mock<IUserRoleRepository> _mockRepo;
         private readonly UserRoleController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public UserRoleControllerTests()
         {
             _mockRepo = new Mock<IUserRoleRepository>();
-            _controller = new UserRoleController(_mockRepo.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new UserRoleController(_mockRepo.Object, _logger.Object);
         }
 
         // ─── GET ALL ───────────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ using Moq;
 using SuggestionService.Data;
 using SuggestionService.Models.DTOs;
 using Xunit;
+using SuggestionService.Clients;
 
 namespace SuggestionServiceTest
 {
@@ -18,12 +19,13 @@ namespace SuggestionServiceTest
         private readonly Mock<ISuggestionRepository> _mockRepo;
         private readonly IMapper _mapper;
         private readonly SuggestionController _controller;
-
+        private readonly Mock<LoggerServiceClient> _logger;
         public SuggestionControllerTests()
         {
             _mockRepo = new Mock<ISuggestionRepository>();
             _mapper = Mock.Of<IMapper>();
-            _controller = new SuggestionController(_mockRepo.Object, _mapper);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new SuggestionController(_mockRepo.Object, _mapper, _logger.Object);
         }
 
         [Fact]
@@ -164,12 +166,14 @@ namespace SuggestionServiceTest
         private readonly Mock<ISuggestionCommentRepository> _mockRepo;
         private readonly IMapper _mapper;
         private readonly SuggestionCommentController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public SuggestionCommentControllerTests()
         {
             _mockRepo = new Mock<ISuggestionCommentRepository>();
             _mapper = Mock.Of<IMapper>();
-            _controller = new SuggestionCommentController(_mockRepo.Object, _mapper);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new SuggestionCommentController(_mockRepo.Object, _mapper, _logger.Object);
         }
 
         [Fact]
@@ -272,12 +276,13 @@ namespace SuggestionServiceTest
         private readonly Mock<IVoteRepository> _mockRepo;
         private readonly IMapper _mapper;
         private readonly VoteController _controller;
-
+        private readonly Mock<LoggerServiceClient> _logger;
         public VoteControllerTests()
         {
             _mockRepo = new Mock<IVoteRepository>();
             _mapper = Mock.Of<IMapper>();
-            _controller = new VoteController(_mockRepo.Object, _mapper);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new VoteController(_mockRepo.Object, _mapper, _logger.Object);
         }
 
         [Fact]
@@ -331,12 +336,14 @@ namespace SuggestionServiceTest
         private readonly Mock<ISuggestionCategoryRepository> _mockRepo;
         private readonly IMapper _mapper;
         private readonly SuggestionCategoryController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public SuggestionCategoryControllerTests()
         {
             _mockRepo = new Mock<ISuggestionCategoryRepository>();
             _mapper = Mock.Of<IMapper>();
-            _controller = new SuggestionCategoryController(_mockRepo.Object, _mapper);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new SuggestionCategoryController(_mockRepo.Object, _mapper, _logger.Object);
         }
 
         [Fact]

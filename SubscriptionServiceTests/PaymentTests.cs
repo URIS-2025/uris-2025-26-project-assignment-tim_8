@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SubscriptionService.Data;
 using SubscriptionService.Models.DTOs;
 using AnonymousAPI.Controllers;
+using SubscriptionService.Clients;
 
 
 namespace SubscriptionServiceTests
@@ -11,11 +12,13 @@ namespace SubscriptionServiceTests
     {
         private readonly Mock<IPaymentRepository> _mockRepo;
         private readonly PaymentController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public PaymentControllerTests()
         {
             _mockRepo = new Mock<IPaymentRepository>();
-            _controller = new PaymentController(_mockRepo.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new PaymentController(_mockRepo.Object, _logger.Object);
         }
 
         // =====================
@@ -440,12 +443,12 @@ namespace SubscriptionServiceTests
         }
 
         [Fact]
-        public void CreatePayment_ThrowsException_WhenRepositoryFails()
+        public async Task CreatePayment_ThrowsException_WhenRepositoryFails()
         {
             var dto = new PaymentCreationDTO { SubscriptionId = Guid.NewGuid(), Total = 50.0 };
             _mockRepo.Setup(r => r.CreatePayment(dto)).Throws(new Exception("DB error"));
 
-            Assert.Throws<Exception>(() => _controller.CreatePayment(dto));
+            await Assert.ThrowsAsync<Exception>(() => _controller.CreatePayment(dto));
         }
 
         // =====================
@@ -535,12 +538,12 @@ namespace SubscriptionServiceTests
         }
 
         [Fact]
-        public void UpdatePayment_ThrowsException_WhenRepositoryFails()
+        public async Task UpdatePayment_ThrowsException_WhenRepositoryFails()
         {
             var dto = new PaymentDTO { Id = Guid.NewGuid(), Total = 100.0 };
             _mockRepo.Setup(r => r.UpdatePayment(dto)).Throws(new Exception("DB error"));
 
-            Assert.Throws<Exception>(() => _controller.UpdatePayment(dto));
+            await Assert.ThrowsAsync<Exception>(() => _controller.UpdatePayment(dto));
         }
 
         // =====================
@@ -606,12 +609,12 @@ namespace SubscriptionServiceTests
         }
 
         [Fact]
-        public void DeletePayment_ThrowsException_WhenRepositoryFails()
+        public async Task DeletePayment_ThrowsException_WhenRepositoryFails()
         {
             var id = Guid.NewGuid();
             _mockRepo.Setup(r => r.DeletePayment(id)).Throws(new Exception("DB error"));
 
-            Assert.Throws<Exception>(() => _controller.DeletePayment(id));
+            await Assert.ThrowsAsync<Exception>(() => _controller.DeletePayment(id));
         }
     }
 }

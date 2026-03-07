@@ -1,16 +1,17 @@
-﻿using AnonymousDomain.Models.Attachment;
+﻿using AnonymousAPI.Controllers;
+using AnonymousDomain.Models.Attachment;
+using AttachmentService.Clients;
 using AttachmentService.Context;
 using AttachmentService.Interfaces;
 using AttachmentService.Models.Attachment.DTOs;
 using AttachmentService.Models.DTOs;
 using AttachmentService.Repositories;
-using AnonymousAPI.Controllers;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Xunit;
 using Moq;
+using Xunit;
 
 namespace AttachmentServiceTest
 {
@@ -299,12 +300,14 @@ namespace AttachmentServiceTest
         private readonly Mock<IAttachmentRepository> _mockRepo;
         private readonly IMapper _mapper;
         private readonly AttachmentController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public AttachmentControllerTests()
         {
             _mockRepo = new Mock<IAttachmentRepository>();
             _mapper = Mock.Of<IMapper>();
-            _controller = new AttachmentController(_mockRepo.Object, _mapper);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new AttachmentController(_mockRepo.Object, _mapper, _logger.Object);
         }
 
         [Fact]

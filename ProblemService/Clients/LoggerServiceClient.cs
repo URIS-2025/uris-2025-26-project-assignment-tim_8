@@ -7,6 +7,8 @@ namespace ProblemService.Clients
     {
         private readonly HttpClient _http;
 
+        public LoggerServiceClient() { }
+
         public LoggerServiceClient(IHttpClientFactory factory)
         {
             _http = factory.CreateClient("LoggerService");
@@ -32,5 +34,4 @@ namespace ProblemService.Clients
             catch { }
         }
     }
-}
 }

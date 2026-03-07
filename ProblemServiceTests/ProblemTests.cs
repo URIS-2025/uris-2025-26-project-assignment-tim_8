@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using ProblemService.Clients;
 using ProblemService.Controllers;
 using ProblemService.Data;
 using ProblemService.Enums;
@@ -15,12 +16,14 @@ namespace ProblemService.Tests
         private readonly Mock<IProblemRepository> _mockRepo;
         private readonly Mock<IMapper> _mockMapper;
         private readonly ProblemController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public ProblemControllerTests()
         {
             _mockRepo = new Mock<IProblemRepository>();
             _mockMapper = new Mock<IMapper>();
-            _controller = new ProblemController(_mockRepo.Object, _mockMapper.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new ProblemController(_mockRepo.Object, _mockMapper.Object, _logger.Object);
         }
 
         // GET ALL
@@ -153,7 +156,7 @@ namespace ProblemService.Tests
         }
 
         [Fact]
-        public void CreateProblem_ThrowsException_WhenProblemBoxIdIsEmpty()
+        public async Task CreateProblem_ThrowsException_WhenProblemBoxIdIsEmpty()
         {
             var creationDTO = new ProblemCreationDTO
             {
@@ -164,11 +167,11 @@ namespace ProblemService.Tests
             _mockRepo.Setup(repo => repo.CreateProblem(creationDTO))
                      .Throws(new ArgumentException("ProblemBoxId must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblem(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblem(creationDTO));
         }
 
         [Fact]
-        public void CreateProblem_ThrowsException_WhenTitleIsEmpty()
+        public async Task CreateProblem_ThrowsException_WhenTitleIsEmpty()
         {
             var creationDTO = new ProblemCreationDTO
             {
@@ -179,11 +182,11 @@ namespace ProblemService.Tests
             _mockRepo.Setup(repo => repo.CreateProblem(creationDTO))
                      .Throws(new ArgumentException("Title must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblem(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblem(creationDTO));
         }
 
         [Fact]
-        public void CreateProblem_ThrowsException_WhenDescriptionIsEmpty()
+        public async Task CreateProblem_ThrowsException_WhenDescriptionIsEmpty()
         {
             var creationDTO = new ProblemCreationDTO
             {
@@ -194,7 +197,7 @@ namespace ProblemService.Tests
             _mockRepo.Setup(repo => repo.CreateProblem(creationDTO))
                      .Throws(new ArgumentException("Description must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblem(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblem(creationDTO));
         }
 
         // PUT
@@ -225,17 +228,17 @@ namespace ProblemService.Tests
         }
 
         [Fact]
-        public void UpdateProblem_ThrowsException_WhenProblemNotFound()
+        public async Task UpdateProblem_ThrowsException_WhenProblemNotFound()
         {
             var updateDTO = new ProblemUpdateDTO { Id = Guid.NewGuid() };
             _mockRepo.Setup(repo => repo.UpdateProblem(updateDTO))
                      .Throws(new ArgumentException("Problem with that Id does not exist."));
 
-            Assert.Throws<ArgumentException>(() => _controller.UpdateProblem(updateDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.UpdateProblem(updateDTO));
         }
 
         [Fact]
-        public void UpdateProblem_ThrowsException_WhenProblemBoxIdIsEmpty()
+        public async Task UpdateProblem_ThrowsException_WhenProblemBoxIdIsEmpty()
         {
             var updateDTO = new ProblemUpdateDTO
             {
@@ -247,7 +250,7 @@ namespace ProblemService.Tests
             _mockRepo.Setup(repo => repo.UpdateProblem(updateDTO))
                      .Throws(new ArgumentException("ProblemBoxId must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.UpdateProblem(updateDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.UpdateProblem(updateDTO));
         }
 
         // DELETE
@@ -263,13 +266,13 @@ namespace ProblemService.Tests
         }
 
         [Fact]
-        public void DeleteProblem_ThrowsException_WhenProblemNotFound()
+        public async Task DeleteProblem_ThrowsException_WhenProblemNotFound()
         {
             var id = Guid.NewGuid();
             _mockRepo.Setup(repo => repo.DeleteProblem(id))
                      .Throws(new ArgumentException("Problem with that Id does not exist."));
 
-            Assert.Throws<ArgumentException>(() => _controller.DeleteProblem(id));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.DeleteProblem(id));
         }
     }
 }

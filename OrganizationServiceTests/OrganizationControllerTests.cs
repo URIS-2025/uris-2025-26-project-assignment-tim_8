@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using OrganizationService.Data;
 using OrganizationService.Models.DTOs;
 using AnonymousAPI.Controllers;
+using OrganizationService.Clients;
 
 namespace OrganizationService.Tests.Controllers
 {
@@ -11,11 +12,13 @@ namespace OrganizationService.Tests.Controllers
     {
         private readonly Mock<IOrganizationRepository> _mockRepo;
         private readonly OrganizationController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public OrganizationControllerTests()
         {
             _mockRepo = new Mock<IOrganizationRepository>();
-            _controller = new OrganizationController(_mockRepo.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new OrganizationController(_mockRepo.Object, _logger.Object);
         }
 
         // ─── GET ALL ───────────────────────────────────────────────────────────
