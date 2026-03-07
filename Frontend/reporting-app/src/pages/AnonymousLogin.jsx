@@ -38,7 +38,7 @@ const AnonymousLogin = () => {
             await login(token);
 
             // Navigate to the next page
-            navigate('/anonymous/submit');
+            navigate('/portal');
         } catch (error) {
             console.error(error);
             alert(error.message || 'Login failed. Please try again.');
