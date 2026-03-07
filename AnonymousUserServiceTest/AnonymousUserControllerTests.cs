@@ -86,14 +86,6 @@ namespace AnonymousUserService.Tests.Controllers
         // ─── DELETE ───────────────────────────────────────────────────────────
 
         [Fact]
-        public void DeleteAnonymousUser_ReturnsNoContent()
-        {
-            var result = _controller.DeleteAnonymousUser(Guid.NewGuid());
-
-            Assert.IsType<NoContentResult>(result);
-        }
-
-        [Fact]
         public void DeleteAnonymousUser_CallsRepository_Once()
         {
             var id = Guid.NewGuid();

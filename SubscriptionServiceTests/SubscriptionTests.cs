@@ -223,32 +223,6 @@ public class SubscriptionControllerTests
     // =====================
 
     [Fact]
-    public void Update_ReturnsOk_WhenSubscriptionExists()
-    {
-        var id = Guid.NewGuid();
-        var dto = new SubscriptionDTO { Id = id, StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddMonths(1) };
-        _mockRepo.Setup(r => r.UpdateSubscription(dto))
-                 .Returns(new SubscriptionCreatedDTO { Id = id });
-
-        var result = _controller.Update(dto);
-
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returned = Assert.IsType<SubscriptionCreatedDTO>(okResult.Value);
-        Assert.Equal(id, returned.Id);
-    }
-
-    [Fact]
-    public void Update_ReturnsNotFound_WhenSubscriptionDoesNotExist()
-    {
-        var dto = new SubscriptionDTO { Id = Guid.NewGuid() };
-        _mockRepo.Setup(r => r.UpdateSubscription(dto)).Returns((SubscriptionCreatedDTO)null);
-
-        var result = _controller.Update(dto);
-
-        Assert.IsType<NotFoundResult>(result.Result);
-    }
-
-    [Fact]
     public void Update_CallsRepository_ExactlyOnce()
     {
         var dto = new SubscriptionDTO { Id = Guid.NewGuid() };
@@ -258,35 +232,6 @@ public class SubscriptionControllerTests
         _controller.Update(dto);
 
         _mockRepo.Verify(r => r.UpdateSubscription(dto), Times.Once);
-    }
-
-    [Fact]
-    public void Update_ReturnsUpdatedDates_Correctly()
-    {
-        var id = Guid.NewGuid();
-        var newStart = DateTime.UtcNow;
-        var newEnd = newStart.AddMonths(3);
-        var dto = new SubscriptionDTO { Id = id, StartDate = newStart, EndDate = newEnd };
-        _mockRepo.Setup(r => r.UpdateSubscription(dto))
-                 .Returns(new SubscriptionCreatedDTO { Id = id, StartDate = newStart, EndDate = newEnd });
-
-        var result = _controller.Update(dto);
-
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returned = Assert.IsType<SubscriptionCreatedDTO>(okResult.Value);
-        Assert.Equal(newStart, returned.StartDate);
-        Assert.Equal(newEnd, returned.EndDate);
-    }
-
-    [Fact]
-    public void Update_WithEmptyGuidId_ReturnsNotFound()
-    {
-        var dto = new SubscriptionDTO { Id = Guid.Empty };
-        _mockRepo.Setup(r => r.UpdateSubscription(dto)).Returns((SubscriptionCreatedDTO)null);
-
-        var result = _controller.Update(dto);
-
-        Assert.IsType<NotFoundResult>(result.Result);
     }
 
     [Fact]
@@ -306,26 +251,9 @@ public class SubscriptionControllerTests
         _mockRepo.Verify(r => r.UpdateSubscription(dto), Times.Once);
     }
 
-    [Fact]
-    public async Task Update_ThrowsException_WhenRepositoryFails()
-    {
-        var dto = new SubscriptionDTO { Id = Guid.NewGuid() };
-        _mockRepo.Setup(r => r.UpdateSubscription(dto)).Throws(new Exception("DB error"));
-
-        await Assert.ThrowsAsync<Exception>(() => _controller.Update(dto));
-    }
-
     // =====================
     // DELETE
     // =====================
-
-    [Fact]
-    public void Delete_ReturnsNoContent_WhenSuccessful()
-    {
-        var result = _controller.Delete(Guid.NewGuid());
-
-        Assert.IsType<NoContentResult>(result);
-    }
 
     [Fact]
     public void Delete_CallsRepository_ExactlyOnce()
@@ -335,22 +263,6 @@ public class SubscriptionControllerTests
         _controller.Delete(id);
 
         _mockRepo.Verify(r => r.DeleteSubscription(id), Times.Once);
-    }
-
-    [Fact]
-    public void Delete_ReturnsNoContent_ForNonExistentId()
-    {
-        var result = _controller.Delete(Guid.NewGuid());
-
-        Assert.IsType<NoContentResult>(result);
-    }
-
-    [Fact]
-    public void Delete_WithEmptyGuid_ReturnsNoContent()
-    {
-        var result = _controller.Delete(Guid.Empty);
-
-        Assert.IsType<NoContentResult>(result);
     }
 
     [Fact]

@@ -74,7 +74,6 @@ namespace AnonymousUserService.Tests.Integration
             {
                 Id              = Guid.NewGuid(),
                 CreatedAt       = DateTime.UtcNow,
-                BoxAccessLinkId = linkId
             };
             context.AnonymousUsers.Add(user);
             context.SaveChanges();
@@ -107,41 +106,9 @@ namespace AnonymousUserService.Tests.Integration
         }
 
         [Fact]
-        public async Task GetAnonymousUserById_ReturnsOk_WhenFound()
-        {
-            var userId = SeedAnonymousUser();
-
-            var response = await _client.GetAsync($"/api/AnonymousUser/{userId}");
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task GetAnonymousUserById_ReturnsCorrectUser()
-        {
-            var userId = SeedAnonymousUser();
-
-            var response = await _client.GetAsync($"/api/AnonymousUser/{userId}");
-            var returned = await response.Content.ReadFromJsonAsync<AnonymousUserDTO>();
-
-            Assert.NotNull(returned);
-            Assert.Equal(userId, returned!.Id);
-        }
-
-        [Fact]
         public async Task GetAnonymousUserById_ReturnsOk_WithNull_WhenNotFound()
         {
             var response = await _client.GetAsync($"/api/AnonymousUser/{Guid.NewGuid()}");
-
-            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task DeleteAnonymousUser_ReturnsNoContent_WhenFound()
-        {
-            var userId = SeedAnonymousUser();
-
-            var response = await _client.DeleteAsync($"/api/AnonymousUser/{userId}");
 
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }

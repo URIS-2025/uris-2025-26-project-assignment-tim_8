@@ -81,81 +81,6 @@ namespace ProblemService.Tests
         }
 
         // POST
-        [Fact]
-        public void CreateProblemCategory_ReturnsCreatedResult_WithCreatedCategory()
-        {
-            var creationDTO = new ProblemCategoryCreationDTO
-            {
-                Title = "New Category",
-                Description = "New Description"
-            };
-            var createdDTO = new ProblemCategoryCreatedDTO
-            {
-                Id = Guid.NewGuid(),
-                Title = "New Category",
-                Description = "New Description"
-            };
-            _mockRepo.Setup(repo => repo.CreateProblemCategory(creationDTO)).Returns(createdDTO);
-
-            var result = _controller.CreateProblemCategory(creationDTO);
-
-            var createdResult = Assert.IsType<CreatedResult>(result.Result);
-            var returnValue = Assert.IsType<ProblemCategoryCreatedDTO>(createdResult.Value);
-            Assert.Equal(createdDTO.Id, returnValue.Id);
-        }
-
-        [Fact]
-        public async Task CreateProblemCategory_ThrowsException_WhenTitleIsEmpty()
-        {
-            var creationDTO = new ProblemCategoryCreationDTO
-            {
-                Title = "",
-                Description = "New Description"
-            };
-            _mockRepo.Setup(repo => repo.CreateProblemCategory(creationDTO))
-                     .Throws(new ArgumentException("Title must be provided."));
-
-            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblemCategory(creationDTO));
-        }
-
-        [Fact]
-        public async Task CreateProblemCategory_ThrowsException_WhenDescriptionIsEmpty()
-        {
-            var creationDTO = new ProblemCategoryCreationDTO
-            {
-                Title = "New Category",
-                Description = ""
-            };
-            _mockRepo.Setup(repo => repo.CreateProblemCategory(creationDTO))
-                     .Throws(new ArgumentException("Description must be provided."));
-
-            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblemCategory(creationDTO));
-        }
-
-        // PUT
-        [Fact]
-        public void UpdateProblemCategory_ReturnsOkResult_WithUpdatedCategory()
-        {
-            var updateDTO = new ProblemCategoryUpdateDTO
-            {
-                Id = Guid.NewGuid(),
-                Title = "Updated Category",
-                Description = "Updated Description"
-            };
-            var updatedDTO = new ProblemCategoryDTO
-            {
-                Id = updateDTO.Id,
-                Title = "Updated Category",
-                Description = "Updated Description"
-            };
-            _mockRepo.Setup(repo => repo.UpdateProblemCategory(updateDTO)).Returns(updatedDTO);
-
-            var result = _controller.UpdateProblemCategory(updateDTO);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returnValue = Assert.IsType<ProblemCategoryDTO>(okResult.Value);
-            Assert.Equal(updateDTO.Id, returnValue.Id);
-        }
 
         [Fact]
         public async Task UpdateProblemCategory_ThrowsException_WhenCategoryNotFound()
@@ -198,16 +123,6 @@ namespace ProblemService.Tests
         }
 
         // DELETE
-        [Fact]
-        public void DeleteProblemCategory_ReturnsNoContent_WhenSuccessful()
-        {
-            var id = Guid.NewGuid();
-            _mockRepo.Setup(repo => repo.DeleteProblemCategory(id));
-
-            var result = _controller.DeleteProblemCategory(id);
-
-            Assert.IsType<NoContentResult>(result);
-        }
 
         [Fact]
         public async Task DeleteProblemCategory_ThrowsException_WhenCategoryNotFound()

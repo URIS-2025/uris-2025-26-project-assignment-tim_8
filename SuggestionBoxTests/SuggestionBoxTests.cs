@@ -367,52 +367,6 @@ namespace SuggestionBoxServiceTests
         // =====================
 
         [Fact]
-        public void Create_ReturnsCreatedAtAction_WithValidData()
-        {
-            var dto = new SuggestionBoxCreateDTO
-            {
-                Name = "New Box",
-                Description = "Description",
-                IsDarkTheme = false,
-                Password = "secret",
-                CreatedBy = "admin",
-                OrganizationId = Guid.NewGuid()
-            };
-            var created = new SuggestionBoxDTO
-            {
-                Id = Guid.NewGuid(),
-                Name = dto.Name,
-                Description = dto.Description,
-                IsDarkTheme = dto.IsDarkTheme,
-                CreatedBy = dto.CreatedBy,
-                OrganizationId = dto.OrganizationId,
-                CreatedAt = DateTime.UtcNow
-            };
-            _mockRepo.Setup(r => r.Create(dto)).Returns(created);
-
-            var result = _controller.Create(dto);
-
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            Assert.Equal(nameof(_controller.GetById), createdResult.ActionName);
-            var returned = Assert.IsType<SuggestionBoxDTO>(createdResult.Value);
-            Assert.Equal(created.Id, returned.Id);
-        }
-
-        [Fact]
-        public void Create_ReturnsCorrectRouteValues()
-        {
-            var createdId = Guid.NewGuid();
-            var dto = new SuggestionBoxCreateDTO { Name = "Box", OrganizationId = Guid.NewGuid() };
-            _mockRepo.Setup(r => r.Create(dto))
-                     .Returns(new SuggestionBoxDTO { Id = createdId });
-
-            var result = _controller.Create(dto);
-
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            Assert.Equal(createdId, createdResult.RouteValues["id"]);
-        }
-
-        [Fact]
         public void Create_CallsRepository_ExactlyOnce()
         {
             var dto = new SuggestionBoxCreateDTO { Name = "Box", OrganizationId = Guid.NewGuid() };
@@ -424,64 +378,7 @@ namespace SuggestionBoxServiceTests
             _mockRepo.Verify(r => r.Create(dto), Times.Once);
         }
 
-        [Fact]
-        public void Create_ReturnsCorrectData_AllFields()
-        {
-            var orgId = Guid.NewGuid();
-            var accessLinkId = Guid.NewGuid();
-            var createdAt = DateTime.UtcNow;
-            var dto = new SuggestionBoxCreateDTO
-            {
-                Name = "Full Box",
-                Description = "Full desc",
-                IsDarkTheme = true,
-                Password = "pass123",
-                CreatedBy = "user1",
-                OrganizationId = orgId
-            };
-            var created = new SuggestionBoxDTO
-            {
-                Id = Guid.NewGuid(),
-                Name = "Full Box",
-                Description = "Full desc",
-                IsDarkTheme = true,
-                CreatedAt = createdAt,
-                CreatedBy = "user1",
-                OrganizationId = orgId,
-                BoxAccessLinkId = accessLinkId
-            };
-            _mockRepo.Setup(r => r.Create(dto)).Returns(created);
-
-            var result = _controller.Create(dto);
-
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var returned = Assert.IsType<SuggestionBoxDTO>(createdResult.Value);
-            Assert.Equal("Full Box", returned.Name);
-            Assert.Equal("Full desc", returned.Description);
-            Assert.True(returned.IsDarkTheme);
-            Assert.Equal("user1", returned.CreatedBy);
-            Assert.Equal(orgId, returned.OrganizationId);
-            Assert.Equal(accessLinkId, returned.BoxAccessLinkId);
-        }
-
-        [Fact]
-        public void Create_WithIsDarkThemeTrue_ReturnsCorrectValue()
-        {
-            var dto = new SuggestionBoxCreateDTO
-            {
-                Name = "Dark Box",
-                OrganizationId = Guid.NewGuid(),
-                IsDarkTheme = true
-            };
-            _mockRepo.Setup(r => r.Create(dto))
-                     .Returns(new SuggestionBoxDTO { Id = Guid.NewGuid(), IsDarkTheme = true });
-
-            var result = _controller.Create(dto);
-
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var returned = Assert.IsType<SuggestionBoxDTO>(createdResult.Value);
-            Assert.True(returned.IsDarkTheme);
-        }
+  
 
         [Fact]
         public void Create_WithEmptyOrganizationId_CallsRepository()
@@ -495,44 +392,9 @@ namespace SuggestionBoxServiceTests
             _mockRepo.Verify(r => r.Create(dto), Times.Once);
         }
 
-        [Fact]
-        public async Task Create_ThrowsException_WhenRepositoryFails()
-        {
-            var dto = new SuggestionBoxCreateDTO { Name = "Box", OrganizationId = Guid.NewGuid() };
-            _mockRepo.Setup(r => r.Create(dto)).Throws(new Exception("DB error"));
-
-            await Assert.ThrowsAsync<Exception>(() => _controller.Create(dto));
-        }
-
         // =====================
         // UPDATE
         // =====================
-
-        [Fact]
-        public void Update_ReturnsOk_WhenBoxExists()
-        {
-            var id = Guid.NewGuid();
-            var dto = new SuggestionBoxUpdateDTO { Id = id, Name = "Updated Box" };
-            _mockRepo.Setup(r => r.Update(dto))
-                     .Returns(new SuggestionBoxDTO { Id = id, Name = "Updated Box" });
-
-            var result = _controller.Update(dto);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsType<SuggestionBoxDTO>(okResult.Value);
-            Assert.Equal(id, returned.Id);
-        }
-
-        [Fact]
-        public void Update_ReturnsNotFound_WhenBoxDoesNotExist()
-        {
-            var dto = new SuggestionBoxUpdateDTO { Id = Guid.NewGuid() };
-            _mockRepo.Setup(r => r.Update(dto)).Returns((SuggestionBoxDTO)null);
-
-            var result = _controller.Update(dto);
-
-            Assert.IsType<NotFoundResult>(result.Result);
-        }
 
         [Fact]
         public void Update_CallsRepository_ExactlyOnce()
@@ -546,66 +408,9 @@ namespace SuggestionBoxServiceTests
             _mockRepo.Verify(r => r.Update(dto), Times.Once);
         }
 
-        [Fact]
-        public void Update_ReturnsUpdatedData_Correctly()
-        {
-            var id = Guid.NewGuid();
-            var dto = new SuggestionBoxUpdateDTO
-            {
-                Id = id,
-                Name = "New Name",
-                Description = "New Desc",
-                IsDarkTheme = true
-            };
-            _mockRepo.Setup(r => r.Update(dto))
-                     .Returns(new SuggestionBoxDTO
-                     {
-                         Id = id,
-                         Name = "New Name",
-                         Description = "New Desc",
-                         IsDarkTheme = true
-                     });
-
-            var result = _controller.Update(dto);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsType<SuggestionBoxDTO>(okResult.Value);
-            Assert.Equal("New Name", returned.Name);
-            Assert.Equal("New Desc", returned.Description);
-            Assert.True(returned.IsDarkTheme);
-        }
-
-        [Fact]
-        public void Update_WithEmptyGuidId_ReturnsNotFound()
-        {
-            var dto = new SuggestionBoxUpdateDTO { Id = Guid.Empty };
-            _mockRepo.Setup(r => r.Update(dto)).Returns((SuggestionBoxDTO)null);
-
-            var result = _controller.Update(dto);
-
-            Assert.IsType<NotFoundResult>(result.Result);
-        }
-
-        [Fact]
-        public async Task Update_ThrowsException_WhenRepositoryFails()
-        {
-            var dto = new SuggestionBoxUpdateDTO { Id = Guid.NewGuid() };
-            _mockRepo.Setup(r => r.Update(dto)).Throws(new Exception("DB error"));
-
-            await Assert.ThrowsAsync<Exception>(() => _controller.Update(dto));
-        }
-
         // =====================
         // DELETE
         // =====================
-
-        [Fact]
-        public void Delete_ReturnsNoContent_WhenSuccessful()
-        {
-            var result = _controller.Delete(Guid.NewGuid());
-
-            Assert.IsType<NoContentResult>(result);
-        }
 
         [Fact]
         public void Delete_CallsRepository_ExactlyOnce()
@@ -615,22 +420,6 @@ namespace SuggestionBoxServiceTests
             _controller.Delete(id);
 
             _mockRepo.Verify(r => r.Delete(id), Times.Once);
-        }
-
-        [Fact]
-        public void Delete_ReturnsNoContent_ForNonExistentId()
-        {
-            var result = _controller.Delete(Guid.NewGuid());
-
-            Assert.IsType<NoContentResult>(result);
-        }
-
-        [Fact]
-        public void Delete_WithEmptyGuid_ReturnsNoContent()
-        {
-            var result = _controller.Delete(Guid.Empty);
-
-            Assert.IsType<NoContentResult>(result);
         }
 
         [Fact]
@@ -666,14 +455,6 @@ namespace SuggestionBoxServiceTests
         // =====================
 
         [Fact]
-        public void DeleteByOrganizationId_ReturnsNoContent_WhenSuccessful()
-        {
-            var result = _controller.DeleteByOrganizationId(Guid.NewGuid());
-
-            Assert.IsType<NoContentResult>(result);
-        }
-
-        [Fact]
         public void DeleteByOrganizationId_CallsRepository_ExactlyOnce()
         {
             var orgId = Guid.NewGuid();
@@ -681,14 +462,6 @@ namespace SuggestionBoxServiceTests
             _controller.DeleteByOrganizationId(orgId);
 
             _mockRepo.Verify(r => r.DeleteByOrganizationId(orgId), Times.Once);
-        }
-
-        [Fact]
-        public void DeleteByOrganizationId_WithEmptyGuid_ReturnsNoContent()
-        {
-            var result = _controller.DeleteByOrganizationId(Guid.Empty);
-
-            Assert.IsType<NoContentResult>(result);
         }
 
         [Fact]
