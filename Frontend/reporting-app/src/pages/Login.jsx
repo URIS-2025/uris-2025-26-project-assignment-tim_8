@@ -164,8 +164,13 @@ const Login = () => {
                     throw new Error("No token received from the server");
                 }
 
-                login(token);
-                navigate('/admin/dashboard');
+                const userData = await login(token);
+
+                if (userData?.role === 'billingmanager') {
+                    navigate('/admin/billing');
+                } else {
+                    navigate('/admin/dashboard');
+                }
             }
         } catch (error) {
             console.error(error);

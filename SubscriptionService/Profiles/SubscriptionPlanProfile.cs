@@ -9,7 +9,7 @@ namespace SubscriptionService.Profiles
         public SubscriptionPlanProfile()
         {
             CreateMap<SubscriptionPlan, SubscriptionPlanDTO>().ReverseMap();
-            CreateMap<SubscriptionPlan, SubscriptionCreatedDTO>().ReverseMap();
+            CreateMap<SubscriptionPlan, SubscriptionPlanCreationDTO>().ReverseMap();
         }
     }
 }
