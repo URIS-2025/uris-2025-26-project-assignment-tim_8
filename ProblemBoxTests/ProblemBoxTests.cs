@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using ProblemBoxService.Clients;
 using ProblemBoxService.Controllers;
 using ProblemBoxService.Data;
 using ProblemBoxService.Enums;
@@ -14,12 +15,14 @@ namespace ProblemBoxService.Tests
         private readonly Mock<IProblemBoxRepository> _mockRepo;
         private readonly Mock<IMapper> _mockMapper;
         private readonly ProblemBoxController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public ProblemBoxControllerTests()
         {
             _mockRepo = new Mock<IProblemBoxRepository>();
             _mockMapper = new Mock<IMapper>();
-            _controller = new ProblemBoxController(_mockRepo.Object, _mockMapper.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new ProblemBoxController(_mockRepo.Object, _mockMapper.Object, _logger.Object);
         }
 
         // GET ALL
@@ -140,9 +143,7 @@ namespace ProblemBoxService.Tests
                 Description = "New Description",
                 Password = "password123",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             var createdDTO = new ProblemBoxCreatedDTO
             {
@@ -160,7 +161,7 @@ namespace ProblemBoxService.Tests
         }
 
         [Fact]
-        public void CreateProblemBox_ThrowsException_WhenOrganizationIdIsEmpty()
+        public async Task CreateProblemBox_ThrowsException_WhenOrganizationIdIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
@@ -172,11 +173,11 @@ namespace ProblemBoxService.Tests
             _mockRepo.Setup(repo => repo.CreateProblemBox(creationDTO))
                      .Throws(new ArgumentException("OrganizationId must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblemBox(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblemBox(creationDTO));
         }
 
         [Fact]
-        public void CreateProblemBox_ThrowsException_WhenNameIsEmpty()
+        public async Task CreateProblemBox_ThrowsException_WhenNameIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
@@ -188,11 +189,11 @@ namespace ProblemBoxService.Tests
             _mockRepo.Setup(repo => repo.CreateProblemBox(creationDTO))
                      .Throws(new ArgumentException("Name must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblemBox(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblemBox(creationDTO));
         }
 
         [Fact]
-        public void CreateProblemBox_ThrowsException_WhenDescriptionIsEmpty()
+        public async Task CreateProblemBox_ThrowsException_WhenDescriptionIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
@@ -204,11 +205,11 @@ namespace ProblemBoxService.Tests
             _mockRepo.Setup(repo => repo.CreateProblemBox(creationDTO))
                      .Throws(new ArgumentException("Description must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblemBox(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblemBox(creationDTO));
         }
 
         [Fact]
-        public void CreateProblemBox_ThrowsException_WhenPasswordIsEmpty()
+        public async Task CreateProblemBox_ThrowsException_WhenPasswordIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
@@ -220,7 +221,7 @@ namespace ProblemBoxService.Tests
             _mockRepo.Setup(repo => repo.CreateProblemBox(creationDTO))
                      .Throws(new ArgumentException("Password must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblemBox(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblemBox(creationDTO));
         }
 
         // PUT
@@ -252,17 +253,17 @@ namespace ProblemBoxService.Tests
         }
 
         [Fact]
-        public void UpdateProblemBox_ThrowsException_WhenProblemBoxNotFound()
+        public async Task UpdateProblemBox_ThrowsException_WhenProblemBoxNotFound()
         {
             var updateDTO = new ProblemBoxUpdateDTO { Id = Guid.NewGuid() };
             _mockRepo.Setup(repo => repo.UpdateProblemBox(updateDTO))
                      .Throws(new ArgumentException("ProblemBox with that Id does not exist."));
 
-            Assert.Throws<ArgumentException>(() => _controller.UpdateProblemBox(updateDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.UpdateProblemBox(updateDTO));
         }
 
         [Fact]
-        public void UpdateProblemBox_ThrowsException_WhenNameIsEmpty()
+        public async Task UpdateProblemBox_ThrowsException_WhenNameIsEmpty()
         {
             var updateDTO = new ProblemBoxUpdateDTO
             {
@@ -274,11 +275,11 @@ namespace ProblemBoxService.Tests
             _mockRepo.Setup(repo => repo.UpdateProblemBox(updateDTO))
                      .Throws(new ArgumentException("Name must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.UpdateProblemBox(updateDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.UpdateProblemBox(updateDTO));
         }
 
         [Fact]
-        public void UpdateProblemBox_ThrowsException_WhenDescriptionIsEmpty()
+        public async Task UpdateProblemBox_ThrowsException_WhenDescriptionIsEmpty()
         {
             var updateDTO = new ProblemBoxUpdateDTO
             {
@@ -290,11 +291,11 @@ namespace ProblemBoxService.Tests
             _mockRepo.Setup(repo => repo.UpdateProblemBox(updateDTO))
                      .Throws(new ArgumentException("Description must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.UpdateProblemBox(updateDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.UpdateProblemBox(updateDTO));
         }
 
         [Fact]
-        public void UpdateProblemBox_ThrowsException_WhenPasswordIsEmpty()
+        public async Task UpdateProblemBox_ThrowsException_WhenPasswordIsEmpty()
         {
             var updateDTO = new ProblemBoxUpdateDTO
             {
@@ -306,7 +307,7 @@ namespace ProblemBoxService.Tests
             _mockRepo.Setup(repo => repo.UpdateProblemBox(updateDTO))
                      .Throws(new ArgumentException("Password must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.UpdateProblemBox(updateDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.UpdateProblemBox(updateDTO));
         }
 
         // DELETE
@@ -322,13 +323,13 @@ namespace ProblemBoxService.Tests
         }
 
         [Fact]
-        public void DeleteProblemBox_ThrowsException_WhenProblemBoxNotFound()
+        public async Task DeleteProblemBox_ThrowsException_WhenProblemBoxNotFound()
         {
             var id = Guid.NewGuid();
             _mockRepo.Setup(repo => repo.DeleteProblemBox(id))
                      .Throws(new ArgumentException("ProblemBox with that Id does not exist."));
 
-            Assert.Throws<ArgumentException>(() => _controller.DeleteProblemBox(id));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.DeleteProblemBox(id));
         }
     }
 }

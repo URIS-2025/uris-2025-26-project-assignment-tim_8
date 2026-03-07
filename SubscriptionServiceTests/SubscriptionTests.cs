@@ -1,6 +1,7 @@
 ﻿using AnonymousAPI.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using SubscriptionService.Clients;
 using SubscriptionService.Data;
 using SubscriptionService.Models.DTOs;
 
@@ -8,13 +9,14 @@ public class SubscriptionControllerTests
 {
     private readonly Mock<ISubscriptionRepository> _mockRepo;
     private readonly SubscriptionController _controller;
-
+    private readonly Mock<LoggerServiceClient> _logger;
     public SubscriptionControllerTests()
     {
         _mockRepo = new Mock<ISubscriptionRepository>();
+        _logger = new Mock<LoggerServiceClient>();
 
         // BillingServiceCall — pass null, Create testove preskačemo
-        _controller = new SubscriptionController(_mockRepo.Object, null);
+        _controller = new SubscriptionController(_mockRepo.Object, null, _logger.Object);
     }
 
     // =====================
@@ -305,12 +307,12 @@ public class SubscriptionControllerTests
     }
 
     [Fact]
-    public void Update_ThrowsException_WhenRepositoryFails()
+    public async Task Update_ThrowsException_WhenRepositoryFails()
     {
         var dto = new SubscriptionDTO { Id = Guid.NewGuid() };
         _mockRepo.Setup(r => r.UpdateSubscription(dto)).Throws(new Exception("DB error"));
 
-        Assert.Throws<Exception>(() => _controller.Update(dto));
+        await Assert.ThrowsAsync<Exception>(() => _controller.Update(dto));
     }
 
     // =====================
@@ -371,11 +373,11 @@ public class SubscriptionControllerTests
     }
 
     [Fact]
-    public void Delete_ThrowsException_WhenRepositoryFails()
+    public async Task Delete_ThrowsException_WhenRepositoryFails()
     {
         var id = Guid.NewGuid();
         _mockRepo.Setup(r => r.DeleteSubscription(id)).Throws(new Exception("DB error"));
 
-        Assert.Throws<Exception>(() => _controller.Delete(id));
+        await Assert.ThrowsAsync<Exception>(() => _controller.Delete(id));
     }
 }

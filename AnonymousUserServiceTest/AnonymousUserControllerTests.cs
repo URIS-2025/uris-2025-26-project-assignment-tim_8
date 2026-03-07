@@ -6,6 +6,7 @@ using AnonymousUserService.Models.DTOs.AnonymousUser;
 using AnonymousUserService.Models.DTOs.BoxAccessLink;
 using AutoMapper;
 using AnonymousAPI.Controllers;
+using AnonymousUserService.Clients;
 
 namespace AnonymousUserService.Tests.Controllers
 {
@@ -14,12 +15,14 @@ namespace AnonymousUserService.Tests.Controllers
         private readonly Mock<IAnonymousUserRepository> _mockRepo;
         private readonly Mock<IMapper> _mockMapper;
         private readonly AnonymousUserController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public AnonymousUserControllerTests()
         {
             _mockRepo   = new Mock<IAnonymousUserRepository>();
             _mockMapper = new Mock<IMapper>();
-            _controller = new AnonymousUserController(_mockRepo.Object, _mockMapper.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new AnonymousUserController(_mockRepo.Object, _mockMapper.Object, _logger.Object);
         }
 
         // ─── GET ALL ──────────────────────────────────────────────────────────

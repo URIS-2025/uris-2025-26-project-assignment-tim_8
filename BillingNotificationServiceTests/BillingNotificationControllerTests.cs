@@ -5,6 +5,7 @@ using BillingNotificationService.Data;
 using BillingNotificationService.Models.DTOs.BillingNotificationDTO;
 using AutoMapper;
 using AnonymousAPI.Controllers;
+using BillingNotificationService.Clients;
 
 namespace BillingNotificationService.Tests.Controllers
 {
@@ -12,13 +13,15 @@ namespace BillingNotificationService.Tests.Controllers
     {
         private readonly Mock<IBillingNotificationRepository> _mockRepo;
         private readonly Mock<IMapper> _mockMapper;
+        private readonly Mock<LoggerServiceClient> _logger;
         private readonly BillingNotificationController _controller;
 
         public BillingNotificationControllerTests()
         {
             _mockRepo   = new Mock<IBillingNotificationRepository>();
             _mockMapper = new Mock<IMapper>();
-            _controller = new BillingNotificationController(_mockRepo.Object, _mockMapper.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new BillingNotificationController(_mockRepo.Object, _mockMapper.Object, _logger.Object);
         }
 
         // ─── GET ALL ──────────────────────────────────────────────────────────

@@ -8,6 +8,8 @@ public class LoggerServiceClient
 {
     private readonly HttpClient _http;
 
+    public LoggerServiceClient() { }
+
     public LoggerServiceClient(IHttpClientFactory factory)
     {
         _http = factory.CreateClient("LoggerService");

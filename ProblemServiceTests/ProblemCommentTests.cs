@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using ProblemService.Clients;
 using ProblemService.Controllers;
 using ProblemService.Data;
 using ProblemService.Models.DTOs;
@@ -14,12 +15,14 @@ namespace ProblemService.Tests
         private readonly Mock<IProblemCommentRepository> _mockRepo;
         private readonly Mock<IMapper> _mockMapper;
         private readonly ProblemCommentController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public ProblemCommentControllerTests()
         {
             _mockRepo = new Mock<IProblemCommentRepository>();
             _mockMapper = new Mock<IMapper>();
-            _controller = new ProblemCommentController(_mockRepo.Object, _mockMapper.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new ProblemCommentController(_mockRepo.Object, _mockMapper.Object, _logger.Object);
         }
 
         // GET ALL
@@ -104,7 +107,7 @@ namespace ProblemService.Tests
         }
 
         [Fact]
-        public void CreateProblemComment_ThrowsException_WhenProblemIdIsEmpty()
+        public async Task CreateProblemComment_ThrowsException_WhenProblemIdIsEmpty()
         {
             var creationDTO = new ProblemCommentCreationDTO
             {
@@ -115,11 +118,11 @@ namespace ProblemService.Tests
             _mockRepo.Setup(repo => repo.CreateProblemComment(creationDTO))
                      .Throws(new ArgumentException("ProblemId must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblemComment(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblemComment(creationDTO));
         }
 
         [Fact]
-        public void CreateProblemComment_ThrowsException_WhenAuthorIdIsEmpty()
+        public async Task CreateProblemComment_ThrowsException_WhenAuthorIdIsEmpty()
         {
             var creationDTO = new ProblemCommentCreationDTO
             {
@@ -130,11 +133,11 @@ namespace ProblemService.Tests
             _mockRepo.Setup(repo => repo.CreateProblemComment(creationDTO))
                      .Throws(new ArgumentException("ProblemCommentAuthorId must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblemComment(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblemComment(creationDTO));
         }
 
         [Fact]
-        public void CreateProblemComment_ThrowsException_WhenCommentTextIsEmpty()
+        public async Task CreateProblemComment_ThrowsException_WhenCommentTextIsEmpty()
         {
             var creationDTO = new ProblemCommentCreationDTO
             {
@@ -145,7 +148,7 @@ namespace ProblemService.Tests
             _mockRepo.Setup(repo => repo.CreateProblemComment(creationDTO))
                      .Throws(new ArgumentException("CommentText must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateProblemComment(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateProblemComment(creationDTO));
         }
 
         [Fact]
@@ -199,13 +202,13 @@ namespace ProblemService.Tests
         }
 
         [Fact]
-        public void UpdateProblemComment_ThrowsException_WhenCommentNotFound()
+        public async Task UpdateProblemComment_ThrowsException_WhenCommentNotFound()
         {
             var updateDTO = new ProblemCommentUpdateDTO { Id = Guid.NewGuid() };
             _mockRepo.Setup(repo => repo.UpdateProblemComment(updateDTO))
                      .Throws(new ArgumentException("ProblemComment with that Id does not exist."));
 
-            Assert.Throws<ArgumentException>(() => _controller.UpdateProblemComment(updateDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.UpdateProblemComment(updateDTO));
         }
 
         // DELETE
@@ -221,13 +224,13 @@ namespace ProblemService.Tests
         }
 
         [Fact]
-        public void DeleteProblemComment_ThrowsException_WhenCommentNotFound()
+        public async Task DeleteProblemComment_ThrowsException_WhenCommentNotFound()
         {
             var id = Guid.NewGuid();
             _mockRepo.Setup(repo => repo.DeleteProblemComment(id))
                      .Throws(new ArgumentException("ProblemComment with that Id does not exist."));
 
-            Assert.Throws<ArgumentException>(() => _controller.DeleteProblemComment(id));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.DeleteProblemComment(id));
         }
     }
 }

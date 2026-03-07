@@ -5,6 +5,7 @@ using AnonymousAPI.Controllers;
 using SystemNotificationService.Data;
 using SystemNotificationService.Models.DTOs.SystemNotification;
 using Xunit;
+using SystemNotificationService.Clients;
 
 namespace SystemNotificationService.Tests
 {
@@ -13,12 +14,13 @@ namespace SystemNotificationService.Tests
         private readonly Mock<ISystemNotificationRepository> _mockRepo;
         private readonly Mock<IMapper> _mockMapper;
         private readonly SystemNotificationController _controller;
-
+        private readonly Mock<LoggerServiceClient> _logger;
         public SystemNotificationControllerTests()
         {
             _mockRepo = new Mock<ISystemNotificationRepository>();
             _mockMapper = new Mock<IMapper>();
-            _controller = new SystemNotificationController(_mockRepo.Object, _mockMapper.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new SystemNotificationController(_mockRepo.Object, _mockMapper.Object, _logger.Object);
         }
 
         // GET ALL
@@ -100,7 +102,7 @@ namespace SystemNotificationService.Tests
 
         // POST - both null
         [Fact]
-        public void CreateSystemNotification_ThrowsException_WhenBothIdsAreNull()
+        public async Task CreateSystemNotification_ThrowsException_WhenBothIdsAreNull()
         {
             var creationDTO = new SystemNotificationCreationDTO
             {
@@ -114,12 +116,12 @@ namespace SystemNotificationService.Tests
                      .Throws(new ArgumentException(
                          "Either ProblemCommentId or SuggestionCommentId must be provided."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateSystemNotification(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateSystemNotification(creationDTO));
         }
 
         // POST - both provided
         [Fact]
-        public void CreateSystemNotification_ThrowsException_WhenBothIdsAreProvided()
+        public async Task CreateSystemNotification_ThrowsException_WhenBothIdsAreProvided()
         {
             var creationDTO = new SystemNotificationCreationDTO
             {
@@ -133,7 +135,7 @@ namespace SystemNotificationService.Tests
                      .Throws(new ArgumentException(
                          "Cannot provide both ProblemCommentId and SuggestionCommentId. Choose one."));
 
-            Assert.Throws<ArgumentException>(() => _controller.CreateSystemNotification(creationDTO));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.CreateSystemNotification(creationDTO));
         }
 
         // POST - without OrganizationId and AnonymousUserId (both optional)
@@ -181,13 +183,13 @@ namespace SystemNotificationService.Tests
         }
 
         [Fact]
-        public void DeleteSystemNotification_ThrowsException_WhenNotificationNotFound()
+        public async Task DeleteSystemNotification_ThrowsException_WhenNotificationNotFound()
         {
             var id = Guid.NewGuid();
             _mockRepo.Setup(repo => repo.DeleteSystemNotification(id))
                      .Throws(new ArgumentException($"SystemNotification with ID {id} not found."));
 
-            Assert.Throws<ArgumentException>(() => _controller.DeleteSystemNotification(id));
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.DeleteSystemNotification(id));
         }
     }
 }

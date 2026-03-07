@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SuggestionBoxService.Data;
 using SuggestionBoxService.Models.DTOs;
 using AnonymousAPI.Controllers;
+using SuggestionBoxService.Clients;
 
 namespace SuggestionBoxServiceTests
 {
@@ -10,11 +11,13 @@ namespace SuggestionBoxServiceTests
     {
         private readonly Mock<ISuggestionBoxRepository> _mockRepo;
         private readonly SuggestionBoxController _controller;
+        private readonly Mock<LoggerServiceClient> _logger;
 
         public SuggestionBoxControllerTests()
         {
             _mockRepo = new Mock<ISuggestionBoxRepository>();
-            _controller = new SuggestionBoxController(_mockRepo.Object);
+            _logger = new Mock<LoggerServiceClient>();
+            _controller = new SuggestionBoxController(_mockRepo.Object, _logger.Object);
         }
 
         // =====================
@@ -493,12 +496,12 @@ namespace SuggestionBoxServiceTests
         }
 
         [Fact]
-        public void Create_ThrowsException_WhenRepositoryFails()
+        public async Task Create_ThrowsException_WhenRepositoryFails()
         {
             var dto = new SuggestionBoxCreateDTO { Name = "Box", OrganizationId = Guid.NewGuid() };
             _mockRepo.Setup(r => r.Create(dto)).Throws(new Exception("DB error"));
 
-            Assert.Throws<Exception>(() => _controller.Create(dto));
+            await Assert.ThrowsAsync<Exception>(() => _controller.Create(dto));
         }
 
         // =====================
@@ -584,12 +587,12 @@ namespace SuggestionBoxServiceTests
         }
 
         [Fact]
-        public void Update_ThrowsException_WhenRepositoryFails()
+        public async Task Update_ThrowsException_WhenRepositoryFails()
         {
             var dto = new SuggestionBoxUpdateDTO { Id = Guid.NewGuid() };
             _mockRepo.Setup(r => r.Update(dto)).Throws(new Exception("DB error"));
 
-            Assert.Throws<Exception>(() => _controller.Update(dto));
+            await Assert.ThrowsAsync<Exception>(() => _controller.Update(dto));
         }
 
         // =====================
@@ -650,12 +653,12 @@ namespace SuggestionBoxServiceTests
         }
 
         [Fact]
-        public void Delete_ThrowsException_WhenRepositoryFails()
+        public async Task Delete_ThrowsException_WhenRepositoryFails()
         {
             var id = Guid.NewGuid();
             _mockRepo.Setup(r => r.Delete(id)).Throws(new Exception("DB error"));
 
-            Assert.Throws<Exception>(() => _controller.Delete(id));
+            await Assert.ThrowsAsync<Exception>(() => _controller.Delete(id));
         }
 
         // =====================
@@ -708,12 +711,12 @@ namespace SuggestionBoxServiceTests
         }
 
         [Fact]
-        public void DeleteByOrganizationId_ThrowsException_WhenRepositoryFails()
+        public async Task DeleteByOrganizationId_ThrowsException_WhenRepositoryFails()
         {
             var orgId = Guid.NewGuid();
             _mockRepo.Setup(r => r.DeleteByOrganizationId(orgId)).Throws(new Exception("DB error"));
 
-            Assert.Throws<Exception>(() => _controller.DeleteByOrganizationId(orgId));
+            await Assert.ThrowsAsync<Exception>(() => _controller.DeleteByOrganizationId(orgId));
         }
     }
 }
