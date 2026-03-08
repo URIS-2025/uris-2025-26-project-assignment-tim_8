@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, Paperclip, Clock, Shield, AlertTriangle, Trash2, Loader2, Plus, Download } from 'lucide-react';
 import { SuggestionService } from '../services/suggestionService';
+import { ProblemService } from '../services/problemService';
 import { AttachmentService } from '../services/attachmentService';
 import { SuggestionCategoryService } from '../services/suggestionCategoryService';
 import './SubmissionDetails.css';
@@ -22,6 +23,7 @@ const SubmissionDetails = () => {
 
     // Real data state
     const [suggestion, setSuggestion] = useState(null);
+    const [submissionType, setSubmissionType] = useState('suggestion'); // 'suggestion' | 'problem'
     const [attachments, setAttachments] = useState([]);
     const [availableCategories, setAvailableCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -54,18 +56,33 @@ const SubmissionDetails = () => {
             setLoading(true);
             setError(null);
 
-            // Parallel fetch recommendation
-            const [data, attData] = await Promise.all([
-                SuggestionService.getById(submissionId),
-                AttachmentService.getBySuggestionId(submissionId).catch(() => [])
-            ]);
+            // Try to fetch as suggestion first, fall back to problem
+            let data = null;
+            let type = 'suggestion';
+            let attData = [];
+
+            try {
+                data = await SuggestionService.getById(submissionId);
+                type = 'suggestion';
+                attData = await AttachmentService.getBySuggestionId(submissionId).catch(() => []);
+            } catch {
+                // Not a suggestion, try problem
+                try {
+                    data = await ProblemService.getById(submissionId);
+                    type = 'problem';
+                    attData = await AttachmentService.getByProblemId(submissionId).catch(() => []);
+                } catch {
+                    throw new Error('Submission not found.');
+                }
+            }
 
             setSuggestion(data);
+            setSubmissionType(type);
             setAttachments(attData);
             setStatus(typeof data.status === 'number' ? (statusMap[data.status] || 'New') : data.status);
         } catch (err) {
-            console.error('Error fetching suggestion details:', err);
-            setError('Failed to load suggestion details. Please check that the backend is running.');
+            console.error('Error fetching submission details:', err);
+            setError('Failed to load submission details. Please check that the backend is running.');
         } finally {
             setLoading(false);
         }
@@ -105,14 +122,19 @@ const SubmissionDetails = () => {
         }
     };
 
-    const handleDeleteSuggestion = async () => {
-        if (!window.confirm('Are you sure you want to delete this suggestion?')) return;
+    const handleDeleteSubmission = async () => {
+        const label = submissionType === 'problem' ? 'problem' : 'suggestion';
+        if (!window.confirm(`Are you sure you want to delete this ${label}?`)) return;
         try {
-            await SuggestionService.delete(submissionId);
+            if (submissionType === 'problem') {
+                await ProblemService.delete(submissionId);
+            } else {
+                await SuggestionService.delete(submissionId);
+            }
             navigate(-1);
         } catch (err) {
-            console.error('Error deleting suggestion:', err);
-            alert('Failed to delete suggestion.');
+            console.error(`Error deleting ${label}:`, err);
+            alert(`Failed to delete ${label}.`);
         }
     };
 
@@ -128,7 +150,7 @@ const SubmissionDetails = () => {
             <div className="submission-details-container animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
                 <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                     <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
-                    <p>Loading suggestion details...</p>
+                    <p>Loading submission details...</p>
                 </div>
             </div>
         );
@@ -151,7 +173,9 @@ const SubmissionDetails = () => {
     }
 
     // Derive display values from real data
-    const title = suggestion?.title || 'Untitled Suggestion';
+    const isProblem = submissionType === 'problem';
+    const typeLabel = isProblem ? 'Problem' : 'Suggestion';
+    const title = suggestion?.title || `Untitled ${typeLabel}`;
     const description = suggestion?.description || 'No description provided.';
     const createdAt = suggestion?.createdAt ? new Date(suggestion.createdAt).toLocaleString() : '—';
     const categories = suggestion?.categories || [];
@@ -168,11 +192,11 @@ const SubmissionDetails = () => {
             <div className="submission-header glass-panel">
                 <div className="submission-header-top">
                     <div className="submission-meta-info">
-                        <span className="meta-box-name">Suggestion</span>
+                        <span className="meta-box-name">{typeLabel}</span>
                         <span className="meta-id">{submissionId}</span>
                     </div>
                     <div className="submission-actions">
-                        <button className="btn btn-ghost icon-btn danger" title="Delete Suggestion" onClick={handleDeleteSuggestion}>
+                        <button className="btn btn-ghost icon-btn danger" title={`Delete ${typeLabel}`} onClick={handleDeleteSubmission}>
                             <Trash2 size={18} />
                         </button>
                     </div>
@@ -197,64 +221,66 @@ const SubmissionDetails = () => {
                         </select>
                     </div>
 
-                    <div className="tag-group">
-                        <label>Category:</label>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                            {categories.length > 0 ? (
-                                categories.map(c => (
-                                    <span key={c.id} className="readonly-tag">{c.name || c.title}</span>
-                                ))
-                            ) : (
-                                <span className="readonly-tag" style={{ background: 'transparent', border: '1px dashed var(--border-subtle)' }}>None</span>
-                            )}
+                    {!isProblem && (
+                        <div className="tag-group">
+                            <label>Category:</label>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {categories.length > 0 ? (
+                                    categories.map(c => (
+                                        <span key={c.id} className="readonly-tag">{c.name || c.title}</span>
+                                    ))
+                                ) : (
+                                    <span className="readonly-tag" style={{ background: 'transparent', border: '1px dashed var(--border-subtle)' }}>None</span>
+                                )}
 
-                            {isAddingCategory ? (
-                                <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-                                    <select
-                                        className="portal-input"
-                                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', minWidth: '120px', height: 'auto' }}
-                                        value={selectedCategoryId}
-                                        onChange={(e) => setSelectedCategoryId(e.target.value)}
-                                        autoFocus
-                                    >
-                                        <option value="">Select...</option>
-                                        {availableCategories
-                                            .filter(ac => !categories.find(c => c.id === ac.id))
-                                            .map(ac => (
-                                                <option key={ac.id} value={ac.id}>{ac.title}</option>
-                                            ))}
-                                    </select>
+                                {isAddingCategory ? (
+                                    <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                                        <select
+                                            className="portal-input"
+                                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', minWidth: '120px', height: 'auto' }}
+                                            value={selectedCategoryId}
+                                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                                            autoFocus
+                                        >
+                                            <option value="">Select...</option>
+                                            {availableCategories
+                                                .filter(ac => !categories.find(c => c.id === ac.id))
+                                                .map(ac => (
+                                                    <option key={ac.id} value={ac.id}>{ac.title}</option>
+                                                ))}
+                                        </select>
+                                        <button
+                                            className="btn btn-primary"
+                                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
+                                            onClick={handleAddCategory}
+                                        >
+                                            Add
+                                        </button>
+                                        <button
+                                            className="btn btn-ghost"
+                                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
+                                            onClick={() => { setIsAddingCategory(false); setSelectedCategoryId(''); }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                ) : (
                                     <button
-                                        className="btn btn-primary"
-                                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
-                                        onClick={handleAddCategory}
+                                        className="btn btn-ghost icon-btn"
+                                        style={{ padding: '0.25rem' }}
+                                        onClick={() => setIsAddingCategory(true)}
+                                        title="Add Category"
                                     >
-                                        Add
+                                        <Plus size={16} />
                                     </button>
-                                    <button
-                                        className="btn btn-ghost"
-                                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
-                                        onClick={() => { setIsAddingCategory(false); setSelectedCategoryId(''); }}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    className="btn btn-ghost icon-btn"
-                                    style={{ padding: '0.25rem' }}
-                                    onClick={() => setIsAddingCategory(true)}
-                                    title="Add Category"
-                                >
-                                    <Plus size={16} />
-                                </button>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="tag-group">
-                        <label>Suggestion Box ID:</label>
-                        <span className="readonly-tag" style={{ fontSize: '0.8rem' }}>{suggestion?.suggestionBoxId || '—'}</span>
+                        <label>{isProblem ? 'Problem Box ID:' : 'Suggestion Box ID:'}</label>
+                        <span className="readonly-tag" style={{ fontSize: '0.8rem' }}>{isProblem ? (suggestion?.problemBoxId || '—') : (suggestion?.suggestionBoxId || '—')}</span>
                     </div>
                 </div>
             </div>
@@ -342,7 +368,7 @@ const SubmissionDetails = () => {
                 <div className="submission-sidebar">
                     {/* Suggestion Info Card */}
                     <div className="context-card glass-panel">
-                        <h3>Suggestion Info</h3>
+                        <h3>{typeLabel} Info</h3>
                         <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <div>
                                 <span style={{ color: 'var(--text-muted)' }}>ID: </span>
@@ -352,13 +378,15 @@ const SubmissionDetails = () => {
                                 <span style={{ color: 'var(--text-muted)' }}>Created: </span>
                                 <span>{createdAt}</span>
                             </div>
+                            {!isProblem && (
+                                <div>
+                                    <span style={{ color: 'var(--text-muted)' }}>Categories: </span>
+                                    <span>{categoryNames}</span>
+                                </div>
+                            )}
                             <div>
-                                <span style={{ color: 'var(--text-muted)' }}>Categories: </span>
-                                <span>{categoryNames}</span>
-                            </div>
-                            <div>
-                                <span style={{ color: 'var(--text-muted)' }}>Suggestion Box: </span>
-                                <code style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{suggestion?.suggestionBoxId || '—'}</code>
+                                <span style={{ color: 'var(--text-muted)' }}>{isProblem ? 'Problem Box: ' : 'Suggestion Box: '}</span>
+                                <code style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{isProblem ? (suggestion?.problemBoxId || '—') : (suggestion?.suggestionBoxId || '—')}</code>
                             </div>
                         </div>
                     </div>

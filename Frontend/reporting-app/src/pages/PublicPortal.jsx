@@ -227,13 +227,14 @@ const PublicPortal = () => {
                                     <CheckCircle size={48} />
                                 </div>
                                 <h2>Successfully Submitted!</h2>
-                                <p>Your suggestion has been sent to the organization administrators.</p>
+                                <p>Your {submissionType === 'problem' ? 'problem' : 'suggestion'} has been sent to the organization administrators.</p>
                                 {createdSuggestion && (
                                     <div className="tracking-info">
-                                        <p>Your suggestion details:</p>
+                                        <p>Your {submissionType === 'problem' ? 'problem' : 'suggestion'} details:</p>
                                         <div style={{ textAlign: 'left', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}>
                                             <p><strong>ID:</strong> <code>{createdSuggestion.id}</code></p>
                                             <p><strong>Title:</strong> {createdSuggestion.title}</p>
+                                            <p><strong>Description:</strong> {createdSuggestion.description}</p>
                                             <p><strong>Status:</strong> {statusMap[createdSuggestion.status] || createdSuggestion.status}</p>
                                         </div>
                                     </div>
