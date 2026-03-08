@@ -11,8 +11,39 @@ const DataTable = ({
     searchPlaceholder = 'Search...',
     showExport = false,
     searchValue = '',
-    onSearchChange
+    onSearchChange,
+    currentPage = 1,
+    onPageChange,
+    pageSize = 5
 }) => {
+    // Pagination logic
+    const totalItems = data.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    const isPaginated = !!onPageChange;
+    const safePage = Math.min(currentPage, totalPages);
+
+    const displayData = isPaginated
+        ? data.slice((safePage - 1) * pageSize, safePage * pageSize)
+        : data;
+
+    const startEntry = totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1;
+    const endEntry = isPaginated ? Math.min(safePage * pageSize, totalItems) : totalItems;
+
+    // Generate page numbers to display
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
+        let start = Math.max(1, safePage - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        if (end - start + 1 < maxVisible) {
+            start = Math.max(1, end - maxVisible + 1);
+        }
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+        return pages;
+    };
+
     return (
         <div className="data-table-container glass-panel animate-fade-in">
             {/* Table Header Controls */}
@@ -55,8 +86,8 @@ const DataTable = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {data.length > 0 ? (
-                            data.map((row, rowIndex) => (
+                        {displayData.length > 0 ? (
+                            displayData.map((row, rowIndex) => (
                                 <tr
                                     key={row.id || rowIndex}
                                     onClick={() => onRowClick && onRowClick(row)}
@@ -90,17 +121,38 @@ const DataTable = ({
                 </table>
             </div>
 
-            {/* Pagination (Static UI for now) */}
+            {/* Pagination */}
             <div className="table-pagination">
-                <span className="pagination-info">Showing 1 to {Math.min(data.length, 10)} of {data.length} entries</span>
+                <span className="pagination-info">
+                    Showing {startEntry} to {endEntry} of {totalItems} entries
+                </span>
                 <div className="pagination-controls">
-                    <button className="btn btn-ghost icon-btn small" disabled>
+                    <button
+                        className="btn btn-ghost icon-btn small"
+                        disabled={safePage <= 1}
+                        onClick={() => isPaginated && onPageChange(safePage - 1)}
+                    >
                         <ChevronLeft size={16} />
                     </button>
-                    <span className="page-number active">1</span>
-                    <span className="page-number">2</span>
-                    <span className="page-number">3</span>
-                    <button className="btn btn-ghost icon-btn small">
+                    {isPaginated ? (
+                        getPageNumbers().map((page) => (
+                            <span
+                                key={page}
+                                className={`page-number ${page === safePage ? 'active' : ''}`}
+                                onClick={() => onPageChange(page)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                {page}
+                            </span>
+                        ))
+                    ) : (
+                        <span className="page-number active">1</span>
+                    )}
+                    <button
+                        className="btn btn-ghost icon-btn small"
+                        disabled={safePage >= totalPages}
+                        onClick={() => isPaginated && onPageChange(safePage + 1)}
+                    >
                         <ChevronRight size={16} />
                     </button>
                 </div>

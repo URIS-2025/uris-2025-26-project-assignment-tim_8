@@ -5,6 +5,8 @@ import StatusBadge from '../components/StatusBadge';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
 import { SuggestionService } from '../services/suggestionService';
+import { ProblemBoxService } from '../services/problemBoxService';
+import { ProblemService } from '../services/problemService';
 import './BoxDetails.css';
 
 // Map numeric status to readable label
@@ -16,14 +18,31 @@ const statusMap = {
     4: 'Closed'
 };
 
+// Map numeric priority to readable label
+const priorityMap = {
+    0: 'Low',
+    1: 'Medium',
+    2: 'High',
+    3: 'Critical'
+};
+
+const priorityColorMap = {
+    0: 'var(--text-muted)',
+    1: 'var(--accent-primary)',
+    2: 'var(--warning)',
+    3: 'var(--danger)'
+};
+
 const BoxDetails = () => {
     const { boxId } = useParams();
     const navigate = useNavigate();
 
     const [box, setBox] = useState(null);
-    const [suggestions, setSuggestions] = useState([]);
+    const [boxType, setBoxType] = useState(null); // 'suggestion' | 'problem'
+    const [items, setItems] = useState([]); // suggestions or problems
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         fetchBoxData();
@@ -34,40 +53,65 @@ const BoxDetails = () => {
         try {
             setLoading(true);
             setError(null);
+            setCurrentPage(1);
 
-            // Fetch box details and all suggestions in parallel
-            const [boxData, allSuggestions] = await Promise.all([
-                SuggestionBoxService.getById(boxId),
-                SuggestionService.getAll()
-            ]);
+            // Try to fetch as suggestion box first
+            let boxData = null;
+            let type = null;
+
+            try {
+                boxData = await SuggestionBoxService.getById(boxId);
+                type = 'suggestion';
+            } catch {
+                // Not a suggestion box, try problem box
+                try {
+                    boxData = await ProblemBoxService.getById(boxId);
+                    type = 'problem';
+                } catch {
+                    throw new Error('Box not found. It may have been deleted.');
+                }
+            }
 
             setBox(boxData);
+            setBoxType(type);
 
-            // Filter suggestions that belong to this suggestion box
-            const boxSuggestions = allSuggestions.filter(
-                (s) => s.suggestionBoxId === boxId
-            );
-            setSuggestions(boxSuggestions);
+            // Fetch items based on box type
+            if (type === 'suggestion') {
+                const allSuggestions = await SuggestionService.getAll();
+                const boxSuggestions = allSuggestions.filter(
+                    (s) => s.suggestionBoxId === boxId
+                );
+                setItems(boxSuggestions);
+            } else {
+                const problems = await ProblemService.getByProblemBoxId(boxId);
+                setItems(problems);
+            }
         } catch (err) {
             console.error('Error fetching box data:', err);
-            setError('Failed to load box details. Please check that the backend services are running.');
+            setError(err.message || 'Failed to load box details. Please check that the backend services are running.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDeleteSuggestion = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this suggestion?')) return;
+    const handleDeleteItem = async (id) => {
+        const itemLabel = boxType === 'suggestion' ? 'suggestion' : 'problem';
+        if (!window.confirm(`Are you sure you want to delete this ${itemLabel}?`)) return;
         try {
-            await SuggestionService.delete(id);
-            setSuggestions((prev) => prev.filter((s) => s.id !== id));
+            if (boxType === 'suggestion') {
+                await SuggestionService.delete(id);
+            } else {
+                await ProblemService.delete(id);
+            }
+            setItems((prev) => prev.filter((s) => s.id !== id));
         } catch (err) {
-            console.error('Error deleting suggestion:', err);
-            alert('Failed to delete suggestion.');
+            console.error(`Error deleting ${itemLabel}:`, err);
+            alert(`Failed to delete ${itemLabel}.`);
         }
     };
 
-    const columns = [
+    // Columns for suggestion box
+    const suggestionColumns = [
         {
             header: 'Title',
             accessor: 'title',
@@ -120,7 +164,7 @@ const BoxDetails = () => {
                     style={{ color: 'var(--danger)', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
                     onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteSuggestion(row.id);
+                        handleDeleteItem(row.id);
                     }}
                 >
                     Delete
@@ -128,6 +172,81 @@ const BoxDetails = () => {
             )
         }
     ];
+
+    // Columns for problem box
+    const problemColumns = [
+        {
+            header: 'Title',
+            accessor: 'title',
+            render: (row) => <span style={{ fontWeight: 500 }}>{row.title}</span>
+        },
+        {
+            header: 'Description',
+            accessor: 'description',
+            render: (row) => (
+                <span style={{ color: 'var(--text-secondary)' }}>
+                    {row.description?.length > 60
+                        ? row.description.substring(0, 60) + '...'
+                        : row.description || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Status',
+            accessor: 'status',
+            width: '130px',
+            render: (row) => {
+                const label = typeof row.status === 'number' ? statusMap[row.status] || 'Unknown' : row.status;
+                return <StatusBadge type="status" status={label} />;
+            }
+        },
+        {
+            header: 'Priority',
+            accessor: 'priority',
+            width: '120px',
+            render: (row) => {
+                const label = typeof row.priority === 'number' ? priorityMap[row.priority] || 'Unknown' : row.priority;
+                const color = typeof row.priority === 'number' ? priorityColorMap[row.priority] || 'var(--text-muted)' : 'var(--text-muted)';
+                return (
+                    <span style={{
+                        fontWeight: 600,
+                        color: color,
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.8rem',
+                        background: `${color}15`
+                    }}>
+                        {label}
+                    </span>
+                );
+            }
+        },
+        {
+            header: 'Created',
+            accessor: 'createdAt',
+            width: '140px',
+            render: (row) => <span>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '—'}</span>
+        },
+        {
+            header: 'Actions',
+            accessor: 'actions',
+            width: '100px',
+            render: (row) => (
+                <button
+                    className="btn btn-ghost"
+                    style={{ color: 'var(--danger)', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteItem(row.id);
+                    }}
+                >
+                    Delete
+                </button>
+            )
+        }
+    ];
+
+    const columns = boxType === 'problem' ? problemColumns : suggestionColumns;
 
     const handleRowClick = (row) => {
         navigate(`/admin/submissions/${row.id}`);
@@ -161,10 +280,15 @@ const BoxDetails = () => {
     }
 
     // Compute stats from real data
-    const totalSuggestions = suggestions.length;
-    const newCount = suggestions.filter((s) => s.status === 0).length;
-    const resolvedCount = suggestions.filter((s) => s.status === 3).length;
-    const inProgressCount = suggestions.filter((s) => s.status === 1).length;
+    const totalItems = items.length;
+    const newCount = items.filter((s) => s.status === 0).length;
+    const resolvedCount = items.filter((s) => s.status === 3).length;
+    const inProgressCount = items.filter((s) => s.status === 1).length;
+
+    // Dynamic labels based on box type
+    const isSuggestion = boxType === 'suggestion';
+    const itemTypeLabel = isSuggestion ? 'Suggestions' : 'Problems';
+    const boxTypeLabel = isSuggestion ? 'Suggestion Box' : 'Problem Box';
 
     return (
         <div className="box-details-container animate-fade-in">
@@ -174,11 +298,15 @@ const BoxDetails = () => {
 
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">{box?.name || 'Suggestion Box'}</h1>
+                    <h1 className="page-title">{box?.name || boxTypeLabel}</h1>
                     <p className="page-description">
                         {box?.description && <>{box.description} &bull; </>}
-                        Created by: {box?.createdBy || 'Unknown'}
-                        {box?.createdAt && <> &bull; {new Date(box.createdAt).toLocaleDateString()}</>}
+                        {isSuggestion && box?.createdBy && <>Created by: {box.createdBy} &bull; </>}
+                        {box?.createdAt && <>{new Date(box.createdAt).toLocaleDateString()}</>}
+                        {' '}&bull; <span style={{
+                            color: isSuggestion ? 'var(--accent-primary)' : 'var(--warning)',
+                            fontWeight: 500
+                        }}>{boxTypeLabel}</span>
                     </p>
                 </div>
             </div>
@@ -204,13 +332,17 @@ const BoxDetails = () => {
                         <span style={{ color: 'var(--text-muted)' }}>Theme: </span>
                         <span>{box.isDarkTheme ? '🌙 Dark' : '☀️ Light'}</span>
                     </div>
+                    <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Status: </span>
+                        <StatusBadge type="status" status={typeof box.status === 'number' ? statusMap[box.status] || 'Unknown' : box.status} />
+                    </div>
                 </div>
             )}
 
             <div className="box-stats-row">
                 <div className="mini-stat glass-panel">
-                    <span className="mini-stat-label">Total Suggestions</span>
-                    <span className="mini-stat-value">{totalSuggestions}</span>
+                    <span className="mini-stat-label">Total {itemTypeLabel}</span>
+                    <span className="mini-stat-value">{totalItems}</span>
                 </div>
                 <div className="mini-stat glass-panel">
                     <span className="mini-stat-label">New</span>
@@ -228,12 +360,15 @@ const BoxDetails = () => {
 
             <div className="table-wrapper">
                 <DataTable
-                    title="All Suggestions"
-                    data={suggestions}
+                    title={`All ${itemTypeLabel}`}
+                    data={items}
                     columns={columns}
                     onRowClick={handleRowClick}
-                    searchPlaceholder="Search by title or description..."
+                    searchPlaceholder={`Search by title or description...`}
                     showExport={true}
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                    pageSize={5}
                 />
             </div>
         </div>

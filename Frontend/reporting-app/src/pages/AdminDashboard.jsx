@@ -19,15 +19,27 @@ import { SuggestionService } from '../services/suggestionService';
 const AdminDashboard = () => {
     const { user } = useAuth();
     const [isOrgModalOpen, setOrgModalOpen] = useState(false);
+    const [isProblemBoxModalOpen, setProblemBoxModalOpen] = useState(false);
     const [organizations, setOrganizations] = useState([]);
     const [suggestionBoxes, setSuggestionBoxes] = useState([]);
     const [problemBoxes, setProblemBoxes] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [creatingProblemBox, setCreatingProblemBox] = useState(false);
     const role = user?.role || 'user';
 
     // Form state for creating organization
     const [newOrg, setNewOrg] = useState({ name: '' });
+
+    // Form state for creating problem box (matches ProblemBoxCreationDTO)
+    const [newProblemBox, setNewProblemBox] = useState({
+        name: '',
+        description: '',
+        isDarkTheme: false,
+        password: '',
+        createdBy: '',
+        organizationId: ''
+    });
 
     const navigate = useNavigate();
 
@@ -68,7 +80,7 @@ const AdminDashboard = () => {
             const data = await ProblemBoxService.getAll();
             setProblemBoxes(data);
         } catch (error) {
-            console.error("Failed to fetch suggestion boxes", error);
+            console.error("Failed to fetch problem boxes", error);
         } finally {
             setIsLoading(false);
         }
@@ -102,6 +114,29 @@ const AdminDashboard = () => {
         } catch (error) {
             console.error("Failed to create organization", error);
             alert("Failed to create organization");
+        }
+    };
+
+    const handleCreateProblemBox = async () => {
+        if (!newProblemBox.name.trim() || !newProblemBox.organizationId) return;
+        try {
+            setCreatingProblemBox(true);
+            await ProblemBoxService.create({
+                name: newProblemBox.name,
+                description: newProblemBox.description,
+                isDarkTheme: newProblemBox.isDarkTheme,
+                password: newProblemBox.password,
+                createdBy: newProblemBox.createdBy || user?.username || '',
+                organizationId: newProblemBox.organizationId
+            });
+            setProblemBoxModalOpen(false);
+            setNewProblemBox({ name: '', description: '', isDarkTheme: false, password: '', createdBy: '', organizationId: '' });
+            await fetchProblemBoxes(); // Re-fetch to update "Active Problem Boxes" counter
+        } catch (error) {
+            console.error("Failed to create problem box", error);
+            alert("Failed to create problem box");
+        } finally {
+            setCreatingProblemBox(false);
         }
     };
 
@@ -195,7 +230,7 @@ const AdminDashboard = () => {
                             </div>
                             <span>New Suggestion Box</span>
                         </button>
-                        <button className="action-btn">
+                        <button className="action-btn" onClick={() => setProblemBoxModalOpen(true)}>
                             <div className="action-icon" style={{ color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.1)' }}>
                                 <AlertOctagon size={24} />
                             </div>
@@ -205,6 +240,7 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
+            {/* Create Organization Modal */}
             <Modal
                 isOpen={isOrgModalOpen}
                 onClose={() => setOrgModalOpen(false)}
@@ -226,6 +262,89 @@ const AdminDashboard = () => {
                         onChange={(e) => setNewOrg({ name: e.target.value })}
                         required
                     />
+                </div>
+            </Modal>
+
+            {/* Create Problem Box Modal */}
+            <Modal
+                isOpen={isProblemBoxModalOpen}
+                onClose={() => setProblemBoxModalOpen(false)}
+                title="Create Problem Box"
+                footer={
+                    <>
+                        <button className="btn btn-ghost" onClick={() => setProblemBoxModalOpen(false)}>Cancel</button>
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleCreateProblemBox}
+                            disabled={creatingProblemBox || !newProblemBox.name || !newProblemBox.organizationId}
+                        >
+                            {creatingProblemBox ? 'Creating...' : 'Create Box'}
+                        </button>
+                    </>
+                }
+            >
+                <div className="form-group">
+                    <label>Box Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Facilities & Maintenance"
+                        value={newProblemBox.name}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, name: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Organization <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <select
+                        className="form-control"
+                        value={newProblemBox.organizationId}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, organizationId: e.target.value })}
+                    >
+                        <option value="">Select an organization...</option>
+                        {organizations.map((org) => (
+                            <option key={org.id} value={org.id}>{org.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label>Created By</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Admin User"
+                        value={newProblemBox.createdBy}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, createdBy: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Description</label>
+                    <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="What is this box used for?"
+                        value={newProblemBox.description}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, description: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Password (Optional)</label>
+                    <input
+                        type="password"
+                        className="form-control"
+                        placeholder="Set a password for this box"
+                        value={newProblemBox.password}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, password: e.target.value })}
+                    />
+                </div>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <input
+                        type="checkbox"
+                        id="pbIsDarkTheme"
+                        checked={newProblemBox.isDarkTheme}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, isDarkTheme: e.target.checked })}
+                        style={{ width: 'auto' }}
+                    />
+                    <label htmlFor="pbIsDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
                 </div>
             </Modal>
         </div>
