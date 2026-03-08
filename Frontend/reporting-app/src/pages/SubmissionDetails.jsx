@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Paperclip, Clock, Shield, AlertTriangle, Trash2, Loader2, Plus, Download } from 'lucide-react';
+import { ArrowLeft, Send, Paperclip, Clock, Shield, AlertTriangle, Trash2, Loader2, Plus, Download, User } from 'lucide-react';
 import { SuggestionService } from '../services/suggestionService';
 import { ProblemService } from '../services/problemService';
 import { AttachmentService } from '../services/attachmentService';
 import { SuggestionCategoryService } from '../services/suggestionCategoryService';
+import { SuggestionCommentService } from '../services/suggestionCommentService';
+import { SystemNotificationService } from '../services/systemNotificationService';
+import { useAuth } from '../context/AuthContext';
 import './SubmissionDetails.css';
 
 // Map numeric status to readable label
@@ -19,7 +22,10 @@ const statusMap = {
 const SubmissionDetails = () => {
     const { submissionId } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [replyText, setReplyText] = useState('');
+    const [comments, setComments] = useState([]);
+    const [sendingReply, setSendingReply] = useState(false);
 
     // Real data state
     const [suggestion, setSuggestion] = useState(null);
@@ -39,8 +45,19 @@ const SubmissionDetails = () => {
     useEffect(() => {
         fetchSuggestionAndData();
         fetchCategories();
+        fetchComments();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [submissionId]);
+
+    const fetchComments = async () => {
+        try {
+            const data = await SuggestionCommentService.getBySuggestionId(submissionId);
+            setComments(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error('Error fetching comments:', err);
+            setComments([]);
+        }
+    };
 
     const fetchCategories = async () => {
         try {
@@ -138,11 +155,38 @@ const SubmissionDetails = () => {
         }
     };
 
-    const handleReplySubmit = (e) => {
+    const handleReplySubmit = async (e) => {
         e.preventDefault();
-        if (!replyText.trim()) return;
-        console.log('Sent reply:', replyText);
-        setReplyText('');
+        if (!replyText.trim() || sendingReply) return;
+
+        setSendingReply(true);
+        try {
+            // 1. Create SuggestionComment
+            const createdComment = await SuggestionCommentService.create({
+                text: replyText,
+                suggestionId: submissionId
+            });
+
+            // 2. Create SystemNotification
+            try {
+                await SystemNotificationService.create({
+                    text: replyText,
+                    suggestionCommentId: createdComment.id || null,
+                    organizationId: suggestion?.organizationId || null
+                });
+            } catch (notifErr) {
+                console.error('Failed to create system notification:', notifErr);
+            }
+
+            // 3. Refresh comments and clear input
+            setReplyText('');
+            await fetchComments();
+        } catch (err) {
+            console.error('Error sending reply:', err);
+            alert('Failed to send reply. Please try again.');
+        } finally {
+            setSendingReply(false);
+        }
     };
 
     if (loading) {
@@ -333,17 +377,40 @@ const SubmissionDetails = () => {
                         <span>Communication Thread</span>
                     </div>
 
-                    {/* Thread messages — empty for now since no comment data is available */}
+                    {/* Thread messages */}
                     <div className="thread-container">
-                        <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                            No replies yet.
-                        </div>
+                        {comments.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                No replies yet.
+                            </div>
+                        ) : (
+                            comments.map((comment) => (
+                                <div key={comment.id} className="message-bubble admin glass-panel">
+                                    <div className="message-header">
+                                        <div className="message-author">
+                                            <div className="author-avatar" style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7' }}>
+                                                <User size={14} />
+                                            </div>
+                                            <span className="author-name">{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Staff'}</span>
+                                            <span className="author-badge">Reply</span>
+                                        </div>
+                                        <span className="message-time">
+                                            <Clock size={12} />{' '}
+                                            {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : '—'}
+                                        </span>
+                                    </div>
+                                    <div className="message-body">
+                                        <p>{comment.text}</p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
 
                     {/* Reply Box */}
                     <div className="reply-box glass-panel">
                         <div className="reply-header">
-                            Reply as <strong>Admin</strong>
+                            Reply as <strong>{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}</strong>
                         </div>
                         <form onSubmit={handleReplySubmit}>
                             <textarea
@@ -356,8 +423,9 @@ const SubmissionDetails = () => {
                                 <button type="button" className="btn btn-ghost icon-btn" title="Attach file">
                                     <Paperclip size={18} />
                                 </button>
-                                <button type="submit" className="btn btn-primary" disabled={!replyText.trim()}>
-                                    <Send size={16} /> Send Reply
+                                <button type="submit" className="btn btn-primary" disabled={!replyText.trim() || sendingReply}>
+                                    {sendingReply ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
+                                    {sendingReply ? ' Sending...' : ' Send Reply'}
                                 </button>
                             </div>
                         </form>
