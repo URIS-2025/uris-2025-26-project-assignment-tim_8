@@ -428,7 +428,7 @@ const OrganizationDetails = () => {
                     </div>
                 </div>
                 <div className="form-group mt-3">
-                    <label>Description (Optional)</label>
+                    <label>Description </label>
                     <textarea
                         className="form-control"
                         rows="3"

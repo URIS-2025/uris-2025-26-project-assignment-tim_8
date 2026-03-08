@@ -35,6 +35,14 @@ const AdminDashboard = () => {
 
     // Form state for creating problem box (matches ProblemBoxCreationDTO)
     const [newProblemBox, setNewProblemBox] = useState({
+        name: '',
+        description: '',
+        isDarkTheme: false,
+        password: '',
+        createdBy: '',
+        organizationId: ''
+    });
+
     // Form state for creating suggestion box
     const [suggestionBoxForm, setSuggestionBoxForm] = useState({
         name: '',
@@ -141,6 +149,9 @@ const AdminDashboard = () => {
             alert("Failed to create problem box");
         } finally {
             setCreatingProblemBox(false);
+        }
+    };
+
     const handleCreateSuggestionBox = async () => {
         if (!suggestionBoxForm.name || !suggestionBoxForm.organizationId) return;
         try {
@@ -304,6 +315,77 @@ const AdminDashboard = () => {
                             disabled={creatingProblemBox || !newProblemBox.name || !newProblemBox.organizationId}
                         >
                             {creatingProblemBox ? 'Creating...' : 'Create Box'}
+                        </button>
+                    </>
+                }
+            >
+                <div className="form-group">
+                    <label>Box Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Facilities & Maintenance"
+                        value={newProblemBox.name}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, name: e.target.value })}
+                        required
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Organization <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <select
+                        className="form-control"
+                        value={newProblemBox.organizationId}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, organizationId: e.target.value })}
+                        required
+                    >
+                        <option value="">Select an organization...</option>
+                        {organizations.map((org) => (
+                            <option key={org.id} value={org.id}>{org.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label>Created By</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. John Doe"
+                        value={newProblemBox.createdBy}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, createdBy: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Description</label>
+                    <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="What is this box used for?"
+                        value={newProblemBox.description}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, description: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Password (Optional)</label>
+                    <input
+                        type="password"
+                        className="form-control"
+                        placeholder="Set a password for this box"
+                        value={newProblemBox.password}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, password: e.target.value })}
+                    />
+                </div>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <input
+                        type="checkbox"
+                        id="pbIsDarkTheme"
+                        checked={newProblemBox.isDarkTheme}
+                        onChange={(e) => setNewProblemBox({ ...newProblemBox, isDarkTheme: e.target.checked })}
+                        style={{ width: 'auto' }}
+                    />
+                    <label htmlFor="pbIsDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
+                </div>
+            </Modal>
+
             {/* Create Suggestion Box Modal */}
             <Modal
                 isOpen={isSuggestionBoxModalOpen}
@@ -327,46 +409,32 @@ const AdminDashboard = () => {
                     <input
                         type="text"
                         className="form-control"
-                        placeholder="e.g. Facilities & Maintenance"
-                        value={newProblemBox.name}
-                        onChange={(e) => setNewProblemBox({ ...newProblemBox, name: e.target.value })}
+                        placeholder="e.g. Feature Ideas"
+                        value={suggestionBoxForm.name}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, name: e.target.value })}
+                        required
                     />
                 </div>
                 <div className="form-group">
                     <label>Organization <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <select
                         className="form-control"
-                        value={newProblemBox.organizationId}
-                        onChange={(e) => setNewProblemBox({ ...newProblemBox, organizationId: e.target.value })}
+                        value={suggestionBoxForm.organizationId}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, organizationId: e.target.value })}
+                        required
                     >
                         <option value="">Select an organization...</option>
                         {organizations.map((org) => (
                             <option key={org.id} value={org.id}>{org.name}</option>
                         ))}
                     </select>
-                        placeholder="e.g. Feature Ideas"
-                        value={suggestionBoxForm.name}
-                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, name: e.target.value })}
-                    />
-                </div>
-                <div className="form-group">
-                    <label>Organization ID <span style={{ color: 'var(--danger)' }}>*</span></label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Enter organization GUID"
-                        value={suggestionBoxForm.organizationId}
-                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, organizationId: e.target.value })}
-                    />
                 </div>
                 <div className="form-group">
                     <label>Created By</label>
                     <input
                         type="text"
                         className="form-control"
-                        placeholder="e.g. Admin User"
-                        value={newProblemBox.createdBy}
-                        onChange={(e) => setNewProblemBox({ ...newProblemBox, createdBy: e.target.value })}
+                        placeholder="e.g. John Doe"
                         value={suggestionBoxForm.createdBy}
                         onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, createdBy: e.target.value })}
                     />
@@ -377,8 +445,6 @@ const AdminDashboard = () => {
                         className="form-control"
                         rows="3"
                         placeholder="What is this box used for?"
-                        value={newProblemBox.description}
-                        onChange={(e) => setNewProblemBox({ ...newProblemBox, description: e.target.value })}
                         value={suggestionBoxForm.description}
                         onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, description: e.target.value })}
                     />
@@ -389,8 +455,6 @@ const AdminDashboard = () => {
                         type="password"
                         className="form-control"
                         placeholder="Set a password for this box"
-                        value={newProblemBox.password}
-                        onChange={(e) => setNewProblemBox({ ...newProblemBox, password: e.target.value })}
                         value={suggestionBoxForm.password}
                         onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, password: e.target.value })}
                     />
@@ -398,18 +462,12 @@ const AdminDashboard = () => {
                 <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <input
                         type="checkbox"
-                        id="pbIsDarkTheme"
-                        checked={newProblemBox.isDarkTheme}
-                        onChange={(e) => setNewProblemBox({ ...newProblemBox, isDarkTheme: e.target.checked })}
-                        style={{ width: 'auto' }}
-                    />
-                    <label htmlFor="pbIsDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
-                        id="suggestionBoxDarkTheme"
+                        id="sbIsDarkTheme"
                         checked={suggestionBoxForm.isDarkTheme}
                         onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, isDarkTheme: e.target.checked })}
                         style={{ width: 'auto' }}
                     />
-                    <label htmlFor="suggestionBoxDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
+                    <label htmlFor="sbIsDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
                 </div>
             </Modal>
         </div>
@@ -417,3 +475,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+

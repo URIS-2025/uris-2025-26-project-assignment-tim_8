@@ -361,8 +361,8 @@ const BoxDetails = () => {
 
             <div className="table-wrapper">
                 <DataTable
-                    title="All Suggestions"
-                    data={suggestions.filter(s =>
+                    title={`All ${itemTypeLabel}`}
+                    data={items.filter(s =>
                         s.title?.toLowerCase().includes(searchValue.toLowerCase()) ||
                         s.description?.toLowerCase().includes(searchValue.toLowerCase())
                     )}
