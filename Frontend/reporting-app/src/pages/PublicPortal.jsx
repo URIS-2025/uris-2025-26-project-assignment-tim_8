@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-// react-router-dom not needed on this page currently
-import { Shield, Send, ArrowRight, CheckCircle, ThumbsUp, MessageSquare, AlertTriangle, Loader2 } from 'lucide-react';
+import { Shield, Send, ArrowRight, CheckCircle, ThumbsUp, MessageSquare, AlertTriangle, Loader2, Paperclip } from 'lucide-react';
+import { jwtDecode } from 'jwt-decode';
 import { SuggestionService } from '../services/suggestionService';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
+import { OrganizationService } from '../services/organizationService';
+import { AttachmentService } from '../services/attachmentService';
 import './PublicPortal.css';
 
 // Map numeric status to label
@@ -20,32 +22,64 @@ const PublicPortal = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [browsing, setBrowsing] = useState(false);
 
-    // Available suggestion boxes for the dropdown
+    // Organizations and suggestion boxes
+    const [organizations, setOrganizations] = useState([]);
     const [suggestionBoxes, setSuggestionBoxes] = useState([]);
+    const [loadingBoxes, setLoadingBoxes] = useState(false);
 
     const [formData, setFormData] = useState({
         title: '',
         content: '',
-        suggestionBoxId: '',
-        anonymousUserId: ''
+        organizationId: '',
+        suggestionBoxId: ''
     });
 
-    // Fetch suggestion boxes for the dropdown on mount
+    // Optional attachment
+    const [attachment, setAttachment] = useState(null);
+
+    // Fetch organizations on mount
     useEffect(() => {
-        const fetchBoxes = async () => {
+        const fetchOrganizations = async () => {
             try {
-                const boxes = await SuggestionBoxService.getAll();
+                const orgs = await OrganizationService.getAll();
+                setOrganizations(orgs);
+            } catch (err) {
+                console.error('Error fetching organizations:', err);
+            }
+        };
+        fetchOrganizations();
+    }, []);
+
+    // When organization changes, fetch suggestion boxes for that org
+    useEffect(() => {
+        if (!formData.organizationId) {
+            setSuggestionBoxes([]);
+            setFormData(prev => ({ ...prev, suggestionBoxId: '' }));
+            return;
+        }
+
+        const fetchBoxesForOrg = async () => {
+            try {
+                setLoadingBoxes(true);
+                const boxes = await SuggestionBoxService.getByOrganizationId(formData.organizationId);
                 setSuggestionBoxes(boxes);
                 // Pre-select first box if available
                 if (boxes.length > 0) {
                     setFormData(prev => ({ ...prev, suggestionBoxId: boxes[0].id }));
+                } else {
+                    setFormData(prev => ({ ...prev, suggestionBoxId: '' }));
                 }
             } catch (err) {
-                console.error('Error fetching suggestion boxes:', err);
+                console.error('Error fetching suggestion boxes for organization:', err);
+                setSuggestionBoxes([]);
+                setFormData(prev => ({ ...prev, suggestionBoxId: '' }));
+            } finally {
+                setLoadingBoxes(false);
             }
         };
-        fetchBoxes();
-    }, []);
+        fetchBoxesForOrg();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.organizationId]);
 
     // Fetch suggestions when browse tab is active
     useEffect(() => {
@@ -68,24 +102,61 @@ const PublicPortal = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.title || !formData.content) return;
+        if (!formData.title || !formData.content || !formData.suggestionBoxId) return;
 
         try {
             setIsSubmitting(true);
             setSubmitError(null);
 
+            // Read auth token and decode anonymous user ID
+            const authToken = localStorage.getItem('authToken');
+            let anonymousUserId = '00000000-0000-0000-0000-000000000000';
+            if (authToken) {
+                try {
+                    const decoded = jwtDecode(authToken);
+                    anonymousUserId = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || anonymousUserId;
+                } catch (decodeErr) {
+                    console.error('Failed to decode auth token:', decodeErr);
+                }
+            }
+
             // Build the SuggestionCreationDTO
             const payload = {
                 title: formData.title,
                 description: formData.content,
-                suggestionBoxId: formData.suggestionBoxId || '00000000-0000-0000-0000-000000000000',
-                anonymousUserId: formData.anonymousUserId || '00000000-0000-0000-0000-000000000000',
+                suggestionBoxId: formData.suggestionBoxId,
+                anonymousUserId: anonymousUserId,
                 categoryIds: []
             };
 
-            const result = await SuggestionService.create(payload);
+            const result = await SuggestionService.create(payload, authToken);
+
+            // If there's an attachment, upload it
+            if (attachment) {
+                try {
+                    const base64String = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(attachment);
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = error => reject(error);
+                    });
+
+                    await AttachmentService.create({
+                        fileName: attachment.name,
+                        fileType: attachment.type || 'application/octet-stream',
+                        url: base64String, // the Base64 data URL
+                        suggestionId: result.id,
+                        problemId: null
+                    });
+                } catch (attachErr) {
+                    console.error('Error uploading attachment:', attachErr);
+                    // Non-blocking, the suggestion was still created successfully
+                }
+            }
+
             setCreatedSuggestion(result);
             setIsSubmitted(true);
+            setAttachment(null);
         } catch (err) {
             console.error('Error submitting suggestion:', err);
             setSubmitError('Failed to submit. Please make sure the backend is running and try again.');
@@ -144,7 +215,7 @@ const PublicPortal = () => {
                                     </div>
                                 )}
                                 <button className="btn btn-primary" onClick={() => {
-                                    setFormData(prev => ({ title: '', content: '', suggestionBoxId: prev.suggestionBoxId, anonymousUserId: prev.anonymousUserId }));
+                                    setFormData(prev => ({ title: '', content: '', organizationId: prev.organizationId, suggestionBoxId: prev.suggestionBoxId }));
                                     setIsSubmitted(false);
                                     setCreatedSuggestion(null);
                                 }}>
@@ -171,9 +242,35 @@ const PublicPortal = () => {
                                 </div>
 
                                 <form className="public-submit-form" onSubmit={handleSubmit}>
+                                    {/* Step 1: Select Organization */}
+                                    <div className="form-group">
+                                        <label>Organization <span className="required">*</span></label>
+                                        {organizations.length > 0 ? (
+                                            <select
+                                                className="portal-input"
+                                                value={formData.organizationId}
+                                                onChange={(e) => setFormData({ ...formData, organizationId: e.target.value, suggestionBoxId: '' })}
+                                            >
+                                                <option value="">— Select an organization —</option>
+                                                {organizations.map(org => (
+                                                    <option key={org.id} value={org.id}>
+                                                        {org.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading organizations...</p>
+                                        )}
+                                    </div>
+
+                                    {/* Step 2: Select Suggestion Box (only after organization is selected) */}
                                     <div className="form-group">
                                         <label>Suggestion Box <span className="required">*</span></label>
-                                        {suggestionBoxes.length > 0 ? (
+                                        {!formData.organizationId ? (
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Please select an organization first.</p>
+                                        ) : loadingBoxes ? (
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading suggestion boxes...</p>
+                                        ) : suggestionBoxes.length > 0 ? (
                                             <select
                                                 className="portal-input"
                                                 value={formData.suggestionBoxId}
@@ -186,25 +283,8 @@ const PublicPortal = () => {
                                                 ))}
                                             </select>
                                         ) : (
-                                            <input
-                                                type="text"
-                                                className="portal-input"
-                                                placeholder="Enter Suggestion Box GUID"
-                                                value={formData.suggestionBoxId}
-                                                onChange={(e) => setFormData({ ...formData, suggestionBoxId: e.target.value })}
-                                            />
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No suggestion boxes found for this organization.</p>
                                         )}
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Anonymous User ID</label>
-                                        <input
-                                            type="text"
-                                            className="portal-input"
-                                            placeholder="Enter your anonymous user GUID (optional)"
-                                            value={formData.anonymousUserId}
-                                            onChange={(e) => setFormData({ ...formData, anonymousUserId: e.target.value })}
-                                        />
                                     </div>
 
                                     <div className="form-group">
@@ -229,6 +309,24 @@ const PublicPortal = () => {
                                             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                                             required
                                         />
+                                    </div>
+
+                                    {/* Optional Attachment */}
+                                    <div className="form-group">
+                                        <label><Paperclip size={14} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} /> Attachment (Optional)</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <input
+                                                type="file"
+                                                className="portal-input"
+                                                style={{ padding: '0.5rem' }}
+                                                onChange={(e) => setAttachment(e.target.files[0] || null)}
+                                            />
+                                        </div>
+                                        {attachment && (
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.35rem' }}>
+                                                Selected: {attachment.name} ({(attachment.size / 1024).toFixed(1)} KB)
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="form-info-card privacy-card">
@@ -258,7 +356,7 @@ const PublicPortal = () => {
                                     <button
                                         type="submit"
                                         className="btn btn-primary btn-lg submit-btn bounce-hover"
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || !formData.organizationId || !formData.suggestionBoxId}
                                     >
                                         {isSubmitting ? (
                                             <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Submitting...</>

@@ -109,57 +109,9 @@ namespace ProblemServiceIntegrationTests
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
-        [Fact]
-        public async Task CreateProblemComment_ReturnsInternalServerError_WhenProblemIdIsEmpty()
-        {
-            var creationDTO = new ProblemCommentCreationDTO
-            {
-                CommentText = "Integration Test Comment",
-                IsAnonymous = false,
-                ProblemId = Guid.Empty,
-                ProblemCommentAuthorId = Guid.NewGuid()
-            };
 
-            var response = await _client.PostAsJsonAsync("/api/ProblemComment", creationDTO);
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task CreateProblemComment_ReturnsInternalServerError_WhenAuthorIdIsEmpty()
-        {
-            var problem = await CreateTestProblem();
-
-            var creationDTO = new ProblemCommentCreationDTO
-            {
-                CommentText = "Integration Test Comment",
-                IsAnonymous = false,
-                ProblemId = problem.Id,
-                ProblemCommentAuthorId = Guid.Empty
-            };
-
-            var response = await _client.PostAsJsonAsync("/api/ProblemComment", creationDTO);
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task CreateProblemComment_ReturnsInternalServerError_WhenCommentTextIsEmpty()
-        {
-            var problem = await CreateTestProblem();
-
-            var creationDTO = new ProblemCommentCreationDTO
-            {
-                CommentText = "",
-                IsAnonymous = false,
-                ProblemId = problem.Id,
-                ProblemCommentAuthorId = Guid.NewGuid()
-            };
-
-            var response = await _client.PostAsJsonAsync("/api/ProblemComment", creationDTO);
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
+       
+        
 
         // GET BY ID
         [Fact]

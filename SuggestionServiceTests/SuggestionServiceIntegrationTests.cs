@@ -169,7 +169,6 @@ namespace SuggestionService.Tests.Integration
                 CreatedAt       = DateTime.UtcNow,
                 BoxAccessLinkId = link.Id
             };
-            context.AnonymousUsers.Add(user);
             context.SaveChanges();
             return user.Id;
         }
@@ -300,7 +299,6 @@ namespace SuggestionService.Tests.Integration
             var link = new BoxAccessLink { Id = Guid.NewGuid(), AccessToken = "token", IsActive = true, CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7) };
             context.Set<BoxAccessLink>().Add(link);
             var user = new AnonymousUser { Id = Guid.NewGuid(), CreatedAt = DateTime.UtcNow, BoxAccessLinkId = link.Id };
-            context.AnonymousUsers.Add(user);
             var suggestion = new Suggestion { Id = Guid.NewGuid(), Title = "Test", Description = "Opis", CreatedAt = DateTime.UtcNow, SuggestionBoxId = Guid.NewGuid(), AnonymousUserId = user.Id, Status = ProblemSuggestionStatus.Active };
             context.Suggestions.Add(suggestion);
             context.SaveChanges();
@@ -369,7 +367,6 @@ namespace SuggestionService.Tests.Integration
             var link = new BoxAccessLink { Id = Guid.NewGuid(), AccessToken = "token", IsActive = true, CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7) };
             context.Set<BoxAccessLink>().Add(link);
             var user = new AnonymousUser { Id = Guid.NewGuid(), CreatedAt = DateTime.UtcNow, BoxAccessLinkId = link.Id };
-            context.AnonymousUsers.Add(user);
             var suggestion = new Suggestion { Id = Guid.NewGuid(), Title = "Test", Description = "Opis", CreatedAt = DateTime.UtcNow, SuggestionBoxId = Guid.NewGuid(), AnonymousUserId = user.Id, Status = ProblemSuggestionStatus.Active };
             context.Suggestions.Add(suggestion);
             context.SaveChanges();

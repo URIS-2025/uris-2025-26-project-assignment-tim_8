@@ -43,6 +43,7 @@ const BoxDetails = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchValue, setSearchValue] = useState('');
 
     useEffect(() => {
         fetchBoxData();
@@ -360,11 +361,16 @@ const BoxDetails = () => {
 
             <div className="table-wrapper">
                 <DataTable
-                    title={`All ${itemTypeLabel}`}
-                    data={items}
+                    title="All Suggestions"
+                    data={suggestions.filter(s =>
+                        s.title?.toLowerCase().includes(searchValue.toLowerCase()) ||
+                        s.description?.toLowerCase().includes(searchValue.toLowerCase())
+                    )}
                     columns={columns}
                     onRowClick={handleRowClick}
-                    searchPlaceholder={`Search by title or description...`}
+                    searchPlaceholder="Search by title or description..."
+                    searchValue={searchValue}
+                    onSearchChange={setSearchValue}
                     showExport={true}
                     currentPage={currentPage}
                     onPageChange={setCurrentPage}

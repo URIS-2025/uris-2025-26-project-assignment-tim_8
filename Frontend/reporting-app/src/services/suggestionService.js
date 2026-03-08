@@ -23,12 +23,16 @@ export const SuggestionService = {
     },
 
     // POST /api/Suggestion
-    create: async (data) => {
+    create: async (data, token) => {
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
         const response = await fetch(`${API_BASE_URL}/api/Suggestion/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify(data),
         });
         if (!response.ok) throw new Error('Failed to create suggestion');

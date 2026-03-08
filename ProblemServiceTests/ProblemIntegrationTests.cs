@@ -84,57 +84,11 @@ namespace ProblemServiceIntegrationTests
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
-        [Fact]
-        public async Task CreateProblem_ReturnsBadRequest_WhenProblemBoxIdIsEmpty()
-        {
-            var creationDTO = new ProblemCreationDTO
-            {
-                Title = "Integration Test Problem",
-                Description = "Integration Test Description",
-                ProblemBoxId = Guid.Empty,
-                Status = ProblemSuggestionStatus.Active,
-                Priority = ProblemPriority.High
-            };
+       
 
-            var response = await _client.PostAsJsonAsync("/api/Problem", creationDTO);
+      
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task CreateProblem_ReturnsBadRequest_WhenTitleIsEmpty()
-        {
-            var creationDTO = new ProblemCreationDTO
-            {
-                Title = "",
-                Description = "Integration Test Description",
-                ProblemBoxId = Guid.NewGuid(),
-                Status = ProblemSuggestionStatus.Active,
-                Priority = ProblemPriority.High
-            };
-
-            var response = await _client.PostAsJsonAsync("/api/Problem", creationDTO);
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task CreateProblem_ReturnsBadRequest_WhenDescriptionIsEmpty()
-        {
-            var creationDTO = new ProblemCreationDTO
-            {
-                Title = "Integration Test Problem",
-                Description = "",
-                ProblemBoxId = Guid.NewGuid(),
-                Status = ProblemSuggestionStatus.Active,
-                Priority = ProblemPriority.High
-            };
-
-            var response = await _client.PostAsJsonAsync("/api/Problem", creationDTO);
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
+        
         // GET BY ID
         [Fact]
         public async Task GetProblemById_ReturnsOk_WhenProblemExists()

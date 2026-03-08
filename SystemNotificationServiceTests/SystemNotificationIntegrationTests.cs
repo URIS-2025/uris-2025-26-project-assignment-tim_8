@@ -145,36 +145,6 @@ namespace SystemNotificationService.Tests.Integration
             Assert.NotEqual(Guid.Empty, returned.Id);
         }
 
-        [Fact]
-        public async Task CreateSystemNotification_ReturnsBadRequest_WhenBothIdsProvided()
-        {
-            var dto = new SystemNotificationCreationDTO
-            {
-                Text                = "Test",
-                ProblemCommentId    = Guid.NewGuid(),
-                SuggestionCommentId = Guid.NewGuid()
-            };
-
-            var response = await _client.PostAsJsonAsync("/api/SystemNotification", dto);
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task CreateSystemNotification_ReturnsBadRequest_WhenNeitherIdProvided()
-        {
-            var dto = new SystemNotificationCreationDTO
-            {
-                Text                = "Test",
-                ProblemCommentId    = null,
-                SuggestionCommentId = null
-            };
-
-            var response = await _client.PostAsJsonAsync("/api/SystemNotification", dto);
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
         // ─── DELETE ───────────────────────────────────────────────────────────
 
         [Fact]

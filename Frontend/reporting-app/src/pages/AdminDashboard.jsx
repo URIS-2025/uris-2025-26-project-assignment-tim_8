@@ -20,12 +20,14 @@ const AdminDashboard = () => {
     const { user } = useAuth();
     const [isOrgModalOpen, setOrgModalOpen] = useState(false);
     const [isProblemBoxModalOpen, setProblemBoxModalOpen] = useState(false);
+    const [isSuggestionBoxModalOpen, setSuggestionBoxModalOpen] = useState(false);
     const [organizations, setOrganizations] = useState([]);
     const [suggestionBoxes, setSuggestionBoxes] = useState([]);
     const [problemBoxes, setProblemBoxes] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [creatingProblemBox, setCreatingProblemBox] = useState(false);
+    const [creatingSuggestionBox, setCreatingSuggestionBox] = useState(false);
     const role = user?.role || 'user';
 
     // Form state for creating organization
@@ -33,6 +35,8 @@ const AdminDashboard = () => {
 
     // Form state for creating problem box (matches ProblemBoxCreationDTO)
     const [newProblemBox, setNewProblemBox] = useState({
+    // Form state for creating suggestion box
+    const [suggestionBoxForm, setSuggestionBoxForm] = useState({
         name: '',
         description: '',
         isDarkTheme: false,
@@ -137,6 +141,27 @@ const AdminDashboard = () => {
             alert("Failed to create problem box");
         } finally {
             setCreatingProblemBox(false);
+    const handleCreateSuggestionBox = async () => {
+        if (!suggestionBoxForm.name || !suggestionBoxForm.organizationId) return;
+        try {
+            setCreatingSuggestionBox(true);
+            const created = await SuggestionBoxService.create({
+                name: suggestionBoxForm.name,
+                description: suggestionBoxForm.description,
+                isDarkTheme: suggestionBoxForm.isDarkTheme,
+                password: suggestionBoxForm.password,
+                createdBy: suggestionBoxForm.createdBy,
+                organizationId: suggestionBoxForm.organizationId
+            });
+            setSuggestionBoxForm({ name: '', description: '', isDarkTheme: false, password: '', createdBy: '', organizationId: '' });
+            setSuggestionBoxModalOpen(false);
+            await fetchSuggestionBoxes();
+            navigate(`/admin/boxes/${created.id}`);
+        } catch (error) {
+            console.error("Failed to create suggestion box", error);
+            alert("Failed to create suggestion box");
+        } finally {
+            setCreatingSuggestionBox(false);
         }
     };
 
@@ -224,7 +249,7 @@ const AdminDashboard = () => {
                                 <span>Add Organization</span>
                             </button>
                         )}
-                        <button className="action-btn">
+                        <button className="action-btn" onClick={() => setSuggestionBoxModalOpen(true)}>
                             <div className="action-icon" style={{ color: 'var(--success)', backgroundColor: 'rgba(34, 197, 94, 0.1)' }}>
                                 <MessageSquareWarning size={24} />
                             </div>
@@ -279,6 +304,20 @@ const AdminDashboard = () => {
                             disabled={creatingProblemBox || !newProblemBox.name || !newProblemBox.organizationId}
                         >
                             {creatingProblemBox ? 'Creating...' : 'Create Box'}
+            {/* Create Suggestion Box Modal */}
+            <Modal
+                isOpen={isSuggestionBoxModalOpen}
+                onClose={() => setSuggestionBoxModalOpen(false)}
+                title="Create Suggestion Box"
+                footer={
+                    <>
+                        <button className="btn btn-ghost" onClick={() => setSuggestionBoxModalOpen(false)}>Cancel</button>
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleCreateSuggestionBox}
+                            disabled={creatingSuggestionBox || !suggestionBoxForm.name || !suggestionBoxForm.organizationId}
+                        >
+                            {creatingSuggestionBox ? 'Creating...' : 'Create Box'}
                         </button>
                     </>
                 }
@@ -305,6 +344,20 @@ const AdminDashboard = () => {
                             <option key={org.id} value={org.id}>{org.name}</option>
                         ))}
                     </select>
+                        placeholder="e.g. Feature Ideas"
+                        value={suggestionBoxForm.name}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, name: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Organization ID <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Enter organization GUID"
+                        value={suggestionBoxForm.organizationId}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, organizationId: e.target.value })}
+                    />
                 </div>
                 <div className="form-group">
                     <label>Created By</label>
@@ -314,6 +367,8 @@ const AdminDashboard = () => {
                         placeholder="e.g. Admin User"
                         value={newProblemBox.createdBy}
                         onChange={(e) => setNewProblemBox({ ...newProblemBox, createdBy: e.target.value })}
+                        value={suggestionBoxForm.createdBy}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, createdBy: e.target.value })}
                     />
                 </div>
                 <div className="form-group">
@@ -324,6 +379,8 @@ const AdminDashboard = () => {
                         placeholder="What is this box used for?"
                         value={newProblemBox.description}
                         onChange={(e) => setNewProblemBox({ ...newProblemBox, description: e.target.value })}
+                        value={suggestionBoxForm.description}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, description: e.target.value })}
                     />
                 </div>
                 <div className="form-group">
@@ -334,6 +391,8 @@ const AdminDashboard = () => {
                         placeholder="Set a password for this box"
                         value={newProblemBox.password}
                         onChange={(e) => setNewProblemBox({ ...newProblemBox, password: e.target.value })}
+                        value={suggestionBoxForm.password}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, password: e.target.value })}
                     />
                 </div>
                 <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -345,6 +404,12 @@ const AdminDashboard = () => {
                         style={{ width: 'auto' }}
                     />
                     <label htmlFor="pbIsDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
+                        id="suggestionBoxDarkTheme"
+                        checked={suggestionBoxForm.isDarkTheme}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, isDarkTheme: e.target.checked })}
+                        style={{ width: 'auto' }}
+                    />
+                    <label htmlFor="suggestionBoxDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
                 </div>
             </Modal>
         </div>

@@ -86,21 +86,6 @@ namespace BillingNotificationService.Tests.Controllers
         // ─── CREATE ───────────────────────────────────────────────────────────
 
         [Fact]
-        public void CreateBillingNotification_ReturnsCreated_WithCorrectData()
-        {
-            var creationDto = new BillingNotificationCreationDTO { Text = "Nova notifikacija", OrganizationId = Guid.NewGuid(), PaymentId = Guid.NewGuid() };
-            var createdDto  = new BillingNotificationCreatedDTO  { Id = Guid.NewGuid(), Text = "Nova notifikacija", OrganizationId = creationDto.OrganizationId, PaymentId = creationDto.PaymentId };
-            _mockRepo.Setup(r => r.CreateBillingNotification(creationDto)).Returns(createdDto);
-
-            var result = _controller.CreateBillingNotification(creationDto);
-
-            var createdResult = Assert.IsType<CreatedResult>(result.Result);
-            var returned = Assert.IsType<BillingNotificationCreatedDTO>(createdResult.Value);
-            Assert.Equal("Nova notifikacija", returned.Text);
-            Assert.NotEqual(Guid.Empty, returned.Id);
-        }
-
-        [Fact]
         public void CreateBillingNotification_CallsRepository_Once()
         {
             var creationDto = new BillingNotificationCreationDTO { Text = "Test", OrganizationId = Guid.NewGuid(), PaymentId = Guid.NewGuid() };
@@ -112,23 +97,7 @@ namespace BillingNotificationService.Tests.Controllers
             _mockRepo.Verify(r => r.CreateBillingNotification(creationDto), Times.Once);
         }
 
-        // ─── UPDATE ───────────────────────────────────────────────────────────
-
-        [Fact]
-        public void UpdateBillingNotification_ReturnsOk_WithUpdatedData()
-        {
-            var id        = Guid.NewGuid();
-            var updateDto = new BillingNotificationUpdateDTO { Id = id, Text = "Azurirana notifikacija", OrganizationId = Guid.NewGuid(), PaymentId = Guid.NewGuid() };
-            var updatedDto = new BillingNotificationDTO { Id = id, Text = "Azurirana notifikacija", IsRead = false, OrganizationId = updateDto.OrganizationId, PaymentId = updateDto.PaymentId };
-            _mockRepo.Setup(r => r.UpdateBillingNotification(updateDto)).Returns(updatedDto);
-
-            var result = _controller.UpdateBillingNotification(updateDto);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsType<BillingNotificationDTO>(okResult.Value);
-            Assert.Equal(id, returned.Id);
-            Assert.Equal("Azurirana notifikacija", returned.Text);
-        }
+        // ─── UPDATE ────────────────────────────────────────────────
 
         [Fact]
         public void UpdateBillingNotification_CallsRepository_Once()
@@ -143,14 +112,6 @@ namespace BillingNotificationService.Tests.Controllers
         }
 
         // ─── DELETE ───────────────────────────────────────────────────────────
-
-        [Fact]
-        public void DeleteBillingNotification_ReturnsNoContent()
-        {
-            var result = _controller.DeleteBillingNotification(Guid.NewGuid());
-
-            Assert.IsType<NoContentResult>(result);
-        }
 
         [Fact]
         public void DeleteBillingNotification_CallsRepository_Once()

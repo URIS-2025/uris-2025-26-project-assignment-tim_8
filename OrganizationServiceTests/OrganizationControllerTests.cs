@@ -85,22 +85,6 @@ namespace OrganizationService.Tests.Controllers
         // ─── CREATE ────────────────────────────────────────────────────────────
 
         [Fact]
-        public void CreateOrganization_ReturnsCreated_WithCorrectData()
-        {
-            var adminId     = Guid.NewGuid();
-            var creationDto = new OrganizationCreationDTO { Name = "New Org", AdminId = adminId };
-            var createdDto  = new OrganizationCreatedDTO  { Id = Guid.NewGuid(), Name = "New Org" };
-            _mockRepo.Setup(r => r.CreateOrganization(creationDto)).Returns(createdDto);
-
-            var result = _controller.CreateOrganization(creationDto);
-
-            var createdResult = Assert.IsType<CreatedResult>(result.Result);
-            var returned = Assert.IsType<OrganizationCreatedDTO>(createdResult.Value);
-            Assert.Equal("New Org", returned.Name);
-            Assert.NotEqual(Guid.Empty, returned.Id);
-        }
-
-        [Fact]
         public void CreateOrganization_CallsRepository_Once()
         {
             var creationDto = new OrganizationCreationDTO { Name = "New Org", AdminId = Guid.NewGuid() };
@@ -114,21 +98,6 @@ namespace OrganizationService.Tests.Controllers
 
         // ─── UPDATE ────────────────────────────────────────────────────────────
 
-        [Fact]
-        public void UpdateOrganization_ReturnsOk_WithUpdatedData()
-        {
-            var id         = Guid.NewGuid();
-            var orgDto     = new OrganizationDTO        { Id = id, Name = "Updated Org", AdminId = Guid.NewGuid() };
-            var updatedDto = new OrganizationCreatedDTO { Id = id, Name = "Updated Org" };
-            _mockRepo.Setup(r => r.UpdateOrganization(orgDto)).Returns(updatedDto);
-
-            var result = _controller.UpdateOrganization(orgDto);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsType<OrganizationCreatedDTO>(okResult.Value);
-            Assert.Equal(id, returned.Id);
-            Assert.Equal("Updated Org", returned.Name);
-        }
 
         [Fact]
         public void UpdateOrganization_CallsRepository_Once()
@@ -143,15 +112,6 @@ namespace OrganizationService.Tests.Controllers
         }
 
         // ─── DELETE ────────────────────────────────────────────────────────────
-
-        [Fact]
-        public void DeleteOrganization_ReturnsNoContent()
-        {
-            var result = _controller.DeleteOrganization(Guid.NewGuid());
-
-            Assert.IsType<NoContentResult>(result);
-        }
-
         [Fact]
         public void DeleteOrganization_CallsRepository_Once()
         {

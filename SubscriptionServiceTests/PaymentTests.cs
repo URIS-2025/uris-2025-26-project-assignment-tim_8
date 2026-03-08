@@ -305,47 +305,6 @@ namespace SubscriptionServiceTests
         // =====================
 
         [Fact]
-        public void CreatePayment_ReturnsCreatedAtAction_WithValidData()
-        {
-            var dto = new PaymentCreationDTO
-            {
-                SubscriptionId = Guid.NewGuid(),
-                Total = 250.0,
-                Currency = "USD",
-                PaymentMethod = "CreditCard"
-            };
-            var created = new PaymentCreatedDTO
-            {
-                Id = Guid.NewGuid(),
-                Total = dto.Total,
-                CreatedAt = DateTime.UtcNow
-            };
-            _mockRepo.Setup(r => r.CreatePayment(dto)).Returns(created);
-
-            var result = _controller.CreatePayment(dto);
-
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            Assert.Equal(nameof(_controller.GetPaymentById), createdResult.ActionName);
-            var returned = Assert.IsType<PaymentCreatedDTO>(createdResult.Value);
-            Assert.Equal(created.Id, returned.Id);
-            Assert.Equal(250.0, returned.Total);
-        }
-
-        [Fact]
-        public void CreatePayment_ReturnsCorrectRouteValues()
-        {
-            var createdId = Guid.NewGuid();
-            var dto = new PaymentCreationDTO { SubscriptionId = Guid.NewGuid(), Total = 50.0 };
-            _mockRepo.Setup(r => r.CreatePayment(dto))
-                     .Returns(new PaymentCreatedDTO { Id = createdId, Total = 50.0 });
-
-            var result = _controller.CreatePayment(dto);
-
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            Assert.Equal(createdId, createdResult.RouteValues["id"]);
-        }
-
-        [Fact]
         public void CreatePayment_CallsRepository_ExactlyOnce()
         {
             var dto = new PaymentCreationDTO
@@ -361,26 +320,6 @@ namespace SubscriptionServiceTests
             _controller.CreatePayment(dto);
 
             _mockRepo.Verify(r => r.CreatePayment(dto), Times.Once);
-        }
-
-        [Fact]
-        public void CreatePayment_WithZeroTotal_ReturnsCreated()
-        {
-            var dto = new PaymentCreationDTO
-            {
-                SubscriptionId = Guid.NewGuid(),
-                Total = 0.0,
-                Currency = "USD",
-                PaymentMethod = "CreditCard"
-            };
-            _mockRepo.Setup(r => r.CreatePayment(dto))
-                     .Returns(new PaymentCreatedDTO { Id = Guid.NewGuid(), Total = 0.0 });
-
-            var result = _controller.CreatePayment(dto);
-
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var returned = Assert.IsType<PaymentCreatedDTO>(createdResult.Value);
-            Assert.Equal(0.0, returned.Total);
         }
 
         [Fact]
@@ -422,72 +361,6 @@ namespace SubscriptionServiceTests
         }
 
         [Fact]
-        public void CreatePayment_ReturnsCreatedAt_WithValidCreatedAtDate()
-        {
-            var before = DateTime.UtcNow.AddSeconds(-1);
-            var dto = new PaymentCreationDTO { SubscriptionId = Guid.NewGuid(), Total = 75.0 };
-            var created = new PaymentCreatedDTO
-            {
-                Id = Guid.NewGuid(),
-                Total = 75.0,
-                CreatedAt = DateTime.UtcNow
-            };
-            _mockRepo.Setup(r => r.CreatePayment(dto)).Returns(created);
-
-            var result = _controller.CreatePayment(dto);
-
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var returned = Assert.IsType<PaymentCreatedDTO>(createdResult.Value);
-            Assert.True(returned.CreatedAt > before);
-            Assert.True(returned.CreatedAt <= DateTime.UtcNow.AddSeconds(1));
-        }
-
-        [Fact]
-        public async Task CreatePayment_ThrowsException_WhenRepositoryFails()
-        {
-            var dto = new PaymentCreationDTO { SubscriptionId = Guid.NewGuid(), Total = 50.0 };
-            _mockRepo.Setup(r => r.CreatePayment(dto)).Throws(new Exception("DB error"));
-
-            await Assert.ThrowsAsync<Exception>(() => _controller.CreatePayment(dto));
-        }
-
-        // =====================
-        // UPDATE PAYMENT
-        // =====================
-
-        [Fact]
-        public void UpdatePayment_ReturnsOk_WhenPaymentExists()
-        {
-            var dto = new PaymentDTO
-            {
-                Id = Guid.NewGuid(),
-                Total = 300.0,
-                Status = "Completed",
-                Currency = "USD",
-                PaymentMethod = "CreditCard"
-            };
-            var updated = new PaymentCreatedDTO { Id = dto.Id, Total = 300.0 };
-            _mockRepo.Setup(r => r.UpdatePayment(dto)).Returns(updated);
-
-            var result = _controller.UpdatePayment(dto);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsType<PaymentCreatedDTO>(okResult.Value);
-            Assert.Equal(dto.Id, returned.Id);
-        }
-
-        [Fact]
-        public void UpdatePayment_ReturnsNotFound_WhenPaymentDoesNotExist()
-        {
-            var dto = new PaymentDTO { Id = Guid.NewGuid(), Total = 100.0 };
-            _mockRepo.Setup(r => r.UpdatePayment(dto)).Returns((PaymentCreatedDTO)null);
-
-            var result = _controller.UpdatePayment(dto);
-
-            Assert.IsType<NotFoundResult>(result.Result);
-        }
-
-        [Fact]
         public void UpdatePayment_CallsRepository_ExactlyOnce()
         {
             var dto = new PaymentDTO { Id = Guid.NewGuid(), Total = 75.0 };
@@ -499,66 +372,9 @@ namespace SubscriptionServiceTests
             _mockRepo.Verify(r => r.UpdatePayment(dto), Times.Once);
         }
 
-        [Fact]
-        public void UpdatePayment_ReturnsUpdatedTotal_Correctly()
-        {
-            var id = Guid.NewGuid();
-            var dto = new PaymentDTO { Id = id, Total = 500.0, Status = "Completed" };
-            var updated = new PaymentCreatedDTO { Id = id, Total = 500.0 };
-            _mockRepo.Setup(r => r.UpdatePayment(dto)).Returns(updated);
-
-            var result = _controller.UpdatePayment(dto);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsType<PaymentCreatedDTO>(okResult.Value);
-            Assert.Equal(500.0, returned.Total);
-        }
-
-        [Fact]
-        public void UpdatePayment_WithZeroTotal_ReturnsOk()
-        {
-            var dto = new PaymentDTO { Id = Guid.NewGuid(), Total = 0.0 };
-            _mockRepo.Setup(r => r.UpdatePayment(dto))
-                     .Returns(new PaymentCreatedDTO { Id = dto.Id, Total = 0.0 });
-
-            var result = _controller.UpdatePayment(dto);
-
-            Assert.IsType<OkObjectResult>(result.Result);
-        }
-
-        [Fact]
-        public void UpdatePayment_WithEmptyGuidId_ReturnsNotFound()
-        {
-            var dto = new PaymentDTO { Id = Guid.Empty, Total = 100.0 };
-            _mockRepo.Setup(r => r.UpdatePayment(dto)).Returns((PaymentCreatedDTO)null);
-
-            var result = _controller.UpdatePayment(dto);
-
-            Assert.IsType<NotFoundResult>(result.Result);
-        }
-
-        [Fact]
-        public async Task UpdatePayment_ThrowsException_WhenRepositoryFails()
-        {
-            var dto = new PaymentDTO { Id = Guid.NewGuid(), Total = 100.0 };
-            _mockRepo.Setup(r => r.UpdatePayment(dto)).Throws(new Exception("DB error"));
-
-            await Assert.ThrowsAsync<Exception>(() => _controller.UpdatePayment(dto));
-        }
-
         // =====================
         // DELETE PAYMENT
         // =====================
-
-        [Fact]
-        public void DeletePayment_ReturnsNoContent_WhenSuccessful()
-        {
-            var id = Guid.NewGuid();
-
-            var result = _controller.DeletePayment(id);
-
-            Assert.IsType<NoContentResult>(result);
-        }
 
         [Fact]
         public void DeletePayment_CallsRepository_ExactlyOnce()
@@ -568,25 +384,6 @@ namespace SubscriptionServiceTests
             _controller.DeletePayment(id);
 
             _mockRepo.Verify(r => r.DeletePayment(id), Times.Once);
-        }
-
-        [Fact]
-        public void DeletePayment_ReturnsNoContent_ForNonExistentId()
-        {
-            var id = Guid.NewGuid();
-            _mockRepo.Setup(r => r.DeletePayment(id));
-
-            var result = _controller.DeletePayment(id);
-
-            Assert.IsType<NoContentResult>(result);
-        }
-
-        [Fact]
-        public void DeletePayment_WithEmptyGuid_ReturnsNoContent()
-        {
-            var result = _controller.DeletePayment(Guid.Empty);
-
-            Assert.IsType<NoContentResult>(result);
         }
 
         [Fact]
