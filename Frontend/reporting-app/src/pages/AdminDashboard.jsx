@@ -10,10 +10,6 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { OrganizationService } from '../services/organizationService';
-import { SubscriptionPlanService } from '../services/subscriptionPlanService';
-import { SubscriptionService } from '../services/subscriptionService';
-import { PaymentService } from '../services/paymentService';
-import { BillingNotificationService } from '../services/billingNotificationService';
 import { useAuth } from '../context/AuthContext';
 import './AdminDashboard.css';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
@@ -23,18 +19,27 @@ import { SuggestionService } from '../services/suggestionService';
 const AdminDashboard = () => {
     const { user } = useAuth();
     const [isOrgModalOpen, setOrgModalOpen] = useState(false);
+    const [isSuggestionBoxModalOpen, setSuggestionBoxModalOpen] = useState(false);
     const [organizations, setOrganizations] = useState([]);
     const [suggestionBoxes, setSuggestionBoxes] = useState([]);
     const [problemBoxes, setProblemBoxes] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [subscriptionPlans, setSubscriptionPlans] = useState([]);
-    const [selectedPlanId, setSelectedPlanId] = useState('');
-    const [isCreating, setIsCreating] = useState(false);
+    const [creatingSuggestionBox, setCreatingSuggestionBox] = useState(false);
     const role = user?.role || 'user';
 
     // Form state for creating organization
     const [newOrg, setNewOrg] = useState({ name: '' });
+
+    // Form state for creating suggestion box
+    const [suggestionBoxForm, setSuggestionBoxForm] = useState({
+        name: '',
+        description: '',
+        isDarkTheme: false,
+        password: '',
+        createdBy: '',
+        organizationId: ''
+    });
 
     const navigate = useNavigate();
 
@@ -43,17 +48,7 @@ const AdminDashboard = () => {
         fetchSuggestionBoxes();
         fetchProblemBoxes();
         fetchSuggestions();
-        fetchSubscriptionPlans();
     }, []);
-
-    const fetchSubscriptionPlans = async () => {
-        try {
-            const data = await SubscriptionPlanService.getAll();
-            setSubscriptionPlans(data);
-        } catch (error) {
-            console.error("Failed to fetch subscription plans", error);
-        }
-    };
 
     const fetchOrganizations = async () => {
         try {
@@ -105,65 +100,44 @@ const AdminDashboard = () => {
 
     const handleCreateOrganization = async () => {
         if (!newOrg.name.trim()) return;
-        if (!selectedPlanId) {
-            alert('Please select a subscription plan');
-            return;
-        }
-        setIsCreating(true);
         try {
-            // Step 1: Create the organization
             const created = await OrganizationService.create({
                 name: newOrg.name,
-                themeColor: '#6366f1',
+                themeColor: '#6366f1', // Default theme color
                 customLogoUrl: null,
-                adminId: user?.id || null
+                adminId: user?.id || null // Automatically add adminId from localstorage user
             });
-
-            // Step 2: Create a subscription linked to the organization and selected plan
-            const now = new Date();
-            const endDate = new Date(now);
-            endDate.setFullYear(endDate.getFullYear() + 1); // 1-year subscription
-
-            const subscription = await SubscriptionService.create({
-                subscriptionPlanId: selectedPlanId,
-                organizationId: created.id,
-                startDate: now.toISOString(),
-                endDate: endDate.toISOString()
-            });
-
-            // Determine plan price
-            const selectedPlan = subscriptionPlans.find(p => p.id === selectedPlanId);
-            const planTitle = selectedPlan?.title?.toLowerCase() || '';
-            let planValue = 0;
-            if (planTitle.includes('premium') || planTitle.includes('enterprise')) planValue = 499;
-            else if (planTitle.includes('standard') || planTitle.includes('pro')) planValue = 199;
-            else if (planTitle.includes('basic')) planValue = 49;
-
-            // Step 3: Create an initial payment for the exact amount
-            const payment = await PaymentService.create({
-                subscriptionId: subscription.id,
-                total: planValue,
-                currency: 'EUR',
-                paymentMethod: 'CreditCard'
-            });
-
-            // Step 4: Create a billing notification for the organization
-            await BillingNotificationService.create({
-                text: `Subscription created for organization "${newOrg.name}".`,
-                organizationId: created.id,
-                paymentId: payment.id
-            });
-
             setOrgModalOpen(false);
             setNewOrg({ name: '' });
-            setSelectedPlanId('');
             fetchOrganizations();
             navigate(`/admin/organizations/${created.id}`);
         } catch (error) {
             console.error("Failed to create organization", error);
-            alert("Failed to create organization: " + error.message);
+            alert("Failed to create organization");
+        }
+    };
+
+    const handleCreateSuggestionBox = async () => {
+        if (!suggestionBoxForm.name || !suggestionBoxForm.organizationId) return;
+        try {
+            setCreatingSuggestionBox(true);
+            const created = await SuggestionBoxService.create({
+                name: suggestionBoxForm.name,
+                description: suggestionBoxForm.description,
+                isDarkTheme: suggestionBoxForm.isDarkTheme,
+                password: suggestionBoxForm.password,
+                createdBy: suggestionBoxForm.createdBy,
+                organizationId: suggestionBoxForm.organizationId
+            });
+            setSuggestionBoxForm({ name: '', description: '', isDarkTheme: false, password: '', createdBy: '', organizationId: '' });
+            setSuggestionBoxModalOpen(false);
+            await fetchSuggestionBoxes();
+            navigate(`/admin/boxes/${created.id}`);
+        } catch (error) {
+            console.error("Failed to create suggestion box", error);
+            alert("Failed to create suggestion box");
         } finally {
-            setIsCreating(false);
+            setCreatingSuggestionBox(false);
         }
     };
 
@@ -251,7 +225,7 @@ const AdminDashboard = () => {
                                 <span>Add Organization</span>
                             </button>
                         )}
-                        <button className="action-btn">
+                        <button className="action-btn" onClick={() => setSuggestionBoxModalOpen(true)}>
                             <div className="action-icon" style={{ color: 'var(--success)', backgroundColor: 'rgba(34, 197, 94, 0.1)' }}>
                                 <MessageSquareWarning size={24} />
                             </div>
@@ -269,14 +243,12 @@ const AdminDashboard = () => {
 
             <Modal
                 isOpen={isOrgModalOpen}
-                onClose={() => { setOrgModalOpen(false); setSelectedPlanId(''); }}
+                onClose={() => setOrgModalOpen(false)}
                 title="Create New Organization"
                 footer={
                     <>
-                        <button className="btn btn-ghost" onClick={() => { setOrgModalOpen(false); setSelectedPlanId(''); }} disabled={isCreating}>Cancel</button>
-                        <button className="btn btn-primary" onClick={handleCreateOrganization} disabled={isCreating}>
-                            {isCreating ? 'Creating...' : 'Create Organization'}
-                        </button>
+                        <button className="btn btn-ghost" onClick={() => setOrgModalOpen(false)}>Cancel</button>
+                        <button className="btn btn-primary" onClick={handleCreateOrganization}>Create Organization</button>
                     </>
                 }
             >
@@ -289,25 +261,87 @@ const AdminDashboard = () => {
                         value={newOrg.name}
                         onChange={(e) => setNewOrg({ name: e.target.value })}
                         required
-                        disabled={isCreating}
+                    />
+                </div>
+            </Modal>
+
+            {/* Create Suggestion Box Modal */}
+            <Modal
+                isOpen={isSuggestionBoxModalOpen}
+                onClose={() => setSuggestionBoxModalOpen(false)}
+                title="Create Suggestion Box"
+                footer={
+                    <>
+                        <button className="btn btn-ghost" onClick={() => setSuggestionBoxModalOpen(false)}>Cancel</button>
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleCreateSuggestionBox}
+                            disabled={creatingSuggestionBox || !suggestionBoxForm.name || !suggestionBoxForm.organizationId}
+                        >
+                            {creatingSuggestionBox ? 'Creating...' : 'Create Box'}
+                        </button>
+                    </>
+                }
+            >
+                <div className="form-group">
+                    <label>Box Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Feature Ideas"
+                        value={suggestionBoxForm.name}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, name: e.target.value })}
                     />
                 </div>
                 <div className="form-group">
-                    <label>Subscription Plan *</label>
-                    <select
+                    <label>Organization ID <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <input
+                        type="text"
                         className="form-control"
-                        value={selectedPlanId}
-                        onChange={(e) => setSelectedPlanId(e.target.value)}
-                        required
-                        disabled={isCreating}
-                    >
-                        <option value="">Select a subscription plan...</option>
-                        {subscriptionPlans.map((plan) => (
-                            <option key={plan.id} value={plan.id}>
-                                {plan.title} — {plan.description}
-                            </option>
-                        ))}
-                    </select>
+                        placeholder="Enter organization GUID"
+                        value={suggestionBoxForm.organizationId}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, organizationId: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Created By</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. Admin User"
+                        value={suggestionBoxForm.createdBy}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, createdBy: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Description</label>
+                    <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="What is this box used for?"
+                        value={suggestionBoxForm.description}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, description: e.target.value })}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Password (Optional)</label>
+                    <input
+                        type="password"
+                        className="form-control"
+                        placeholder="Set a password for this box"
+                        value={suggestionBoxForm.password}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, password: e.target.value })}
+                    />
+                </div>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <input
+                        type="checkbox"
+                        id="suggestionBoxDarkTheme"
+                        checked={suggestionBoxForm.isDarkTheme}
+                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, isDarkTheme: e.target.checked })}
+                        style={{ width: 'auto' }}
+                    />
+                    <label htmlFor="suggestionBoxDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
                 </div>
             </Modal>
         </div>

@@ -8,7 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<AttachmentContext>();
+builder.Services.AddDbContext<AttachmentContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AttachmentDB")));
 builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 

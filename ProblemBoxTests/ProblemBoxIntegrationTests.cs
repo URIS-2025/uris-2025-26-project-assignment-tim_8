@@ -63,9 +63,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "Test Description",
                 Password = "password123",
                 OrganizationId = organizationId,
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
@@ -92,9 +90,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "Test Description",
                 Password = "password123",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             var createResponse = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
             var created = await createResponse.Content.ReadFromJsonAsync<ProblemBoxCreatedDTO>();
@@ -123,9 +119,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "Test Description",
                 Password = "password123",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = boxAccessLinkId,
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
@@ -152,9 +146,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "Test Description",
                 Password = "password123",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
@@ -171,9 +163,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "Test Description",
                 Password = "password123",
                 OrganizationId = Guid.Empty,
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
@@ -190,9 +180,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "Test Description",
                 Password = "password123",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
@@ -209,9 +197,9 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "",
                 Password = "password123",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
+                
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
+                
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
@@ -228,9 +216,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "Test Description",
                 Password = "",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
@@ -248,9 +234,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "Test Description",
                 Password = "password123",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             var createResponse = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
             var created = await createResponse.Content.ReadFromJsonAsync<ProblemBoxCreatedDTO>();
@@ -298,9 +282,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Description = "Test Description",
                 Password = "password123",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             var createResponse = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
             var created = await createResponse.Content.ReadFromJsonAsync<ProblemBoxCreatedDTO>();

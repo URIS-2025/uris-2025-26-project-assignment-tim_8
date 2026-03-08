@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.TestPlatform.TestHost;
 using OrganizationService.Context;
 using OrganizationService.Models.DTOs;
 using Xunit;
+using OrganizationService;
 
 namespace OrganizationService.Tests.Integration
 {

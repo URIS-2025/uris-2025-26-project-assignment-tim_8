@@ -1,29 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Paperclip, Clock, Shield, AlertTriangle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Send, Paperclip, Clock, Shield, AlertTriangle, Trash2, Loader2, Plus, Download } from 'lucide-react';
+import { SuggestionService } from '../services/suggestionService';
+import { AttachmentService } from '../services/attachmentService';
+import { SuggestionCategoryService } from '../services/suggestionCategoryService';
 import './SubmissionDetails.css';
 
-// Mock data
-const mockSubmission = {
-    id: 'SUB-101',
-    boxName: 'Facilities & Maintenance',
-    title: 'Coffee machine in breakroom is broken',
-    content: 'The coffee machine on the 2nd floor has been leaking water since Tuesday. It needs maintenance immediately as it is creating a slip hazard near the power outlets.',
-    author: 'Anonymous',
-    date: 'Oct 24, 2023, 10:30 AM',
-    status: 'In Progress',
-    priority: 'High',
-    category: 'Maintenance',
-    thread: [
-        { id: 1, sender: 'author', role: 'Anonymous', text: 'Please send someone soon, the puddle is getting bigger.', time: 'Oct 24, 2023, 11:15 AM' },
-        { id: 2, sender: 'admin', role: 'Jane Smith (Admin)', text: 'Thank you for reporting this. I have contacted building maintenance, they should arrive within the hour.', time: 'Oct 24, 2023, 11:45 AM' }
-    ],
-    type: 'Problem', // Problem or Suggestion
-    attachments: [
-        { id: 'att-1', name: 'puddle_photo.jpg', size: '2.4 MB' },
-        { id: 'att-2', name: 'machine_serial.png', size: '1.1 MB' }
-    ],
-    upvotes: 0 // Only applicable for suggestions
+// Map numeric status to readable label
+const statusMap = {
+    0: 'New',
+    1: 'In Progress',
+    2: 'Reviewing',
+    3: 'Resolved',
+    4: 'Closed'
 };
 
 const SubmissionDetails = () => {
@@ -31,9 +20,101 @@ const SubmissionDetails = () => {
     const navigate = useNavigate();
     const [replyText, setReplyText] = useState('');
 
-    // States for actions
-    const [priority, setPriority] = useState(mockSubmission.priority);
-    const [status, setStatus] = useState(mockSubmission.status);
+    // Real data state
+    const [suggestion, setSuggestion] = useState(null);
+    const [attachments, setAttachments] = useState([]);
+    const [availableCategories, setAvailableCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Editable status
+    const [status, setStatus] = useState('New');
+
+    // UI State for categories
+    const [isAddingCategory, setIsAddingCategory] = useState(false);
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
+
+    useEffect(() => {
+        fetchSuggestionAndData();
+        fetchCategories();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [submissionId]);
+
+    const fetchCategories = async () => {
+        try {
+            const cats = await SuggestionCategoryService.getAll();
+            setAvailableCategories(cats);
+        } catch (err) {
+            console.error('Error fetching categories:', err);
+        }
+    };
+
+    const fetchSuggestionAndData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Parallel fetch recommendation
+            const [data, attData] = await Promise.all([
+                SuggestionService.getById(submissionId),
+                AttachmentService.getBySuggestionId(submissionId).catch(() => [])
+            ]);
+
+            setSuggestion(data);
+            setAttachments(attData);
+            setStatus(typeof data.status === 'number' ? (statusMap[data.status] || 'New') : data.status);
+        } catch (err) {
+            console.error('Error fetching suggestion details:', err);
+            setError('Failed to load suggestion details. Please check that the backend is running.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddCategory = async () => {
+        if (!selectedCategoryId) return;
+
+        try {
+            // Include existing category IDs plus the new one
+            const currentCatIds = suggestion.categories?.map(c => c.id) || [];
+            if (currentCatIds.includes(selectedCategoryId)) {
+                setIsAddingCategory(false);
+                setSelectedCategoryId('');
+                return; // Already has it
+            }
+
+            const newCategoryIds = [...currentCatIds, selectedCategoryId];
+            const updatePayload = {
+                id: suggestion.id,
+                title: suggestion.title,
+                description: suggestion.description,
+                status: suggestion.status,
+                categoryIds: newCategoryIds
+            };
+
+            await SuggestionService.update(updatePayload);
+
+            // Refresh to get updated object with full category info
+            await fetchSuggestionAndData();
+
+            setIsAddingCategory(false);
+            setSelectedCategoryId('');
+        } catch (err) {
+            console.error('Error adding category:', err);
+            alert('Failed to add category.');
+        }
+    };
+
+    const handleDeleteSuggestion = async () => {
+        if (!window.confirm('Are you sure you want to delete this suggestion?')) return;
+        try {
+            await SuggestionService.delete(submissionId);
+            navigate(-1);
+        } catch (err) {
+            console.error('Error deleting suggestion:', err);
+            alert('Failed to delete suggestion.');
+        }
+    };
 
     const handleReplySubmit = (e) => {
         e.preventDefault();
@@ -41,6 +122,42 @@ const SubmissionDetails = () => {
         console.log('Sent reply:', replyText);
         setReplyText('');
     };
+
+    if (loading) {
+        return (
+            <div className="submission-details-container animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
+                    <p>Loading suggestion details...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="submission-details-container animate-fade-in">
+                <div className="back-link" onClick={() => navigate(-1)}>
+                    <ArrowLeft size={16} /> Back to Box
+                </div>
+                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+                    <p>{error}</p>
+                    <button className="btn btn-ghost" onClick={fetchSuggestionAndData} style={{ marginTop: '1rem' }}>
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Derive display values from real data
+    const title = suggestion?.title || 'Untitled Suggestion';
+    const description = suggestion?.description || 'No description provided.';
+    const createdAt = suggestion?.createdAt ? new Date(suggestion.createdAt).toLocaleString() : '—';
+    const categories = suggestion?.categories || [];
+    const categoryNames = categories.length > 0
+        ? categories.map(c => c.name).join(', ')
+        : 'Uncategorized';
 
     return (
         <div className="submission-details-container animate-fade-in">
@@ -51,17 +168,17 @@ const SubmissionDetails = () => {
             <div className="submission-header glass-panel">
                 <div className="submission-header-top">
                     <div className="submission-meta-info">
-                        <span className="meta-box-name">{mockSubmission.boxName}</span>
-                        <span className="meta-id">{submissionId || mockSubmission.id}</span>
+                        <span className="meta-box-name">Suggestion</span>
+                        <span className="meta-id">{submissionId}</span>
                     </div>
                     <div className="submission-actions">
-                        <button className="btn btn-ghost icon-btn danger" title="Delete Submission">
+                        <button className="btn btn-ghost icon-btn danger" title="Delete Suggestion" onClick={handleDeleteSuggestion}>
                             <Trash2 size={18} />
                         </button>
                     </div>
                 </div>
 
-                <h1 className="submission-title">{mockSubmission.title}</h1>
+                <h1 className="submission-title">{title}</h1>
 
                 <div className="submission-tags">
                     <div className="tag-group">
@@ -74,37 +191,71 @@ const SubmissionDetails = () => {
                         >
                             <option value="New">New</option>
                             <option value="In Progress">In Progress</option>
+                            <option value="Reviewing">Reviewing</option>
                             <option value="Resolved">Resolved</option>
-                        </select>
-                    </div>
-
-                    <div className="tag-group">
-                        <label>Priority:</label>
-                        <select
-                            className="status-select"
-                            value={priority}
-                            onChange={(e) => setPriority(e.target.value)}
-                            style={{ color: priority === 'High' ? 'var(--danger)' : priority === 'Medium' ? 'var(--warning)' : 'var(--success)' }}
-                        >
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
+                            <option value="Closed">Closed</option>
                         </select>
                     </div>
 
                     <div className="tag-group">
                         <label>Category:</label>
-                        <span className="readonly-tag">{mockSubmission.category || 'Uncategorized'}</span>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                            {categories.length > 0 ? (
+                                categories.map(c => (
+                                    <span key={c.id} className="readonly-tag">{c.name || c.title}</span>
+                                ))
+                            ) : (
+                                <span className="readonly-tag" style={{ background: 'transparent', border: '1px dashed var(--border-subtle)' }}>None</span>
+                            )}
+
+                            {isAddingCategory ? (
+                                <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                                    <select
+                                        className="portal-input"
+                                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', minWidth: '120px', height: 'auto' }}
+                                        value={selectedCategoryId}
+                                        onChange={(e) => setSelectedCategoryId(e.target.value)}
+                                        autoFocus
+                                    >
+                                        <option value="">Select...</option>
+                                        {availableCategories
+                                            .filter(ac => !categories.find(c => c.id === ac.id))
+                                            .map(ac => (
+                                                <option key={ac.id} value={ac.id}>{ac.title}</option>
+                                            ))}
+                                    </select>
+                                    <button
+                                        className="btn btn-primary"
+                                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
+                                        onClick={handleAddCategory}
+                                    >
+                                        Add
+                                    </button>
+                                    <button
+                                        className="btn btn-ghost"
+                                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
+                                        onClick={() => { setIsAddingCategory(false); setSelectedCategoryId(''); }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    className="btn btn-ghost icon-btn"
+                                    style={{ padding: '0.25rem' }}
+                                    onClick={() => setIsAddingCategory(true)}
+                                    title="Add Category"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    {mockSubmission.type === 'Suggestion' && (
-                        <div className="tag-group">
-                            <label>Community Votes:</label>
-                            <span className="readonly-tag" style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>
-                                👍 {mockSubmission.upvotes}
-                            </span>
-                        </div>
-                    )}
+                    <div className="tag-group">
+                        <label>Suggestion Box ID:</label>
+                        <span className="readonly-tag" style={{ fontSize: '0.8rem' }}>{suggestion?.suggestionBoxId || '—'}</span>
+                    </div>
                 </div>
             </div>
 
@@ -116,26 +267,35 @@ const SubmissionDetails = () => {
                         <div className="message-header">
                             <div className="message-author">
                                 <div className="author-avatar anonymous"><Shield size={14} /></div>
-                                <span className="author-name">{mockSubmission.author}</span>
+                                <span className="author-name">Anonymous</span>
                                 <span className="author-badge">Original Poster</span>
                             </div>
-                            <span className="message-time"><Clock size={12} /> {mockSubmission.date}</span>
+                            <span className="message-time"><Clock size={12} /> {createdAt}</span>
                         </div>
                         <div className="message-body">
-                            <p>{mockSubmission.content}</p>
+                            <p>{description}</p>
 
-                            {/* Render explicit Attachments (aggregate rule for Problems) */}
-                            {mockSubmission.type === 'Problem' && mockSubmission.attachments?.length > 0 && (
+                            {/* Attachments Section */}
+                            {attachments.length > 0 && (
                                 <div className="submission-attachments" style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
                                     <h4 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <Paperclip size={14} /> Attached Evidence
                                     </h4>
                                     <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                        {mockSubmission.attachments.map(att => (
-                                            <div key={att.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: '0.875rem' }}>
-                                                <span style={{ color: 'var(--text-primary)' }}>{att.name}</span>
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>({att.size})</span>
-                                            </div>
+                                        {attachments.map(att => (
+                                            <a
+                                                key={att.id}
+                                                href={att.url}
+                                                download={att.fileName}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: '0.875rem', textDecoration: 'none', color: 'inherit', transition: 'background 0.2s' }}
+                                                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.2)'}
+                                            >
+                                                <Download size={14} style={{ color: 'var(--accent-primary)' }} />
+                                                <span style={{ color: 'var(--text-primary)' }}>{att.fileName}</span>
+                                            </a>
                                         ))}
                                     </div>
                                 </div>
@@ -147,27 +307,17 @@ const SubmissionDetails = () => {
                         <span>Communication Thread</span>
                     </div>
 
-                    {/* Thread messages */}
+                    {/* Thread messages — empty for now since no comment data is available */}
                     <div className="thread-container">
-                        {mockSubmission.thread.map((msg) => (
-                            <div key={msg.id} className={`message-bubble ${msg.sender} glass-panel`}>
-                                <div className="message-header">
-                                    <div className="message-author">
-                                        <span className="author-name">{msg.role}</span>
-                                    </div>
-                                    <span className="message-time">{msg.time}</span>
-                                </div>
-                                <div className="message-body">
-                                    <p>{msg.text}</p>
-                                </div>
-                            </div>
-                        ))}
+                        <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            No replies yet.
+                        </div>
                     </div>
 
                     {/* Reply Box */}
                     <div className="reply-box glass-panel">
                         <div className="reply-header">
-                            Reply as <strong>Jane Smith (Admin)</strong>
+                            Reply as <strong>Admin</strong>
                         </div>
                         <form onSubmit={handleReplySubmit}>
                             <textarea
@@ -190,15 +340,27 @@ const SubmissionDetails = () => {
 
                 {/* Sidebar Context Panel */}
                 <div className="submission-sidebar">
+                    {/* Suggestion Info Card */}
                     <div className="context-card glass-panel">
-                        <h3>Delegation</h3>
-                        <p className="help-text">Assign this submission to a specific manager to handle.</p>
-                        <select className="assign-select">
-                            <option value="">Unassigned</option>
-                            <option value="m1">Mike Johnson</option>
-                            <option value="m2">Sarah Williams</option>
-                        </select>
-                        <button className="btn btn-ghost btn-full mt-2">Update Assignment</button>
+                        <h3>Suggestion Info</h3>
+                        <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div>
+                                <span style={{ color: 'var(--text-muted)' }}>ID: </span>
+                                <code style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{suggestion?.id}</code>
+                            </div>
+                            <div>
+                                <span style={{ color: 'var(--text-muted)' }}>Created: </span>
+                                <span>{createdAt}</span>
+                            </div>
+                            <div>
+                                <span style={{ color: 'var(--text-muted)' }}>Categories: </span>
+                                <span>{categoryNames}</span>
+                            </div>
+                            <div>
+                                <span style={{ color: 'var(--text-muted)' }}>Suggestion Box: </span>
+                                <code style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{suggestion?.suggestionBoxId || '—'}</code>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="context-card glass-panel alert-card">
