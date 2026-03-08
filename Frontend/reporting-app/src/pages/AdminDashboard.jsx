@@ -15,6 +15,10 @@ import './AdminDashboard.css';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
 import { ProblemBoxService } from '../services/problemBoxService';
 import { SuggestionService } from '../services/suggestionService';
+import { SubscriptionPlanService } from '../services/subscriptionPlanService';
+import { SubscriptionService } from '../services/subscriptionService';
+import { PaymentService } from '../services/paymentService';
+import { BillingNotificationService } from '../services/billingNotificationService';
 
 const AdminDashboard = () => {
     const { user } = useAuth();
@@ -28,6 +32,9 @@ const AdminDashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [creatingProblemBox, setCreatingProblemBox] = useState(false);
     const [creatingSuggestionBox, setCreatingSuggestionBox] = useState(false);
+    const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+    const [selectedPlanId, setSelectedPlanId] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
     const role = user?.role || 'user';
 
     // Form state for creating organization
@@ -60,6 +67,7 @@ const AdminDashboard = () => {
         fetchSuggestionBoxes();
         fetchProblemBoxes();
         fetchSuggestions();
+        fetchSubscriptionPlans();
     }, []);
 
     const fetchOrganizations = async () => {
@@ -71,6 +79,15 @@ const AdminDashboard = () => {
             console.error("Failed to fetch organizations", error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+     const fetchSubscriptionPlans = async () => {
+        try {
+            const data = await SubscriptionPlanService.getAll();
+            setSubscriptionPlans(data);
+        } catch (error) {
+            console.error("Failed to fetch subscription plans", error);
         }
     };
 
@@ -112,6 +129,11 @@ const AdminDashboard = () => {
 
     const handleCreateOrganization = async () => {
         if (!newOrg.name.trim()) return;
+        if (!selectedPlanId) {
+            alert('Please select a subscription plan');
+            return;
+        }
+        setIsCreating(true);
         try {
             const created = await OrganizationService.create({
                 name: newOrg.name,
@@ -119,8 +141,43 @@ const AdminDashboard = () => {
                 customLogoUrl: null,
                 adminId: user?.id || null // Automatically add adminId from localstorage user
             });
+            const now = new Date();
+            const endDate = new Date(now);
+            endDate.setFullYear(endDate.getFullYear() + 1); // 1-year subscription
+
+            const subscription = await SubscriptionService.create({
+                subscriptionPlanId: selectedPlanId,
+                organizationId: created.id,
+                startDate: now.toISOString(),
+                endDate: endDate.toISOString()
+            });
+
+            // Determine plan price
+            const selectedPlan = subscriptionPlans.find(p => p.id === selectedPlanId);
+            const planTitle = selectedPlan?.title?.toLowerCase() || '';
+            let planValue = 0;
+            if (planTitle.includes('premium') || planTitle.includes('enterprise')) planValue = 499;
+            else if (planTitle.includes('standard') || planTitle.includes('pro')) planValue = 199;
+            else if (planTitle.includes('basic')) planValue = 49;
+
+            // Step 3: Create an initial payment for the exact amount
+            const payment = await PaymentService.create({
+                subscriptionId: subscription.id,
+                total: planValue,
+                currency: 'EUR',
+                paymentMethod: 'CreditCard'
+            });
+
+            // Step 4: Create a billing notification for the organization
+            await BillingNotificationService.create({
+                text: `Subscription created for organization "${newOrg.name}".`,
+                organizationId: created.id,
+                paymentId: payment.id
+            });
+
             setOrgModalOpen(false);
             setNewOrg({ name: '' });
+            setSelectedPlanId('');
             fetchOrganizations();
             navigate(`/admin/organizations/${created.id}`);
         } catch (error) {
@@ -279,12 +336,14 @@ const AdminDashboard = () => {
             {/* Create Organization Modal */}
             <Modal
                 isOpen={isOrgModalOpen}
-                onClose={() => setOrgModalOpen(false)}
+                onClose={() => { setOrgModalOpen(false); setSelectedPlanId(''); }}
                 title="Create New Organization"
                 footer={
                     <>
-                        <button className="btn btn-ghost" onClick={() => setOrgModalOpen(false)}>Cancel</button>
-                        <button className="btn btn-primary" onClick={handleCreateOrganization}>Create Organization</button>
+                        <button className="btn btn-ghost" onClick={() => { setOrgModalOpen(false); setSelectedPlanId(''); }} disabled={isCreating}>Cancel</button>
+                        <button className="btn btn-primary" onClick={handleCreateOrganization} disabled={isCreating}>
+                            {isCreating ? 'Creating...' : 'Create Organization'}
+                        </button>
                     </>
                 }
             >
@@ -297,7 +356,26 @@ const AdminDashboard = () => {
                         value={newOrg.name}
                         onChange={(e) => setNewOrg({ name: e.target.value })}
                         required
+                        disabled={isCreating}
                     />
+                </div>
+
+                 <div className="form-group">
+                    <label>Subscription Plan *</label>
+                    <select
+                        className="form-control"
+                        value={selectedPlanId}
+                        onChange={(e) => setSelectedPlanId(e.target.value)}
+                        required
+                        disabled={isCreating}
+                    >
+                        <option value="">Select a subscription plan...</option>
+                        {subscriptionPlans.map((plan) => (
+                            <option key={plan.id} value={plan.id}>
+                                {plan.title} — {plan.description}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </Modal>
 
