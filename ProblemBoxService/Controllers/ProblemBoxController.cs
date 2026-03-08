@@ -25,7 +25,8 @@ namespace ProblemBoxService.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<ProblemBoxDTO>> GetProblemBoxes()
         {
-            return Ok(new List<ProblemBoxDTO>());
+            var result = _problemBoxRepository.GetAll();
+            return Ok(result);
         }
 
         [HttpGet("organization/{id}")]

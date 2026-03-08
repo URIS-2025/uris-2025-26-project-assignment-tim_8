@@ -39,7 +39,8 @@ const OrganizationDetails = () => {
         type: 'suggestion',
         description: '',
         password: '',
-        isDarkTheme: false
+        isDarkTheme: false,
+        createdBy: ''
     });
 
     const [boxSearch, setBoxSearch] = useState('');
@@ -51,6 +52,7 @@ const OrganizationDetails = () => {
 
     useEffect(() => {
         fetchSuggestionBoxes();
+        fetchProblemBoxes();
         fetchOrganization();
         fetchManagers();
     }, [orgId]);
@@ -81,6 +83,15 @@ const OrganizationDetails = () => {
             console.error("Failed to fetch suggestion boxes", error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchProblemBoxes = async () => {
+        try {
+            const data = await ProblemBoxService.getByOrganizationId(orgId);
+            setProblemBoxes(data);
+        } catch (error) {
+            console.error("Failed to fetch problem boxes", error);
         }
     };
 
@@ -147,16 +158,19 @@ const OrganizationDetails = () => {
                     description: newBox.description,
                     isDarkTheme: newBox.isDarkTheme,
                     password: newBox.password,
+                    createdBy: newBox.createdBy || user?.username || '',
                     organizationId: orgId,
                     createdAt: new Date().toISOString()
                 });
             }
 
             setBoxModalOpen(false);
-            setNewBox({ name: '', type: 'suggestion', description: '', password: '', isDarkTheme: false });
-            fetchSuggestionBoxes();
-            //fetchProblemBoxes();
-            // In a real app we would call fetchBoxes() here
+            setNewBox({ name: '', type: 'suggestion', description: '', password: '', isDarkTheme: false, createdBy: '' });
+            if (newBox.type === 'suggestion') {
+                fetchSuggestionBoxes();
+            } else {
+                fetchProblemBoxes();
+            }
             alert(`${newBox.type} box created successfully!`);
         } catch (error) {
             console.error(`Failed to create ${newBox.type} box`, error);
@@ -282,7 +296,10 @@ const OrganizationDetails = () => {
                             </button>
                         </div>
                         <DataTable
-                            data={suggestionBoxes.filter(box =>
+                            data={[
+                                ...suggestionBoxes.map(box => ({ ...box, type: 'Suggestion' })),
+                                ...problemBoxes.map(box => ({ ...box, type: 'Problem' }))
+                            ].filter(box =>
                                 box.name?.toLowerCase().includes(boxSearch.toLowerCase()) ||
                                 box.description?.toLowerCase().includes(boxSearch.toLowerCase())
                             )}
@@ -375,6 +392,18 @@ const OrganizationDetails = () => {
                         <option value="problem">Problem Box (Reporting concrete issues)</option>
                     </select>
                 </div>
+                {newBox.type === 'problem' && (
+                    <div className="form-group">
+                        <label>Created By</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g. Admin User"
+                            value={newBox.createdBy}
+                            onChange={(e) => setNewBox({ ...newBox, createdBy: e.target.value })}
+                        />
+                    </div>
+                )}
                 <div className="form-group">
                     <label>Box Password * (Used by users to access)</label>
                     <input

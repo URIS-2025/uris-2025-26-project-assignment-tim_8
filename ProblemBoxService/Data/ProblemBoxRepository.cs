@@ -21,6 +21,12 @@ namespace ProblemBoxService.Data
             return _context.SaveChanges() > 0;
         }
 
+        public IEnumerable<ProblemBoxDTO> GetAll()
+        {
+            var problemBoxes = _context.ProblemBoxes.ToList();
+            return _mapper.Map<IEnumerable<ProblemBoxDTO>>(problemBoxes);
+        }
+
         public IEnumerable<ProblemBoxDTO> GetProblemBoxByOrganizationId(Guid organizationId)
         {
             var problemBoxes = _context.ProblemBoxes.Where(pb => pb.OrganizationId == organizationId).ToList();

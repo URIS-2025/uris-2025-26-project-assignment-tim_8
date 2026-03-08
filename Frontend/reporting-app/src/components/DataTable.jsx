@@ -12,42 +12,37 @@ const DataTable = ({
     showExport = false,
     searchValue = '',
     onSearchChange,
-    itemsPerPage = 10
+    currentPage = 1,
+    onPageChange,
+    pageSize = 5
 }) => {
-    const [currentPage, setCurrentPage] = useState(0);
+    // Pagination logic
+    const totalItems = data.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    const isPaginated = !!onPageChange;
+    const safePage = Math.min(currentPage, totalPages);
 
-    // Reset to first page when data or search changes
-    const dataLength = data.length;
-    const [prevDataLength, setPrevDataLength] = useState(dataLength);
-    const [prevSearchValue, setPrevSearchValue] = useState(searchValue);
+    const displayData = isPaginated
+        ? data.slice((safePage - 1) * pageSize, safePage * pageSize)
+        : data;
 
-    if (searchValue !== prevSearchValue) {
-        setPrevSearchValue(searchValue);
-        setCurrentPage(0);
-    }
-    if (dataLength !== prevDataLength) {
-        setPrevDataLength(dataLength);
-        if (currentPage > 0 && currentPage >= Math.ceil(dataLength / itemsPerPage)) {
-            setCurrentPage(0);
-        }
-    }
+    const startEntry = totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1;
+    const endEntry = isPaginated ? Math.min(safePage * pageSize, totalItems) : totalItems;
 
-    const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
-    const paginatedData = data.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-    const startEntry = data.length === 0 ? 0 : currentPage * itemsPerPage + 1;
-    const endEntry = Math.min((currentPage + 1) * itemsPerPage, data.length);
-
-    // Build page numbers to display (max 5 visible)
-    const pageNumbers = useMemo(() => {
+    // Generate page numbers to display
+    const getPageNumbers = () => {
         const pages = [];
-        let start = Math.max(0, currentPage - 2);
-        let end = Math.min(totalPages - 1, start + 4);
-        start = Math.max(0, end - 4);
+        const maxVisible = 5;
+        let start = Math.max(1, safePage - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        if (end - start + 1 < maxVisible) {
+            start = Math.max(1, end - maxVisible + 1);
+        }
         for (let i = start; i <= end; i++) {
             pages.push(i);
         }
         return pages;
-    }, [currentPage, totalPages]);
+    };
 
     return (
         <div className="data-table-container glass-panel animate-fade-in">
@@ -91,8 +86,8 @@ const DataTable = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {paginatedData.length > 0 ? (
-                            paginatedData.map((row, rowIndex) => (
+                        {displayData.length > 0 ? (
+                            displayData.map((row, rowIndex) => (
                                 <tr
                                     key={row.id || rowIndex}
                                     onClick={() => onRowClick && onRowClick(row)}
@@ -128,29 +123,35 @@ const DataTable = ({
 
             {/* Pagination */}
             <div className="table-pagination">
-                <span className="pagination-info">Showing {startEntry} to {endEntry} of {data.length} entries</span>
+                <span className="pagination-info">
+                    Showing {startEntry} to {endEntry} of {totalItems} entries
+                </span>
                 <div className="pagination-controls">
                     <button
                         className="btn btn-ghost icon-btn small"
-                        disabled={currentPage === 0}
-                        onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                        disabled={safePage <= 1}
+                        onClick={() => isPaginated && onPageChange(safePage - 1)}
                     >
                         <ChevronLeft size={16} />
                     </button>
-                    {pageNumbers.map((pageNum) => (
-                        <span
-                            key={pageNum}
-                            className={`page-number ${pageNum === currentPage ? 'active' : ''}`}
-                            onClick={() => setCurrentPage(pageNum)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            {pageNum + 1}
-                        </span>
-                    ))}
+                    {isPaginated ? (
+                        getPageNumbers().map((page) => (
+                            <span
+                                key={page}
+                                className={`page-number ${page === safePage ? 'active' : ''}`}
+                                onClick={() => onPageChange(page)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                {page}
+                            </span>
+                        ))
+                    ) : (
+                        <span className="page-number active">1</span>
+                    )}
                     <button
                         className="btn btn-ghost icon-btn small"
-                        disabled={currentPage >= totalPages - 1}
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                        disabled={safePage >= totalPages}
+                        onClick={() => isPaginated && onPageChange(safePage + 1)}
                     >
                         <ChevronRight size={16} />
                     </button>
