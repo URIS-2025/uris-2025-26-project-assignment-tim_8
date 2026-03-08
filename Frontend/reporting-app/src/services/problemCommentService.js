@@ -15,6 +15,13 @@ export const ProblemCommentService = {
         return await response.json();
     },
 
+    // GET /api/ProblemComment/problem/{id}
+    getByProblemId: async (problemId) => {
+        const response = await fetch(`${API_BASE_URL}/api/ProblemComment/problem/${problemId}`);
+        if (!response.ok) throw new Error('Failed to fetch comments by problem');
+        return await response.json();
+    },
+
     // POST /api/ProblemComment
     create: async (data) => {
         const response = await fetch(`${API_BASE_URL}/api/ProblemComment/`, {

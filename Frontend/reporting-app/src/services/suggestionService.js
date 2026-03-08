@@ -22,6 +22,13 @@ export const SuggestionService = {
         return await response.json();
     },
 
+    // GET /api/Suggestion/suggestionbox/{suggestionBoxId}
+    getBySuggestionBoxId: async (suggestionBoxId) => {
+        const response = await fetch(`${API_BASE_URL}/api/Suggestion/suggestionbox/${suggestionBoxId}`);
+        if (!response.ok) throw new Error('Failed to fetch suggestions by suggestion box');
+        return await response.json();
+    },
+
     // POST /api/Suggestion
     create: async (data, token) => {
         const headers = {

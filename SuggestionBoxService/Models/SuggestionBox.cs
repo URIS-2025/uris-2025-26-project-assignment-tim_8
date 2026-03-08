@@ -16,6 +16,6 @@ namespace SuggestionBoxService.Models
         public string Password { get; set; } 
         public string CreatedBy { get; set; }
         public Guid OrganizationId { get; set; }
-        public Guid BoxAccessLinkId { get; set; }
+        public Guid? BoxAccessLinkId { get; set; }
     }
 }

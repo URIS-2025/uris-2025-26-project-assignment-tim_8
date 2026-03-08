@@ -1,8 +1,5 @@
 .portal-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-    min-height: calc(100vh - 72px);
+    width: 100%;
     display: flex;
     flex-direction: column;
     gap: 2rem;

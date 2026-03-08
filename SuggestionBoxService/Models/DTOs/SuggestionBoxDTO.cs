@@ -9,6 +9,5 @@
         public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; }
         public Guid OrganizationId { get; set; }
-        public Guid BoxAccessLinkId { get; set; }
     }
 }

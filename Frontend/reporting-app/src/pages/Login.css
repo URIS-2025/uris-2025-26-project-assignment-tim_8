@@ -2,7 +2,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    min-height: calc(100vh - 72px);
     padding: 2rem;
     position: relative;
     overflow: hidden;
@@ -32,6 +32,7 @@
     color: var(--text-primary);
     background: linear-gradient(135deg, #fff, #a855f7);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
