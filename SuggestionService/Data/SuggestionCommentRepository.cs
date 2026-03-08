@@ -45,6 +45,12 @@ namespace AnonymousRepository.Repositories
         public SuggestionCommentCreationDTO Create(SuggestionCommentCreationDTO commentDto)
         {
             var comment = _mapper.Map<SuggestionComment>(commentDto);
+            
+            // Set defaults for required DB fields that the frontend might not provide
+            if (comment.Id == Guid.Empty) comment.Id = Guid.NewGuid();
+            if (comment.CreatedAt == default(DateTime)) comment.CreatedAt = DateTime.UtcNow;
+            if (string.IsNullOrEmpty(comment.CreatedBy)) comment.CreatedBy = "Anonymous";
+
             _context.SuggestionComments.Add(comment);
             SaveChanges();
             return _mapper.Map<SuggestionCommentCreationDTO>(comment);

@@ -20,6 +20,7 @@ import SubscriptionDetails from './pages/SubscriptionDetails';
 import ProblemBoxes from './pages/ProblemBoxes';
 import SuggestionBoxes from './pages/SuggestionBoxes';
 import Settings from './pages/Settings';
+import CommunityDashboard from './pages/CommunityDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
@@ -80,6 +81,7 @@ function App() {
               <Route path="billing" element={<BillingDashboard />} />
               <Route path="billing/:orgId" element={<SubscriptionDetails />} />
               {/* Placeholders for future pages */}
+              <Route path="community" element={<CommunityDashboard />} />
               <Route path="suggestions" element={<SuggestionBoxes />} />
               <Route path="problems" element={<ProblemBoxes />} />
               <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UserManagement /></ProtectedRoute>} />

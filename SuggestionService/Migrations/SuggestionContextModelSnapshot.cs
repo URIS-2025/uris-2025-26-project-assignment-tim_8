@@ -169,6 +169,28 @@ namespace SuggestionService.Migrations
                     b.ToTable("SuggestionComments");
                 });
 
+            modelBuilder.Entity("AnonymousDomain.Models.Suggestion.SuggestionCommentVote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("SuggestionCommentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("VoteAuthorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SuggestionCommentId");
+
+                    b.ToTable("SuggestionCommentVotes");
+                });
+
             modelBuilder.Entity("AnonymousDomain.Models.Suggestion.Vote", b =>
                 {
                     b.Property<Guid>("Id")
@@ -225,6 +247,15 @@ namespace SuggestionService.Migrations
                         .WithMany()
                         .HasForeignKey("SuggestionId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("AnonymousDomain.Models.Suggestion.SuggestionCommentVote", b =>
+                {
+                    b.HasOne("AnonymousDomain.Models.Suggestion.SuggestionComment", null)
+                        .WithMany()
+                        .HasForeignKey("SuggestionCommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("AnonymousDomain.Models.Suggestion.Vote", b =>

@@ -3,8 +3,11 @@ import { Shield, Send, ArrowRight, CheckCircle, ThumbsUp, MessageSquare, AlertTr
 import { jwtDecode } from 'jwt-decode';
 import { SuggestionService } from '../services/suggestionService';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
+import { ProblemService } from '../services/problemService';
+import { ProblemBoxService } from '../services/problemBoxService';
 import { OrganizationService } from '../services/organizationService';
 import { AttachmentService } from '../services/attachmentService';
+import CommunityFeed from '../components/Community/CommunityFeed';
 import './PublicPortal.css';
 
 // Map numeric status to label
@@ -22,9 +25,10 @@ const PublicPortal = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [browsing, setBrowsing] = useState(false);
 
-    // Organizations and suggestion boxes
+    // Organizations and boxes
     const [organizations, setOrganizations] = useState([]);
     const [suggestionBoxes, setSuggestionBoxes] = useState([]);
+    const [problemBoxes, setProblemBoxes] = useState([]);
     const [loadingBoxes, setLoadingBoxes] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -50,10 +54,11 @@ const PublicPortal = () => {
         fetchOrganizations();
     }, []);
 
-    // When organization changes, fetch suggestion boxes for that org
+    // When organization changes, fetch suggestion boxes and problem boxes for that org
     useEffect(() => {
         if (!formData.organizationId) {
             setSuggestionBoxes([]);
+            setProblemBoxes([]);
             setFormData(prev => ({ ...prev, suggestionBoxId: '' }));
             return;
         }
@@ -61,17 +66,25 @@ const PublicPortal = () => {
         const fetchBoxesForOrg = async () => {
             try {
                 setLoadingBoxes(true);
-                const boxes = await SuggestionBoxService.getByOrganizationId(formData.organizationId);
-                setSuggestionBoxes(boxes);
-                // Pre-select first box if available
-                if (boxes.length > 0) {
-                    setFormData(prev => ({ ...prev, suggestionBoxId: boxes[0].id }));
+                const [sBoxes, pBoxes] = await Promise.all([
+                    SuggestionBoxService.getByOrganizationId(formData.organizationId),
+                    ProblemBoxService.getByOrganizationId(formData.organizationId)
+                ]);
+
+                setSuggestionBoxes(sBoxes);
+                setProblemBoxes(pBoxes);
+
+                // Pre-select first box based on current type
+                const currentBoxes = submissionType === 'suggestion' ? sBoxes : pBoxes;
+                if (currentBoxes.length > 0) {
+                    setFormData(prev => ({ ...prev, suggestionBoxId: currentBoxes[0].id }));
                 } else {
                     setFormData(prev => ({ ...prev, suggestionBoxId: '' }));
                 }
             } catch (err) {
-                console.error('Error fetching suggestion boxes for organization:', err);
+                console.error('Error fetching boxes for organization:', err);
                 setSuggestionBoxes([]);
+                setProblemBoxes([]);
                 setFormData(prev => ({ ...prev, suggestionBoxId: '' }));
             } finally {
                 setLoadingBoxes(false);
@@ -79,7 +92,7 @@ const PublicPortal = () => {
         };
         fetchBoxesForOrg();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [formData.organizationId]);
+    }, [formData.organizationId, submissionType]);
 
     // Fetch suggestions when browse tab is active
     useEffect(() => {
@@ -120,16 +133,27 @@ const PublicPortal = () => {
                 }
             }
 
-            // Build the SuggestionCreationDTO
-            const payload = {
-                title: formData.title,
-                description: formData.content,
-                suggestionBoxId: formData.suggestionBoxId,
-                anonymousUserId: anonymousUserId,
-                categoryIds: []
-            };
-
-            const result = await SuggestionService.create(payload, authToken);
+            // Build the appropriate DTO based on submission type
+            let result;
+            if (submissionType === 'suggestion') {
+                const payload = {
+                    title: formData.title,
+                    description: formData.content,
+                    suggestionBoxId: formData.suggestionBoxId,
+                    anonymousUserId: anonymousUserId,
+                    categoryIds: []
+                };
+                result = await SuggestionService.create(payload, authToken);
+            } else {
+                const payload = {
+                    title: formData.title,
+                    description: formData.content,
+                    problemBoxId: formData.suggestionBoxId,
+                    anonymousUserId: anonymousUserId,
+                    categoryIds: []
+                };
+                result = await ProblemService.create(payload, authToken);
+            }
 
             // If there's an attachment, upload it
             if (attachment) {
@@ -145,8 +169,8 @@ const PublicPortal = () => {
                         fileName: attachment.name,
                         fileType: attachment.type || 'application/octet-stream',
                         url: base64String, // the Base64 data URL
-                        suggestionId: result.id,
-                        problemId: null
+                        suggestionId: submissionType === 'suggestion' ? result.id : null,
+                        problemId: submissionType === 'problem' ? result.id : null
                     });
                 } catch (attachErr) {
                     console.error('Error uploading attachment:', attachErr);
@@ -263,27 +287,27 @@ const PublicPortal = () => {
                                         )}
                                     </div>
 
-                                    {/* Step 2: Select Suggestion Box (only after organization is selected) */}
+                                    {/* Step 2: Select Box (only after organization is selected) */}
                                     <div className="form-group">
-                                        <label>Suggestion Box <span className="required">*</span></label>
+                                        <label>{submissionType === 'suggestion' ? 'Suggestion Box' : 'Problem Box'} <span className="required">*</span></label>
                                         {!formData.organizationId ? (
                                             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Please select an organization first.</p>
                                         ) : loadingBoxes ? (
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading suggestion boxes...</p>
-                                        ) : suggestionBoxes.length > 0 ? (
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading boxes...</p>
+                                        ) : (submissionType === 'suggestion' ? suggestionBoxes : problemBoxes).length > 0 ? (
                                             <select
                                                 className="portal-input"
-                                                value={formData.suggestionBoxId}
+                                                value={formData.suggestionBoxId} // We reuse this field for problemBoxId as well
                                                 onChange={(e) => setFormData({ ...formData, suggestionBoxId: e.target.value })}
                                             >
-                                                {suggestionBoxes.map(box => (
+                                                {(submissionType === 'suggestion' ? suggestionBoxes : problemBoxes).map(box => (
                                                     <option key={box.id} value={box.id}>
                                                         {box.name} {box.description ? `— ${box.description}` : ''}
                                                     </option>
                                                 ))}
                                             </select>
                                         ) : (
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No suggestion boxes found for this organization.</p>
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No {submissionType} boxes found for this organization.</p>
                                         )}
                                     </div>
 
@@ -385,39 +409,36 @@ const PublicPortal = () => {
                                 <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
                                 <p>Loading suggestions...</p>
                             </div>
-                        ) : suggestions.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                <p>No suggestions yet. Be the first to submit one!</p>
-                            </div>
                         ) : (
-                            <div className="suggestions-list">
-                                {suggestions.map(suggestion => (
-                                    <div key={suggestion.id} className="public-suggestion-card glass-panel">
-                                        <div className="vote-column">
-                                            <button className="vote-btn">
-                                                <ThumbsUp size={20} />
-                                            </button>
-                                            <span className="vote-count">
-                                                {statusMap[suggestion.status] || 'New'}
-                                            </span>
-                                        </div>
-                                        <div className="suggestion-content">
-                                            <h3 className="suggestion-title">{suggestion.title}</h3>
-                                            <p className="suggestion-desc">{suggestion.description}</p>
-                                            <div className="suggestion-meta">
-                                                <span>
-                                                    <MessageSquare size={14} />
-                                                    {suggestion.categories?.length || 0} categories
-                                                </span>
-                                                <span>&bull;</span>
-                                                <span>{suggestion.createdAt ? new Date(suggestion.createdAt).toLocaleDateString() : '—'}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                            <CommunityFeed
+                                suggestions={suggestions}
+                                currentAnonUserId={(() => {
+                                    const token = localStorage.getItem('authToken');
+                                    let id = '00000000-0000-0000-0000-000000000000';
+                                    if (token) {
+                                        try {
+                                            const dec = jwtDecode(token);
+                                            id = dec['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || id;
+                                        } catch (e) { }
+                                    }
+                                    return id;
+                                })()}
+                                currentUserEmail={(() => {
+                                    // Use the same ID as their unique email/key for local storage liking isolation
+                                    const token = localStorage.getItem('authToken');
+                                    let key = 'AnonymousVisitor';
+                                    if (token) {
+                                        try {
+                                            const dec = jwtDecode(token);
+                                            key = dec['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || key;
+                                        } catch (e) { }
+                                    }
+                                    return key;
+                                })()}
+                                onRefresh={fetchSuggestions}
+                            />
                         )}
-                        <button className="btn btn-ghost load-more-btn" onClick={fetchSuggestions}>Refresh</button>
+                        <button className="btn btn-ghost load-more-btn" onClick={fetchSuggestions} style={{ width: '100%', marginTop: '1rem' }}>Refresh</button>
                     </div>
                 )}
             </div>
