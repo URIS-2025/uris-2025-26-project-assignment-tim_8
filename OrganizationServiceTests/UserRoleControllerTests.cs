@@ -1,11 +1,9 @@
 using AnonymousAPI.Controllers;
-using LoggerService.Data;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using OrganizationService.Clients;
 using OrganizationService.Data;
 using OrganizationService.Models.DTOs;
-using Xunit;
 
 namespace OrganizationService.Tests.Controllers
 {

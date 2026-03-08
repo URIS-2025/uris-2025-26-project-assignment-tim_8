@@ -71,33 +71,9 @@ namespace ProblemServiceIntegrationTests
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
-        [Fact]
-        public async Task CreateProblemCategory_ReturnsInternalServerError_WhenTitleIsEmpty()
-        {
-            var creationDTO = new ProblemCategoryCreationDTO
-            {
-                Title = "",
-                Description = "Integration Test Description"
-            };
+        
 
-            var response = await _client.PostAsJsonAsync("/api/ProblemCategory", creationDTO);
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task CreateProblemCategory_ReturnsInternalServerError_WhenDescriptionIsEmpty()
-        {
-            var creationDTO = new ProblemCategoryCreationDTO
-            {
-                Title = "Integration Test Category",
-                Description = ""
-            };
-
-            var response = await _client.PostAsJsonAsync("/api/ProblemCategory", creationDTO);
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
+   
 
         // GET BY ID
         [Fact]

@@ -41,7 +41,7 @@ namespace AttachmentService.Context
 
                 entity.Property(a => a.Url)
                       .IsRequired()
-                      .HasMaxLength(500);
+                      .HasColumnType("NVARCHAR(MAX)");
 
                 entity.Property(a => a.UploadedAt)
                       .IsRequired();

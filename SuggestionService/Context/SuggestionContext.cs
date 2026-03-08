@@ -110,8 +110,7 @@ public class SuggestionContext : DbContext
                   .HasForeignKey(sc => sc.SuggestionId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            entity.Property(sc => sc.CommentAuthorId)
-                  .IsRequired(false);
+            
         });
 
         builder.Entity<Vote>(entity =>

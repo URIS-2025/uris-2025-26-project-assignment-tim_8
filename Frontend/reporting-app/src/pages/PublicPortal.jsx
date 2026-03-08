@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-// react-router-dom not needed on this page currently
-import { Shield, Send, ArrowRight, CheckCircle, ThumbsUp, MessageSquare, AlertTriangle, Loader2 } from 'lucide-react';
+import { Shield, Send, ArrowRight, CheckCircle, ThumbsUp, MessageSquare, AlertTriangle, Loader2, Paperclip } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
 import { SuggestionService } from '../services/suggestionService';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
 import { OrganizationService } from '../services/organizationService';
-import { SystemNotificationService } from '../services/systemNotificationService';
+import { AttachmentService } from '../services/attachmentService';
 import './PublicPortal.css';
 
 // Map numeric status to label
@@ -34,6 +33,9 @@ const PublicPortal = () => {
         organizationId: '',
         suggestionBoxId: ''
     });
+
+    // Optional attachment
+    const [attachment, setAttachment] = useState(null);
 
     // Fetch organizations on mount
     useEffect(() => {
@@ -129,22 +131,32 @@ const PublicPortal = () => {
 
             const result = await SuggestionService.create(payload, authToken);
 
-            // Create a SystemNotification for this submission
-            try {
-                await SystemNotificationService.create({
-                    text: `New suggestion submitted: "${formData.title}"`,
-                    organizationId: formData.organizationId,
-                    anonymousUserId: anonymousUserId,
-                    problemCommentId: null,
-                    suggestionCommentId: null
-                });
-            } catch (notifErr) {
-                console.error('Error creating system notification:', notifErr);
-                // Don't block the user if notification fails
+            // If there's an attachment, upload it
+            if (attachment) {
+                try {
+                    const base64String = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(attachment);
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = error => reject(error);
+                    });
+
+                    await AttachmentService.create({
+                        fileName: attachment.name,
+                        fileType: attachment.type || 'application/octet-stream',
+                        url: base64String, // the Base64 data URL
+                        suggestionId: result.id,
+                        problemId: null
+                    });
+                } catch (attachErr) {
+                    console.error('Error uploading attachment:', attachErr);
+                    // Non-blocking, the suggestion was still created successfully
+                }
             }
 
             setCreatedSuggestion(result);
             setIsSubmitted(true);
+            setAttachment(null);
         } catch (err) {
             console.error('Error submitting suggestion:', err);
             setSubmitError('Failed to submit. Please make sure the backend is running and try again.');
@@ -297,6 +309,24 @@ const PublicPortal = () => {
                                             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                                             required
                                         />
+                                    </div>
+
+                                    {/* Optional Attachment */}
+                                    <div className="form-group">
+                                        <label><Paperclip size={14} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} /> Attachment (Optional)</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <input
+                                                type="file"
+                                                className="portal-input"
+                                                style={{ padding: '0.5rem' }}
+                                                onChange={(e) => setAttachment(e.target.files[0] || null)}
+                                            />
+                                        </div>
+                                        {attachment && (
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.35rem' }}>
+                                                Selected: {attachment.name} ({(attachment.size / 1024).toFixed(1)} KB)
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="form-info-card privacy-card">
