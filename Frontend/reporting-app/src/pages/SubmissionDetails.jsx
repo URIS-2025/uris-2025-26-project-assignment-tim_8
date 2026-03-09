@@ -6,6 +6,7 @@ import { ProblemService } from '../services/problemService';
 import { AttachmentService } from '../services/attachmentService';
 import { SuggestionCategoryService } from '../services/suggestionCategoryService';
 import { SuggestionCommentService } from '../services/suggestionCommentService';
+import { ProblemCommentService } from '../services/problemCommentService';
 import { SystemNotificationService } from '../services/systemNotificationService';
 import { useAuth } from '../context/AuthContext';
 import './SubmissionDetails.css';
@@ -51,7 +52,12 @@ const SubmissionDetails = () => {
 
     const fetchComments = async () => {
         try {
-            const data = await SuggestionCommentService.getBySuggestionId(submissionId);
+            let data;
+            if (submissionType === 'problem') {
+                data = await ProblemCommentService.getByProblemId(submissionId);
+            } else {
+                data = await SuggestionCommentService.getBySuggestionId(submissionId);
+            }
             setComments(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error('Error fetching comments:', err);
@@ -161,19 +167,31 @@ const SubmissionDetails = () => {
 
         setSendingReply(true);
         try {
-            // 1. Create SuggestionComment (same structure as CommunityFeed)
-            const createdComment = await SuggestionCommentService.create({
-                suggestionId: submissionId,
-                text: replyText,
-                isAnonymous: false,
-                commentAuthorId: user?.id || '00000000-0000-0000-0000-000000000000',
-                suggestionCommentId: null,
-                createdBy: user?.email || user?.name || 'Staff'
-            });
+            const isProblem = submissionType === 'problem';
+            let createdComment;
+
+            if (isProblem) {
+                createdComment = await ProblemCommentService.create({
+                    problemId: submissionId,
+                    commentText: replyText,
+                    isAnonymous: false,
+                    problemCommentAuthorId: user?.id || '00000000-0000-0000-0000-000000000000',
+                    problemCommentId: null,
+                    createdBy: user?.email || user?.name || 'Staff'
+                });
+            } else {
+                createdComment = await SuggestionCommentService.create({
+                    suggestionId: submissionId,
+                    commentText: replyText,
+                    isAnonymous: false,
+                    suggestionCommentAuthorId: user?.id || '00000000-0000-0000-0000-000000000000',
+                    suggestionCommentId: null,
+                    createdBy: user?.email || user?.name || 'Staff'
+                });
+            }
 
             // 2. Create SystemNotification
             try {
-                const isProblem = submissionType === 'problem';
                 await SystemNotificationService.create({
                     text: replyText,
                     suggestionCommentId: !isProblem ? (createdComment.id || null) : null,
@@ -398,7 +416,7 @@ const SubmissionDetails = () => {
                                             <div className="author-avatar" style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7' }}>
                                                 <User size={14} />
                                             </div>
-                                            <span className="author-name">{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Staff'}</span>
+                                            <span className="author-name">{comment.createdBy || (user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Staff')}</span>
                                             <span className="author-badge">Reply</span>
                                         </div>
                                         <span className="message-time">
@@ -407,7 +425,7 @@ const SubmissionDetails = () => {
                                         </span>
                                     </div>
                                     <div className="message-body">
-                                        <p>{comment.text}</p>
+                                        <p>{comment.commentText || comment.text}</p>
                                     </div>
                                 </div>
                             ))

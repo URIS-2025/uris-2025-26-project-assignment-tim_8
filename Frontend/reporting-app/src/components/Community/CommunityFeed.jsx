@@ -117,9 +117,9 @@ const Post = ({ suggestion, currentAnonUserId, currentUserEmail, organizationId,
         try {
             const createdComment = await SuggestionCommentService.create({
                 suggestionId: suggestion.id,
-                text: commentText,
+                commentText: commentText,
                 isAnonymous: true,
-                commentAuthorId: currentAnonUserId || '00000000-0000-0000-0000-000000000000',
+                suggestionCommentAuthorId: currentAnonUserId || '00000000-0000-0000-0000-000000000000',
                 suggestionCommentId: replyingTo ? replyingTo.id : null,
                 createdBy: currentUserEmail
             });
@@ -323,7 +323,7 @@ const CommentItem = ({ comment, onReply, isReply = false, currentUserEmail }) =>
                             {new Date(comment.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                     </div>
-                    <p style={{ fontSize: '0.9rem', margin: 0 }}>{comment.text}</p>
+                    <p style={{ fontSize: '0.9rem', margin: 0 }}>{comment.commentText || comment.text}</p>
                 </div>
                 <div className="comment-actions" style={{ display: 'flex', alignItems: 'center', marginTop: '0.25rem', paddingLeft: '0.5rem', gap: '1rem' }}>
                     <button
