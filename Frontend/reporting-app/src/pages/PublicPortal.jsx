@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Send, ArrowRight, CheckCircle, ThumbsUp, MessageSquare, AlertTriangle, Loader2, Paperclip } from 'lucide-react';
+import { Shield, Send, ArrowRight, CheckCircle, AlertTriangle, Loader2, Paperclip } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
 import { SuggestionService } from '../services/suggestionService';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
@@ -7,6 +7,7 @@ import { ProblemService } from '../services/problemService';
 import { ProblemBoxService } from '../services/problemBoxService';
 import { OrganizationService } from '../services/organizationService';
 import { AttachmentService } from '../services/attachmentService';
+import { SystemNotificationService } from '../services/systemNotificationService';
 import CommunityFeed from '../components/Community/CommunityFeed';
 import './PublicPortal.css';
 
@@ -176,6 +177,19 @@ const PublicPortal = () => {
                     console.error('Error uploading attachment:', attachErr);
                     // Non-blocking, the suggestion was still created successfully
                 }
+            }
+
+            // Create SystemNotification for the new submission
+            try {
+                await SystemNotificationService.create({
+                    text: formData.content,
+                    organizationId: formData.organizationId || null,
+                    anonymousUserId: anonymousUserId || null,
+                    suggestionCommentId: null,
+                    problemCommentId: null
+                });
+            } catch (notifErr) {
+                console.error('Failed to create system notification:', notifErr);
             }
 
             setCreatedSuggestion(result);

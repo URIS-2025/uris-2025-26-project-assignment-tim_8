@@ -3,11 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
-import { Building2, Users, MessageSquareWarning, AlertOctagon, ArrowLeft, Plus, Settings } from 'lucide-react';
+import { Building2, Users, MessageSquareWarning, AlertOctagon, ArrowLeft, Plus, Settings, Bell, X, Trash2 } from 'lucide-react';
 import { OrganizationService } from '../services/organizationService';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
 import { ProblemBoxService } from '../services/problemBoxService';
 import { UserService } from '../services/userService';
+import { BillingNotificationService } from '../services/billingNotificationService';
+import { SystemNotificationService } from '../services/systemNotificationService';
 import './OrganizationDetails.css';
 import { useAuth } from '../context/AuthContext';
 
@@ -46,6 +48,10 @@ const OrganizationDetails = () => {
     const [boxSearch, setBoxSearch] = useState('');
     const [managerSearch, setManagerSearch] = useState('');
 
+    // Notification bell state
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+
     const [newManager, setNewManager] = useState({
         id: ''
     });
@@ -55,7 +61,32 @@ const OrganizationDetails = () => {
         fetchProblemBoxes();
         fetchOrganization();
         fetchManagers();
+        fetchNotifications();
     }, [orgId]);
+
+    const fetchNotifications = async () => {
+        try {
+            const billingData = await BillingNotificationService.getAll();
+            if (Array.isArray(billingData)) {
+                const filtered = billingData.filter(n => n.organizationId === orgId);
+                setNotifications(filtered);
+            } else {
+                setNotifications([]);
+            }
+        } catch (err) {
+            console.error('Failed to fetch notifications:', err);
+            setNotifications([]);
+        }
+    };
+
+    const handleDeleteNotification = async (notifId) => {
+        try {
+            await BillingNotificationService.delete(notifId);
+            setNotifications(prev => prev.filter(n => n.id !== notifId));
+        } catch (err) {
+            console.error('Failed to delete notification:', err);
+        }
+    };
 
     const fetchOrganization = async () => {
         try {
@@ -258,6 +289,54 @@ const OrganizationDetails = () => {
                         <p className="org-meta">ID: {organization.id} &bull; Created: {new Date(organization.createdAt || Date.now()).toLocaleDateString()}</p>
                     </div>
                     <div className="org-actions">
+                        <div className="notification-bell-wrapper">
+                            <button
+                                className="btn btn-ghost icon-btn notification-bell-btn"
+                                title="Notifications"
+                                onClick={() => setShowNotifications(!showNotifications)}
+                            >
+                                <Bell size={20} />
+                                {notifications.length > 0 && (
+                                    <span className="notification-badge">{notifications.length}</span>
+                                )}
+                            </button>
+
+                            {showNotifications && (
+                                <div className="notification-dropdown glass-panel">
+                                    <div className="notification-dropdown-header">
+                                        <h4>Notifications</h4>
+                                        <button className="btn btn-ghost icon-btn" onClick={() => setShowNotifications(false)}>
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                    <div className="notification-dropdown-body">
+                                        {notifications.length === 0 ? (
+                                            <div className="notification-empty">
+                                                No notifications yet.
+                                            </div>
+                                        ) : (
+                                            notifications.map((notif) => (
+                                                <div key={notif.id} className="notification-item">
+                                                    <div className="notification-item-content">
+                                                        <p className="notification-text">{notif.text}</p>
+                                                        <span className="notification-time">
+                                                            {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : ''}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        className="btn btn-ghost icon-btn notification-delete-btn"
+                                                        onClick={() => handleDeleteNotification(notif.id)}
+                                                        title="Delete notification"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         <button className="btn btn-ghost icon-btn" title="Settings" onClick={() => setSettingsModalOpen(true)}>
                             <Settings size={20} />
                         </button>

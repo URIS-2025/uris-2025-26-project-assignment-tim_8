@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ThumbsUp, MessageSquare, Heart, Send, User } from 'lucide-react';
+import { MessageSquare, Heart, Send, User } from 'lucide-react';
 import { SuggestionCommentService } from '../../services/suggestionCommentService';
+import { SystemNotificationService } from '../../services/systemNotificationService';
 
-const CommunityFeed = ({ suggestions = [], currentAnonUserId, currentUserEmail = 'Anonymous', onRefresh }) => {
+const CommunityFeed = ({ suggestions = [], currentAnonUserId, currentUserEmail = 'Anonymous', organizationId, onRefresh }) => {
     const [sortBy, setSortBy] = useState('newest');
 
     const sortedSuggestions = useMemo(() => {
@@ -40,6 +41,7 @@ const CommunityFeed = ({ suggestions = [], currentAnonUserId, currentUserEmail =
                         suggestion={suggestion}
                         currentAnonUserId={currentAnonUserId}
                         currentUserEmail={currentUserEmail}
+                        organizationId={organizationId}
                         onRefresh={onRefresh}
                     />
                 ))
@@ -48,7 +50,7 @@ const CommunityFeed = ({ suggestions = [], currentAnonUserId, currentUserEmail =
     );
 };
 
-const Post = ({ suggestion, currentAnonUserId, currentUserEmail, onRefresh }) => {
+const Post = ({ suggestion, currentAnonUserId, currentUserEmail, organizationId, onRefresh }) => {
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
     const [showComments, setShowComments] = useState(false);
@@ -113,7 +115,7 @@ const Post = ({ suggestion, currentAnonUserId, currentUserEmail, onRefresh }) =>
         setSubmittingComment(true);
 
         try {
-            await SuggestionCommentService.create({
+            const createdComment = await SuggestionCommentService.create({
                 suggestionId: suggestion.id,
                 text: commentText,
                 isAnonymous: true,
@@ -121,6 +123,18 @@ const Post = ({ suggestion, currentAnonUserId, currentUserEmail, onRefresh }) =>
                 suggestionCommentId: replyingTo ? replyingTo.id : null,
                 createdBy: currentUserEmail
             });
+
+            // Create SystemNotification
+            try {
+                await SystemNotificationService.create({
+                    text: commentText,
+                    suggestionCommentId: createdComment?.id || null,
+                    organizationId: organizationId || suggestion?.organizationId || null,
+                    anonymousUserId: currentAnonUserId || null
+                });
+            } catch (notifErr) {
+                console.error('Failed to create system notification:', notifErr);
+            }
 
             // On success:
             setReplyingTo(null);

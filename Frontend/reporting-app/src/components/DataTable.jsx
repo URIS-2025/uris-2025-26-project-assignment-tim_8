@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Search, Filter, Download, ChevronLeft, ChevronRight, MoreVertical } from 'lucide-react';
 import './DataTable.css';
 
