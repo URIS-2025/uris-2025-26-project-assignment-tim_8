@@ -1,10 +1,11 @@
 ﻿using AnonymousDomain.Models.SystemNotification;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using SystemNotificationService.Clients;
 using SystemNotificationService.Data;
 using SystemNotificationService.Models.DTOs.SystemNotification;
-using System.Text.Json;
 
 namespace AnonymousAPI.Controllers
 {
@@ -26,7 +27,8 @@ namespace AnonymousAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<SystemNotificationCreatedDTO>> GetNotifications()
         {
-            return Ok(new List<SystemNotificationCreatedDTO>());
+            var result = _systemNotificationRepository.GetAllSystemNotifications();
+            return Ok(result);
         }
 
         [HttpPost]

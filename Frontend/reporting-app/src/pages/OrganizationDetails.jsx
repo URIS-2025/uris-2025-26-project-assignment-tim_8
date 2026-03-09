@@ -66,23 +66,40 @@ const OrganizationDetails = () => {
 
     const fetchNotifications = async () => {
         try {
-            const billingData = await BillingNotificationService.getAll();
-            if (Array.isArray(billingData)) {
-                const filtered = billingData.filter(n => n.organizationId === orgId);
-                setNotifications(filtered);
-            } else {
-                setNotifications([]);
-            }
+            const [billingData, systemData] = await Promise.all([
+                BillingNotificationService.getAll().catch(() => []),
+                SystemNotificationService.getAll().catch(() => [])
+            ]);
+
+            const billingFiltered = (Array.isArray(billingData) ? billingData : [])
+                .filter(n => n.organizationId === orgId)
+                .map(n => ({ ...n, type: 'billing' }));
+
+            const systemFiltered = (Array.isArray(systemData) ? systemData : [])
+                .filter(n => n.organizationId === orgId)
+                .map(n => ({ ...n, type: 'system' }));
+
+            const combined = [...billingFiltered, ...systemFiltered].sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0);
+                const dateB = new Date(b.createdAt || 0);
+                return dateB - dateA;
+            });
+
+            setNotifications(combined);
         } catch (err) {
             console.error('Failed to fetch notifications:', err);
             setNotifications([]);
         }
     };
 
-    const handleDeleteNotification = async (notifId) => {
+    const handleDeleteNotification = async (notif) => {
         try {
-            await BillingNotificationService.delete(notifId);
-            setNotifications(prev => prev.filter(n => n.id !== notifId));
+            if (notif.type === 'billing') {
+                await BillingNotificationService.delete(notif.id);
+            } else {
+                await SystemNotificationService.delete(notif.id);
+            }
+            setNotifications(prev => prev.filter(n => n.id !== notif.id));
         } catch (err) {
             console.error('Failed to delete notification:', err);
         }
@@ -316,16 +333,28 @@ const OrganizationDetails = () => {
                                             </div>
                                         ) : (
                                             notifications.map((notif) => (
-                                                <div key={notif.id} className="notification-item">
+                                                <div key={notif.id} className={`notification-item ${notif.type}`}>
+                                                    <div className="notification-icon-small">
+                                                        {notif.type === 'billing' ? (
+                                                            <Bell size={14} style={{ color: 'var(--accent-primary)' }} />
+                                                        ) : (
+                                                            <MessageSquareWarning size={14} style={{ color: 'var(--warning)' }} />
+                                                        )}
+                                                    </div>
                                                     <div className="notification-item-content">
-                                                        <p className="notification-text">{notif.text}</p>
+                                                        <p className="notification-text">
+                                                            <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', display: 'block', opacity: 0.6, marginBottom: '2px' }}>
+                                                                {notif.type}
+                                                            </span>
+                                                            {notif.text}
+                                                        </p>
                                                         <span className="notification-time">
                                                             {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : ''}
                                                         </span>
                                                     </div>
                                                     <button
                                                         className="btn btn-ghost icon-btn notification-delete-btn"
-                                                        onClick={() => handleDeleteNotification(notif.id)}
+                                                        onClick={() => handleDeleteNotification(notif)}
                                                         title="Delete notification"
                                                     >
                                                         <Trash2 size={14} />

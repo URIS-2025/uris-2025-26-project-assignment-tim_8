@@ -32,6 +32,12 @@ const PublicPortal = () => {
     const [problemBoxes, setProblemBoxes] = useState([]);
     const [loadingBoxes, setLoadingBoxes] = useState(false);
 
+    // Browse Filters state
+    const [browseOrgId, setBrowseOrgId] = useState('');
+    const [browseSuggestionBoxes, setBrowseSuggestionBoxes] = useState([]);
+    const [browseBoxId, setBrowseBoxId] = useState('');
+    const [loadingBrowseBoxes, setLoadingBrowseBoxes] = useState(false);
+
     const [formData, setFormData] = useState({
         title: '',
         content: '',
@@ -95,18 +101,54 @@ const PublicPortal = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.organizationId, submissionType]);
 
-    // Fetch suggestions when browse tab is active
+    // When browse organization changes, fetch its suggestion boxes
     useEffect(() => {
-        if (activeTab === 'browse') {
-            fetchSuggestions();
+        if (!browseOrgId) {
+            setBrowseSuggestionBoxes([]);
+            setBrowseBoxId('');
+            setSuggestions([]);
+            return;
         }
-    }, [activeTab]);
 
-    const fetchSuggestions = async () => {
+        const fetchBrowseBoxes = async () => {
+            try {
+                setLoadingBrowseBoxes(true);
+                const boxes = await SuggestionBoxService.getByOrganizationId(browseOrgId);
+                setBrowseSuggestionBoxes(boxes);
+                if (boxes.length > 0) {
+                    setBrowseBoxId(boxes[0].id);
+                } else {
+                    setBrowseBoxId('');
+                    setSuggestions([]);
+                }
+            } catch (err) {
+                console.error('Error fetching browse boxes:', err);
+                setBrowseSuggestionBoxes([]);
+                setBrowseBoxId('');
+            } finally {
+                setLoadingBrowseBoxes(false);
+            }
+        };
+        fetchBrowseBoxes();
+    }, [browseOrgId]);
+
+    // Fetch suggestions when browse tab is active and a box is selected
+    useEffect(() => {
+        if (activeTab === 'browse' && browseBoxId) {
+            fetchSuggestions(browseBoxId);
+        }
+    }, [activeTab, browseBoxId]);
+
+    const fetchSuggestions = async (boxId) => {
+        const targetId = boxId || browseBoxId;
+        if (!targetId) return;
+
         try {
             setBrowsing(true);
             const data = await SuggestionService.getAll();
-            setSuggestions(data);
+            // Filter by selected suggestion box
+            const filtered = data.filter(s => s.suggestionBoxId === targetId);
+            setSuggestions(filtered);
         } catch (err) {
             console.error('Error fetching suggestions:', err);
         } finally {
@@ -409,51 +451,104 @@ const PublicPortal = () => {
                     </div>
                 ) : (
                     <div className="browse-section fade-in">
-                        <div className="board-filters">
-                            <h3>All Suggestions</h3>
-                            <div className="filter-sort">
-                                <select className="portal-select">
-                                    <option>Most Recent</option>
-                                    <option>Oldest First</option>
+                        {/* Browser Filters */}
+                        <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                                    Organization
+                                </label>
+                                <select
+                                    className="portal-input"
+                                    value={browseOrgId}
+                                    onChange={(e) => setBrowseOrgId(e.target.value)}
+                                    style={{ width: '100%', padding: '0.65rem' }}
+                                >
+                                    <option value="">— Select an organization —</option>
+                                    {organizations.map(org => (
+                                        <option key={org.id} value={org.id}>{org.name}</option>
+                                    ))}
                                 </select>
+                            </div>
+
+                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                                    Suggestion Box
+                                </label>
+                                {!browseOrgId ? (
+                                    <select className="portal-input" disabled style={{ width: '100%', padding: '0.65rem', opacity: 0.6 }}>
+                                        <option>Select an organization first</option>
+                                    </select>
+                                ) : loadingBrowseBoxes ? (
+                                    <select className="portal-input" disabled style={{ width: '100%', padding: '0.65rem' }}>
+                                        <option>Loading boxes...</option>
+                                    </select>
+                                ) : browseSuggestionBoxes.length > 0 ? (
+                                    <select
+                                        className="portal-input"
+                                        value={browseBoxId}
+                                        onChange={(e) => setBrowseBoxId(e.target.value)}
+                                        style={{ width: '100%', padding: '0.65rem' }}
+                                    >
+                                        {browseSuggestionBoxes.map(box => (
+                                            <option key={box.id} value={box.id}>
+                                                {box.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <select className="portal-input" disabled style={{ width: '100%', padding: '0.65rem' }}>
+                                        <option>No suggestion boxes found</option>
+                                    </select>
+                                )}
                             </div>
                         </div>
 
-                        {browsing ? (
+                        {!browseOrgId ? (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-lg)' }}>
+                                <p>Please select an organization to view community feedback.</p>
+                            </div>
+                        ) : !browseBoxId ? (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-lg)' }}>
+                                <p>This organization has no suggestion boxes yet.</p>
+                            </div>
+                        ) : browsing ? (
                             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                                 <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
                                 <p>Loading suggestions...</p>
                             </div>
                         ) : (
-                            <CommunityFeed
-                                suggestions={suggestions}
-                                currentAnonUserId={(() => {
-                                    const token = localStorage.getItem('authToken');
-                                    let id = '00000000-0000-0000-0000-000000000000';
-                                    if (token) {
-                                        try {
-                                            const dec = jwtDecode(token);
-                                            id = dec['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || id;
-                                        } catch (e) { }
-                                    }
-                                    return id;
-                                })()}
-                                currentUserEmail={(() => {
-                                    // Use the same ID as their unique email/key for local storage liking isolation
-                                    const token = localStorage.getItem('authToken');
-                                    let key = 'AnonymousVisitor';
-                                    if (token) {
-                                        try {
-                                            const dec = jwtDecode(token);
-                                            key = dec['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || key;
-                                        } catch (e) { }
-                                    }
-                                    return key;
-                                })()}
-                                onRefresh={fetchSuggestions}
-                            />
+                            <>
+                                <CommunityFeed
+                                    suggestions={suggestions}
+                                    currentAnonUserId={(() => {
+                                        const token = localStorage.getItem('authToken');
+                                        let id = '00000000-0000-0000-0000-000000000000';
+                                        if (token) {
+                                            try {
+                                                const dec = jwtDecode(token);
+                                                id = dec['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || id;
+                                            } catch (e) { }
+                                        }
+                                        return id;
+                                    })()}
+                                    currentUserEmail={(() => {
+                                        const token = localStorage.getItem('authToken');
+                                        let key = 'AnonymousVisitor';
+                                        if (token) {
+                                            try {
+                                                const dec = jwtDecode(token);
+                                                key = dec['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || key;
+                                            } catch (e) { }
+                                        }
+                                        return key;
+                                    })()}
+                                    onRefresh={() => fetchSuggestions(browseBoxId)}
+                                    // Pass organizationId for comment creation
+                                    organizationId={browseOrgId}
+                                />
+                                <button className="btn btn-ghost load-more-btn" onClick={() => fetchSuggestions(browseBoxId)} style={{ width: '100%', marginTop: '1rem' }}>Refresh Feed</button>
+                            </>
                         )}
-                        <button className="btn btn-ghost load-more-btn" onClick={fetchSuggestions} style={{ width: '100%', marginTop: '1rem' }}>Refresh</button>
                     </div>
                 )}
             </div>

@@ -22,6 +22,12 @@ namespace SystemNotificationService.Data
             return _context.SaveChanges() > 0;
         }
 
+        public IEnumerable<SystemNotificationCreatedDTO> GetAllSystemNotifications()
+        {
+            var notifications = _context.SystemNotifications.ToList();
+            return _mapper.Map<IEnumerable<SystemNotificationCreatedDTO>>(notifications);
+        }
+
         public SystemNotificationCreatedDTO CreateSystemNotification(SystemNotificationCreationDTO systemNotification)
         {
             var hasProblem = systemNotification.ProblemCommentId.HasValue;
