@@ -2,6 +2,7 @@
 {
     public class SuggestionCommentCreationDTO
     {
+        public Guid Id { get; set; }
         public string Text { get; set; }
         public bool IsAnonymous { get; set; }
         public Guid SuggestionId { get; set; }

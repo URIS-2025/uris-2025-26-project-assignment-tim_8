@@ -161,18 +161,25 @@ const SubmissionDetails = () => {
 
         setSendingReply(true);
         try {
-            // 1. Create SuggestionComment
+            // 1. Create SuggestionComment (same structure as CommunityFeed)
             const createdComment = await SuggestionCommentService.create({
+                suggestionId: submissionId,
                 text: replyText,
-                suggestionId: submissionId
+                isAnonymous: false,
+                commentAuthorId: user?.id || '00000000-0000-0000-0000-000000000000',
+                suggestionCommentId: null,
+                createdBy: user?.email || user?.name || 'Staff'
             });
 
             // 2. Create SystemNotification
             try {
+                const isProblem = submissionType === 'problem';
                 await SystemNotificationService.create({
                     text: replyText,
-                    suggestionCommentId: createdComment.id || null,
-                    organizationId: suggestion?.organizationId || null
+                    suggestionCommentId: !isProblem ? (createdComment.id || null) : null,
+                    problemCommentId: isProblem ? (createdComment.id || null) : null,
+                    organizationId: suggestion?.organizationId || null,
+                    anonymousUserId: suggestion?.anonymousUserId || null
                 });
             } catch (notifErr) {
                 console.error('Failed to create system notification:', notifErr);

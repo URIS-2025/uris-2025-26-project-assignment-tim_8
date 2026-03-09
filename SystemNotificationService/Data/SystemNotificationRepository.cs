@@ -36,6 +36,10 @@ namespace SystemNotificationService.Data
                     "Cannot provide both ProblemCommentId and SuggestionCommentId. Choose one.");
 
             var entity = _mapper.Map<SystemNotification>(systemNotification);
+            entity.CreatedAt = DateTime.UtcNow;
+            entity.UpdatedAt = DateTime.UtcNow;
+            entity.IsRead = false;
+
             _context.SystemNotifications.Add(entity);
             SaveChanges();
             return _mapper.Map<SystemNotificationCreatedDTO>(entity);

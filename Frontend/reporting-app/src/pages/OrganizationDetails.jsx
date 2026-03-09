@@ -8,7 +8,7 @@ import { OrganizationService } from '../services/organizationService';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
 import { ProblemBoxService } from '../services/problemBoxService';
 import { UserService } from '../services/userService';
-import { SystemNotificationService } from '../services/systemNotificationService';
+import { BillingNotificationService } from '../services/billingNotificationService';
 import './OrganizationDetails.css';
 import { useAuth } from '../context/AuthContext';
 
@@ -65,8 +65,13 @@ const OrganizationDetails = () => {
 
     const fetchNotifications = async () => {
         try {
-            const data = await SystemNotificationService.getAll();
-            setNotifications(Array.isArray(data) ? data : []);
+            const data = await BillingNotificationService.getAll();
+            if (Array.isArray(data)) {
+                const filtered = data.filter(n => n.organizationId === orgId);
+                setNotifications(filtered);
+            } else {
+                setNotifications([]);
+            }
         } catch (err) {
             console.error('Failed to fetch notifications:', err);
             setNotifications([]);
@@ -75,7 +80,7 @@ const OrganizationDetails = () => {
 
     const handleDeleteNotification = async (notifId) => {
         try {
-            await SystemNotificationService.delete(notifId);
+            await BillingNotificationService.delete(notifId);
             setNotifications(prev => prev.filter(n => n.id !== notifId));
         } catch (err) {
             console.error('Failed to delete notification:', err);
