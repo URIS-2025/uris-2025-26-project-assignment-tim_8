@@ -9,6 +9,7 @@ import { SuggestionBoxService } from '../services/suggestionBoxService';
 import { ProblemBoxService } from '../services/problemBoxService';
 import { UserService } from '../services/userService';
 import { BillingNotificationService } from '../services/billingNotificationService';
+import { SystemNotificationService } from '../services/systemNotificationService';
 import './OrganizationDetails.css';
 import { useAuth } from '../context/AuthContext';
 
@@ -65,9 +66,9 @@ const OrganizationDetails = () => {
 
     const fetchNotifications = async () => {
         try {
-            const data = await BillingNotificationService.getAll();
-            if (Array.isArray(data)) {
-                const filtered = data.filter(n => n.organizationId === orgId);
+            const billingData = await BillingNotificationService.getAll();
+            if (Array.isArray(billingData)) {
+                const filtered = billingData.filter(n => n.organizationId === orgId);
                 setNotifications(filtered);
             } else {
                 setNotifications([]);
