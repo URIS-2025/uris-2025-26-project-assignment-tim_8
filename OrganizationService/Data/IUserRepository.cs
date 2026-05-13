@@ -1,5 +1,4 @@
-﻿using AnonymousDomain.Models.Organization;
-using Microsoft.AspNetCore.Mvc;
+using AnonymousDomain.Models.Organization;
 using OrganizationService.Models.DTOs;
 
 namespace OrganizationService.Data
@@ -11,6 +10,7 @@ namespace OrganizationService.Data
         UserCreatedDTO CreateUser(UserCreationDTO user);
         UserCreatedDTO UpdateUser(UserUpdateDTO user);
         void DeleteUser(Guid id);
-        string Login (UserLoginDTO login);
+        LoginResponseDTO Login(UserLoginDTO login);
+        LoginResponseDTO RefreshToken(string refreshToken);
     }
 }

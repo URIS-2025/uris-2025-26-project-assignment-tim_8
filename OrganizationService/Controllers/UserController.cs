@@ -1,7 +1,8 @@
-﻿using AnonymousDomain.Models.Organization;
+using AnonymousDomain.Models.Organization;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using OrganizationService.Clients;
 using OrganizationService.Data;
 using OrganizationService.Models.DTOs;
@@ -22,6 +23,7 @@ namespace AnonymousAPI.Controllers
             _loggerClient = loggerClient;
         }
 
+        [Authorize]
         [HttpGet]
         public ActionResult<IEnumerable<UserDTO>> GetAllUsers()
         {
@@ -29,6 +31,7 @@ namespace AnonymousAPI.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public ActionResult<UserDTO> GetUserById(Guid id)
         {
@@ -37,6 +40,7 @@ namespace AnonymousAPI.Controllers
         }
 
         [HttpPost]
+        [EnableRateLimiting("register")]
         public async Task<ActionResult<UserCreatedDTO>> CreateUser([FromBody] UserCreationDTO user)
         {
             try
@@ -56,6 +60,10 @@ namespace AnonymousAPI.Controllers
 
                 return Created("", result);
             }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 await _loggerClient.TryLogAsync(new LogCreationDTO
@@ -72,6 +80,7 @@ namespace AnonymousAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut]
         public async Task<ActionResult<UserCreatedDTO>> UpdateUser([FromBody] UserUpdateDTO user)
         {
@@ -110,6 +119,7 @@ namespace AnonymousAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
@@ -148,11 +158,12 @@ namespace AnonymousAPI.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<string>> Login([FromBody] UserLoginDTO login)
+        [EnableRateLimiting("login")]
+        public async Task<ActionResult<LoginResponseDTO>> Login([FromBody] UserLoginDTO login)
         {
             try
             {
-                var token = _userRepository.Login(login);
+                var result = _userRepository.Login(login);
 
                 await _loggerClient.TryLogAsync(new LogCreationDTO
                 {
@@ -164,7 +175,7 @@ namespace AnonymousAPI.Controllers
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
 
-                return Ok(token);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -178,6 +189,20 @@ namespace AnonymousAPI.Controllers
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
 
+                return Unauthorized(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("refresh")]
+        public ActionResult<LoginResponseDTO> RefreshToken([FromBody] RefreshTokenRequestDTO request)
+        {
+            try
+            {
+                var result = _userRepository.RefreshToken(request.RefreshToken);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
                 return Unauthorized(new { error = ex.Message });
             }
         }

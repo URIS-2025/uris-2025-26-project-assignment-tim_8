@@ -117,7 +117,7 @@ const Post = ({ suggestion, currentAnonUserId, currentUserEmail, organizationId,
         try {
             const createdComment = await SuggestionCommentService.create({
                 suggestionId: suggestion.id,
-                commentText: commentText,
+                text: commentText,
                 isAnonymous: true,
                 suggestionCommentAuthorId: currentAnonUserId || '00000000-0000-0000-0000-000000000000',
                 suggestionCommentId: replyingTo ? replyingTo.id : null,

@@ -1,9 +1,11 @@
-﻿using AnonymousDomain.Models.AnonymousUser;
+using AnonymousDomain.Models.AnonymousUser;
 using AnonymousUserService.Clients;
 using AnonymousUserService.Data;
 using AnonymousUserService.Models.DTOs.AnonymousUser;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json;
 
 namespace AnonymousAPI.Controllers
@@ -23,6 +25,7 @@ namespace AnonymousAPI.Controllers
             _loggerClient = loggerClient;
         }
 
+        [Authorize]
         [HttpGet]
         public ActionResult<IEnumerable<AnonymousUserDTO>> GetAllAnonymousUsers()
         {
@@ -30,6 +33,7 @@ namespace AnonymousAPI.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public ActionResult<AnonymousUserDTO> GetAnonymousUserById(Guid id)
         {
@@ -38,18 +42,27 @@ namespace AnonymousAPI.Controllers
         }
 
         [HttpPost]
+        [EnableRateLimiting("register")]
         public ActionResult<AnonymousUserDTO> Create([FromBody] AnonymousUserCreationDTO anonUser)
-        {
-            var result = _anonymousUserRepository.CreateUser(anonUser);
-            return Created("", result);
-        }
-
-        [HttpPost("login")]
-        public async Task<ActionResult<string>> Login([FromBody] AnonymousUserCreationDTO login)
         {
             try
             {
-                var token = _anonymousUserRepository.Login(login);
+                var result = _anonymousUserRepository.CreateUser(anonUser);
+                return Created("", result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("login")]
+        [EnableRateLimiting("login")]
+        public async Task<ActionResult<AnonymousLoginResponseDTO>> Login([FromBody] AnonymousUserLoginDTO login)
+        {
+            try
+            {
+                var result = _anonymousUserRepository.Login(login);
 
                 await _loggerClient.TryLogAsync(new LogCreationDTO
                 {
@@ -61,7 +74,7 @@ namespace AnonymousAPI.Controllers
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
 
-                return Ok(token);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -79,6 +92,21 @@ namespace AnonymousAPI.Controllers
             }
         }
 
+        [HttpPost("refresh")]
+        public ActionResult<AnonymousLoginResponseDTO> RefreshToken([FromBody] AnonymousRefreshTokenRequestDTO request)
+        {
+            try
+            {
+                var result = _anonymousUserRepository.RefreshToken(request.RefreshToken);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+        }
+
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAnonymousUser(Guid id)
         {

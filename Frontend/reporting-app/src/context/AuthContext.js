@@ -2,29 +2,45 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { UserRoleService } from '../services/userRoleService';
 
+const API_BASE_URL = 'http://127.0.0.1:80';
+
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
+const isTokenExpired = (token) => {
+    try {
+        const { exp } = jwtDecode(token);
+        return exp * 1000 < Date.now();
+    } catch {
+        return true;
+    }
+};
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
 
-    const login = async (token) => {
-        try {
-            const decoded = jwtDecode(token);
+    const login = async (loginResponse) => {
+        const accessToken = loginResponse?.accessToken ?? loginResponse;
+        const refreshToken = loginResponse?.refreshToken ?? null;
 
-            // Map the token claims to our user object
+        try {
+            const decoded = jwtDecode(accessToken);
+
             const nameIdentifier = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-            const emailIdentifier = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
-            const roleId = decoded['RoleId'] || decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+            const emailIdentifier =
+                decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ||
+                decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'];
+            const roleId = decoded['RoleId'] || decoded['role'] ||
+                decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
 
             let roleName = 'user';
             if (roleId) {
                 try {
                     const roleData = await UserRoleService.getById(roleId);
                     roleName = roleData.title ? roleData.title.toLowerCase() : 'user';
-                } catch (err) {
-                    console.error("Failed to fetch role name during login", err);
+                } catch {
+                    // default to 'user' if role fetch fails
                 }
             }
 
@@ -32,18 +48,18 @@ export const AuthProvider = ({ children }) => {
                 id: nameIdentifier,
                 email: emailIdentifier,
                 name: emailIdentifier,
-                roleId: roleId,
-                role: roleName, // Store the actual role name for ProtectedRoute
-                token: token
+                roleId,
+                role: roleName,
+                token: accessToken,
+                refreshToken,
             };
 
             setUser(userData);
             localStorage.setItem('authUser', JSON.stringify(userData));
-            localStorage.setItem('authToken', token);
+            localStorage.setItem('authToken', accessToken);
 
             return userData;
         } catch (error) {
-            console.error("Failed to decode token during login", error);
             throw error;
         }
     };
@@ -54,33 +70,71 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('authToken');
     };
 
+    const silentRefresh = async (storedUser) => {
+        if (!storedUser.refreshToken) return null;
+
+        const isAnonymous = !storedUser.roleId;
+        const endpoint = isAnonymous
+            ? `${API_BASE_URL}/api/AnonymousUser/refresh`
+            : `${API_BASE_URL}/api/User/refresh`;
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken: storedUser.refreshToken }),
+            });
+
+            if (!response.ok) return null;
+
+            const newTokens = await response.json();
+            const updated = {
+                ...storedUser,
+                token: newTokens.accessToken,
+                refreshToken: newTokens.refreshToken,
+            };
+            setUser(updated);
+            localStorage.setItem('authUser', JSON.stringify(updated));
+            localStorage.setItem('authToken', newTokens.accessToken);
+            return updated;
+        } catch {
+            return null;
+        }
+    };
+
     useEffect(() => {
         const initializeAuth = async () => {
             const storedUser = localStorage.getItem('authUser');
-            if (storedUser) {
-                try {
-                    const parsedUser = JSON.parse(storedUser);
+            if (!storedUser) return;
 
-                    // If the stored user is missing the 'role' field, fetch it now
+            try {
+                const parsedUser = JSON.parse(storedUser);
+
+                if (isTokenExpired(parsedUser.token)) {
+                    const refreshed = await silentRefresh(parsedUser);
+                    if (!refreshed) {
+                        logout();
+                        return;
+                    }
+                } else {
                     if (parsedUser.roleId && !parsedUser.role) {
                         try {
                             const roleData = await UserRoleService.getById(parsedUser.roleId);
                             parsedUser.role = roleData.title ? roleData.title.toLowerCase() : 'user';
                             localStorage.setItem('authUser', JSON.stringify(parsedUser));
-                        } catch (err) {
-                            console.error("Failed to fetch role during rehydration", err);
-                            parsedUser.role = 'user'; // default fallback
+                        } catch {
+                            parsedUser.role = 'user';
                         }
                     }
-
                     setUser(parsedUser);
-                } catch (e) {
-                    console.error('Failed to parse user', e);
                 }
+            } catch {
+                logout();
             }
         };
 
         initializeAuth();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (

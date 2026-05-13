@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace OrganizationService.Models.DTOs
+namespace AnonymousUserService.Models.DTOs.AnonymousUser
 {
-    public class UserLoginDTO
+    public class AnonymousUserLoginDTO
     {
         [Required]
         public string Username { get; set; }

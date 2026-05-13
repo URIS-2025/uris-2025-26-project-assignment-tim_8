@@ -182,7 +182,7 @@ const SubmissionDetails = () => {
             } else {
                 createdComment = await SuggestionCommentService.create({
                     suggestionId: submissionId,
-                    commentText: replyText,
+                    text: replyText,
                     isAnonymous: false,
                     suggestionCommentAuthorId: user?.id || '00000000-0000-0000-0000-000000000000',
                     suggestionCommentId: null,

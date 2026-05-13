@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight, Building2, Shield } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Building2, Shield, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserService } from '../services/userService';
 import { UserRoleService } from '../services/userRoleService';
 import { OrganizationService } from '../services/organizationService';
 import './Login.css';
 
-const InputField = ({ icon: Icon, type, placeholder, name, required = true }) => (
+const InputField = ({ icon: Icon, type, placeholder, name, required = true, minLength, maxLength, pattern }) => (
     <div className="input-group">
         <Icon className="input-icon" size={20} />
         <input
@@ -16,6 +16,9 @@ const InputField = ({ icon: Icon, type, placeholder, name, required = true }) =>
             placeholder={placeholder}
             className="input-field glass-panel"
             required={required}
+            minLength={minLength}
+            maxLength={maxLength}
+            pattern={pattern}
         />
     </div>
 );
@@ -49,45 +52,35 @@ const Login = () => {
     const initialMode = queryParams.get('mode') === 'signup' ? 'signup' : 'login';
 
     const [mode, setMode] = useState(initialMode);
+    const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Data for dropdowns
     const [roles, setRoles] = useState([]);
     const [organizations, setOrganizations] = useState([]);
-
-    // Controlled inputs for dropdowns
     const [selectedRoleId, setSelectedRoleId] = useState('');
     const [selectedOrgId, setSelectedOrgId] = useState('');
     const [isManagerRoleSelected, setIsManagerRoleSelected] = useState(false);
 
-    // Sync mode with URL if user navigates back/forward
     useEffect(() => {
         setMode(initialMode);
     }, [initialMode]);
 
-    // Fetch Roles and Organizations on mount
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const fetchedRoles = await UserRoleService.getAll();
-
-                // Roles to exclude from regular signup as they have separate flows or aren't for regular users
                 const excludedRoles = ['AnonymousUser', 'Reporter'];
                 const baseRoles = fetchedRoles.filter(r =>
-                    !excludedRoles.includes(r.name) && !excludedRoles.includes(r.title)
-                );
-
-                // Target roles for specific highlight, otherwise show all non-excluded
+                    !excludedRoles.includes(r.name) && !excludedRoles.includes(r.title));
                 const targetRoles = ['Admin', 'Manager', 'BillingManager'];
                 const filteredRoles = baseRoles.filter(r =>
-                    targetRoles.includes(r.name) || targetRoles.includes(r.title)
-                );
-
+                    targetRoles.includes(r.name) || targetRoles.includes(r.title));
                 setRoles(filteredRoles.length > 0 ? filteredRoles : baseRoles);
 
                 const fetchedOrgs = await OrganizationService.getAll();
                 setOrganizations(fetchedOrgs);
-            } catch (error) {
-                console.error("Failed to fetch roles or organizations:", error);
+            } catch (err) {
+                console.error('Failed to fetch roles or organizations:', err);
             }
         };
         fetchData();
@@ -95,27 +88,28 @@ const Login = () => {
 
     const toggleMode = () => {
         setMode(mode === 'login' ? 'signup' : 'login');
+        setError('');
     };
 
     const handleRoleChange = (e) => {
         const newRoleId = e.target.value;
         setSelectedRoleId(newRoleId);
-
         const selectedRoleObj = roles.find(r => String(r.id) === String(newRoleId));
         const roleName = (selectedRoleObj?.name || selectedRoleObj?.title || '').toLowerCase();
-
         if (roleName === 'manager') {
             setIsManagerRoleSelected(true);
         } else {
             setIsManagerRoleSelected(false);
-            setSelectedOrgId(''); // Clear org selection if not manager
+            setSelectedOrgId('');
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setIsSubmitting(true);
 
-        const email = e.target.email.value.toLowerCase();
+        const email = e.target.email.value.toLowerCase().trim();
         const password = e.target.password.value;
 
         try {
@@ -126,45 +120,32 @@ const Login = () => {
                 const surname = nameParts.slice(1).join(' ') || 'Name';
 
                 if (!selectedRoleId) {
-                    alert("Please select a role.");
+                    setError('Please select a role.');
                     return;
                 }
-
                 if (isManagerRoleSelected && !selectedOrgId) {
-                    alert("Please select an organization for the Manager role.");
+                    setError('Please select an organization for the Manager role.');
                     return;
                 }
 
-                const newUser = {
+                await UserService.create({
                     name,
                     surname,
                     email,
                     password,
                     username: email,
                     roleId: selectedRoleId,
-                    organizationId: isManagerRoleSelected ? selectedOrgId : null
-                };
+                    organizationId: isManagerRoleSelected ? selectedOrgId : null,
+                });
 
-                await UserService.create(newUser);
-                alert("Account created successfully! Please log in.");
                 setMode('login');
+                setError('');
                 setSelectedRoleId('');
                 setSelectedOrgId('');
                 setIsManagerRoleSelected(false);
             } else {
-                const tokenResponse = await UserService.login({
-                    username: email,
-                    password
-                });
-
-                // The token is a string directly from the modified UserService
-                const token = typeof tokenResponse === 'string' ? tokenResponse : tokenResponse.token;
-
-                if (!token) {
-                    throw new Error("No token received from the server");
-                }
-
-                const userData = await login(token);
+                const loginResponse = await UserService.login({ username: email, password });
+                const userData = await login(loginResponse);
 
                 if (userData?.role === 'billingmanager') {
                     navigate('/admin/billing');
@@ -172,9 +153,10 @@ const Login = () => {
                     navigate('/admin/dashboard');
                 }
             }
-        } catch (error) {
-            console.error(error);
-            alert(error.message || "An error occurred");
+        } catch (err) {
+            setError(err.message || 'An error occurred. Please try again.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -189,17 +171,22 @@ const Login = () => {
                     </p>
                 </div>
 
+                {error && (
+                    <div style={{
+                        display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
+                        padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
+                        background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                        fontSize: '0.875rem', color: '#fca5a5', marginBottom: '0.5rem'
+                    }}>
+                        <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+                        <span>{error}</span>
+                    </div>
+                )}
+
                 <form className="auth-form" onSubmit={handleSubmit}>
                     {mode === 'signup' && (
                         <>
-                            <InputField
-                                icon={User}
-                                type="text"
-                                name="name"
-                                placeholder="Full Name (Optional for reporters)"
-                                required={false}
-                            />
-
+                            <InputField icon={User} type="text" name="name" placeholder="Full Name" required={false} />
                             <SelectField
                                 icon={Shield}
                                 name="role"
@@ -207,9 +194,7 @@ const Login = () => {
                                 onChange={handleRoleChange}
                                 options={roles}
                                 placeholder="Select a Role"
-                                required={true}
                             />
-
                             {isManagerRoleSelected && (
                                 <SelectField
                                     icon={Building2}
@@ -218,24 +203,25 @@ const Login = () => {
                                     onChange={(e) => setSelectedOrgId(e.target.value)}
                                     options={organizations}
                                     placeholder="Select Organization"
-                                    required={true}
                                 />
                             )}
                         </>
                     )}
 
-                    <InputField
-                        icon={Mail}
-                        type="email"
-                        name="email"
-                        placeholder="Email Address"
-                    />
+                    <InputField icon={Mail} type="email" name="email" placeholder="Email Address" />
                     <InputField
                         icon={Lock}
                         type="password"
                         name="password"
                         placeholder="Password"
+                        minLength={mode === 'signup' ? 8 : undefined}
                     />
+
+                    {mode === 'signup' && (
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '-0.25rem 0 0.25rem 0.25rem' }}>
+                            Min. 8 characters with at least one uppercase letter, digit, and special character.
+                        </p>
+                    )}
 
                     {mode === 'login' && (
                         <div className="auth-options">
@@ -248,16 +234,21 @@ const Login = () => {
                         </div>
                     )}
 
-                    {/* Removed mock logic helper text */}
-
-                    <button type="submit" className="btn btn-primary btn-full bounce-hover">
-                        {mode === 'login' ? 'Sign In' : 'Create Account'} <ArrowRight size={18} />
+                    <button
+                        type="submit"
+                        className="btn btn-primary btn-full bounce-hover"
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting
+                            ? (mode === 'login' ? 'Signing in...' : 'Creating...')
+                            : (mode === 'login' ? 'Sign In' : 'Create Account')}
+                        {!isSubmitting && <ArrowRight size={18} />}
                     </button>
                 </form>
 
                 <div className="auth-footer">
                     <p>
-                        {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+                        {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
                         <button className="switch-mode-btn" type="button" onClick={toggleMode}>
                             {mode === 'login' ? 'Sign up' : 'Sign in'}
                         </button>
@@ -265,7 +256,6 @@ const Login = () => {
                 </div>
             </div>
 
-            {/* Background visual effects specific to auth page */}
             <div className="auth-bg-shapes">
                 <div className="shape shape-1"></div>
                 <div className="shape shape-2"></div>

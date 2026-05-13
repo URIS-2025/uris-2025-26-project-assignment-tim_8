@@ -42,6 +42,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__AnonymousUserDB=Server=sql-server;Database=AnonymousUserDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
       - Services__LoggerServiceBaseUrl=http://logger-service:8080
+      - Jwt__Key=AnonSvc-Docker-Secret-Key-tim8-uris-2026-secure!!
+      - Jwt__Issuer=AnonymousUserService
+      - Jwt__Audience=AnonymousUserService
     depends_on:
       - sql-server
     restart: always
@@ -55,6 +58,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__OrganizationDb=Server=sql-server;Database=OrganizationDb;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
       - Services__LoggerServiceBaseUrl=http://logger-service:8080
+      - Jwt__Key=OrgSvc-Docker-Secret-Key-tim8-uris-2026-secure!!
+      - Jwt__Issuer=OrganizationService
+      - Jwt__Audience=OrganizationService
     depends_on:
       - sql-server
     restart: always
