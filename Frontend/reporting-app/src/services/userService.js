@@ -1,96 +1,106 @@
 const API_BASE_URL = 'http://127.0.0.1:80';
 
+const getAuthHeader = () => {
+    const token = localStorage.getItem('authToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const extractErrorMessage = async (response) => {
+    try {
+        const data = await response.json();
+        if (data.errors) {
+            return Object.values(data.errors).flat().join(' ');
+        }
+        return data.error || data.title || 'Request failed';
+    } catch {
+        return 'Request failed';
+    }
+};
+
 export const UserService = {
-    // GET /api/User
     getAll: async () => {
-        const response = await fetch(`${API_BASE_URL}/api/User/`);
-        if (!response.ok) throw new Error('Failed to fetch users');
-        return await response.json();
+        const response = await fetch(`${API_BASE_URL}/api/User/`, {
+            headers: { ...getAuthHeader() },
+        });
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
     },
 
-    // GET /api/User/{id}
     getById: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/api/User/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch user');
-        return await response.json();
+        const response = await fetch(`${API_BASE_URL}/api/User/${id}`, {
+            headers: { ...getAuthHeader() },
+        });
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
     },
 
-    // POST /api/User
     create: async (data) => {
         const response = await fetch(`${API_BASE_URL}/api/User/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error('Failed to create user');
-        return await response.json();
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
     },
 
-    // PUT /api/User
     update: async (data) => {
         const response = await fetch(`${API_BASE_URL}/api/User/`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
             body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error('Failed to update user');
-        return await response.json();
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
     },
 
-    // DELETE /api/User/{id}
     delete: async (id) => {
         const response = await fetch(`${API_BASE_URL}/api/User/${id}`, {
             method: 'DELETE',
+            headers: { ...getAuthHeader() },
         });
-        if (!response.ok) throw new Error('Failed to delete user');
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
         return true;
     },
 
-    // POST /api/User/login
+    // Returns { accessToken, refreshToken }
     login: async (data) => {
         const response = await fetch(`${API_BASE_URL}/api/User/login`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error('Login failed');
-        const text = await response.text();
-        try {
-            return JSON.parse(text);
-        } catch {
-            return text;
-        }
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
     },
 
-    // POST /api/User/invite
+    refresh: async (refreshToken) => {
+        const response = await fetch(`${API_BASE_URL}/api/User/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+        });
+        if (!response.ok) throw new Error('Session expired. Please log in again.');
+        return response.json();
+    },
+
     invite: async (data) => {
         const response = await fetch(`${API_BASE_URL}/api/User/invite/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
             body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error('Failed to invite user');
-        return await response.json();
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
     },
 
-    // PUT /api/User/{id}/role
     updateRole: async (id, roleData) => {
         const response = await fetch(`${API_BASE_URL}/api/User/${id}/role/`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
             body: JSON.stringify(roleData),
         });
-        if (!response.ok) throw new Error('Failed to update user role');
-        return await response.json();
-    }
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
+    },
 };

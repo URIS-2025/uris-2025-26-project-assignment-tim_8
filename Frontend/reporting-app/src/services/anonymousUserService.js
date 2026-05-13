@@ -1,58 +1,77 @@
 const API_BASE_URL = 'http://127.0.0.1:80';
 
+const getAuthHeader = () => {
+    const token = localStorage.getItem('authToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const extractErrorMessage = async (response) => {
+    try {
+        const data = await response.json();
+        if (data.errors) {
+            return Object.values(data.errors).flat().join(' ');
+        }
+        return data.error || data.title || 'Request failed';
+    } catch {
+        return 'Request failed';
+    }
+};
+
 export const AnonymousUserService = {
-    // GET /api/AnonymousUser
     getAll: async () => {
-        const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/`);
-        if (!response.ok) throw new Error('Failed to fetch anonymous users');
-        return await response.json();
+        const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/`, {
+            headers: { ...getAuthHeader() },
+        });
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
     },
 
-    // GET /api/AnonymousUser/{id}
     getById: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch anonymous user');
-        return await response.json();
+        const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/${id}`, {
+            headers: { ...getAuthHeader() },
+        });
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
     },
 
-    // POST /api/AnonymousUser
+    // Returns created user DTO
     create: async (data) => {
         const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error('Failed to create anonymous user');
-        return await response.json();
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
     },
 
-    // DELETE /api/AnonymousUser/{id}
     delete: async (id) => {
         const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/${id}`, {
             method: 'DELETE',
+            headers: { ...getAuthHeader() },
         });
-        if (!response.ok) throw new Error('Failed to delete anonymous user');
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
         return true;
     },
 
-    // POST /api/AnonymousUser/login
+    // Returns { accessToken, refreshToken }
     login: async (credentials) => {
         const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/login`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credentials),
         });
+        if (!response.ok) throw new Error(await extractErrorMessage(response));
+        return response.json();
+    },
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Invalid username or password');
-        }
-
-        // The endpoint returns a token string
-        return await response.text();
-    }
+    refresh: async (refreshToken) => {
+        const response = await fetch(`${API_BASE_URL}/api/AnonymousUser/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+        });
+        if (!response.ok) throw new Error('Session expired. Please log in again.');
+        return response.json();
+    },
 };

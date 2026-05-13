@@ -1,5 +1,6 @@
-﻿using AnonymousDomain.Models.Organization;
+using AnonymousDomain.Models.Organization;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrganizationService.Clients;
 using OrganizationService.Data;
@@ -8,7 +9,6 @@ using System.Text.Json;
 
 namespace AnonymousAPI.Controllers
 {
-    //[Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class OrganizationController : Controller
@@ -36,6 +36,7 @@ namespace AnonymousAPI.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<OrganizationCreatedDTO>> CreateOrganization([FromBody] OrganizationCreationDTO organization)
         {
@@ -72,6 +73,7 @@ namespace AnonymousAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut]
         public async Task<ActionResult<OrganizationCreatedDTO>> UpdateOrganization([FromBody] OrganizationDTO organization)
         {
@@ -110,6 +112,7 @@ namespace AnonymousAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrganization(Guid id)
         {

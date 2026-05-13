@@ -1,4 +1,4 @@
-﻿using AnonymousDomain.Models.Organization;
+using AnonymousDomain.Models.Organization;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -36,6 +36,7 @@ namespace AnonymousAPI.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<UserRoleCreatedDTO>> CreateUserRole([FromBody] UserRoleCreationDTO userRole)
         {
@@ -72,6 +73,7 @@ namespace AnonymousAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut]
         public async Task<ActionResult<UserRoleCreatedDTO>> UpdateUserRole([FromBody] UserRoleDTO userRole)
         {
@@ -110,6 +112,7 @@ namespace AnonymousAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUserRole(Guid id)
         {

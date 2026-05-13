@@ -1,6 +1,5 @@
-﻿using AnonymousDomain.Models.AnonymousUser;
+using AnonymousDomain.Models.AnonymousUser;
 using AnonymousUserService.Models.DTOs.AnonymousUser;
-using Microsoft.AspNetCore.Mvc;
 
 namespace AnonymousUserService.Data
 {
@@ -9,7 +8,8 @@ namespace AnonymousUserService.Data
         IEnumerable<AnonymousUserDTO> GetAllAnonymousUsers();
         AnonymousUserDTO GetAnonymousUserById(Guid id);
         AnonymousUserDTO CreateUser(AnonymousUserCreationDTO user);
-        string Login(AnonymousUserCreationDTO login);
+        AnonymousLoginResponseDTO Login(AnonymousUserLoginDTO login);
+        AnonymousLoginResponseDTO RefreshToken(string refreshToken);
         void DeleteAnonymousUser(Guid id);
     }
 }

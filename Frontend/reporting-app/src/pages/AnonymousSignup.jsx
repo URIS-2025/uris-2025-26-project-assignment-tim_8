@@ -1,38 +1,55 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, User, ArrowRight, UserPlus, ShieldCheck } from 'lucide-react';
+import { Lock, User, ArrowRight, UserPlus, ShieldCheck, AlertCircle } from 'lucide-react';
 import { AnonymousUserService } from '../services/anonymousUserService';
 import './Login.css';
+
+const passwordStrength = (password) => {
+    if (!password) return { label: '', color: '' };
+    if (password.length < 8) return { label: 'Too short', color: '#ef4444' };
+    const strong = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$/.test(password);
+    if (strong) return { label: 'Strong', color: '#22c55e' };
+    const medium = password.length >= 8 && (/[A-Z]/.test(password) || /[0-9]/.test(password));
+    if (medium) return { label: 'Medium', color: '#f59e0b' };
+    return { label: 'Weak', color: '#ef4444' };
+};
 
 const AnonymousSignup = () => {
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
+    const [password, setPassword] = useState('');
+
+    const strength = passwordStrength(password);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
 
         const username = e.target.username.value.trim();
-        const password = e.target.password.value;
         const confirmPassword = e.target.confirmPassword.value;
 
         if (!username || !password) {
-            alert('Please fill in all fields.');
+            setError('Please fill in all fields.');
+            return;
+        }
+
+        if (password.length < 8) {
+            setError('Password must be at least 8 characters.');
             return;
         }
 
         if (password !== confirmPassword) {
-            alert('Passwords do not match.');
+            setError('Passwords do not match.');
             return;
         }
 
         try {
             setIsSubmitting(true);
             await AnonymousUserService.create({ username, password });
-            alert('Anonymous account created successfully! Please log in.');
             navigate('/anonymous/login');
-        } catch (error) {
-            console.error(error);
-            alert(error.message || 'Failed to create anonymous account.');
+        } catch (err) {
+            setError(err.message || 'Failed to create anonymous account.');
         } finally {
             setIsSubmitting(false);
         }
@@ -55,15 +72,31 @@ const AnonymousSignup = () => {
                     <p>Create an anonymous account to submit feedback securely</p>
                 </div>
 
+                {error && (
+                    <div style={{
+                        display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
+                        padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
+                        background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                        fontSize: '0.875rem', color: '#fca5a5', marginBottom: '0.5rem'
+                    }}>
+                        <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+                        <span>{error}</span>
+                    </div>
+                )}
+
                 <form className="auth-form" onSubmit={handleSubmit}>
                     <div className="input-group">
                         <User className="input-icon" size={20} />
                         <input
                             type="text"
                             name="username"
-                            placeholder="Choose a Username"
+                            placeholder="Choose a Username (3–30 chars, letters/digits/_)"
                             className="input-field glass-panel"
                             required
+                            minLength={3}
+                            maxLength={30}
+                            pattern="^[a-zA-Z0-9_]+$"
+                            title="Username may only contain letters, digits, and underscores"
                         />
                     </div>
 
@@ -72,11 +105,21 @@ const AnonymousSignup = () => {
                         <input
                             type="password"
                             name="password"
-                            placeholder="Password"
+                            placeholder="Password (min. 8 characters)"
                             className="input-field glass-panel"
                             required
+                            minLength={8}
+                            maxLength={64}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>
+
+                    {password && (
+                        <p style={{ fontSize: '0.8rem', margin: '-0.25rem 0 0.25rem 0.25rem', color: strength.color }}>
+                            Password strength: {strength.label}
+                        </p>
+                    )}
 
                     <div className="input-group">
                         <ShieldCheck className="input-icon" size={20} />
@@ -104,7 +147,7 @@ const AnonymousSignup = () => {
                         className="btn btn-primary btn-full bounce-hover"
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? 'Creating...' : 'Create Anonymous Account'} <ArrowRight size={18} />
+                        {isSubmitting ? 'Creating...' : 'Create Anonymous Account'} {!isSubmitting && <ArrowRight size={18} />}
                     </button>
                 </form>
 
