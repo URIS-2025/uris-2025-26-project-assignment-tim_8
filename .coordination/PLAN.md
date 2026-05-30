@@ -1,87 +1,59 @@
-# Plan: Auth input hardening — valid emails + strong passwords (org + anonymous)
+# Plan: Bootstrap knowledge base (.claude/rules/ + .claude/guides/ + CLAUDE.md)
 
-Base branch: feature/auth-input-hardening
+Base branch: dev
 Mode: local
-Created: 2026-05-31T19:24:00+02:00
+Created: 2026-05-30T15:29:01Z
 
-Source plan: `AUTH_HARDENING_PLAN.md` (read it for full rationale). This file is the static
-breakdown; progress lives in the `tasks/` filenames, never here.
+## Goal
 
-## THE GOLDEN RULE (applies to every task)
+Bootstrap a dense, scannable, codebase-specific knowledge base that future agent
+sessions load on every run:
+- `.claude/rules/*.md` — "how to write code" — WRONG/CORRECT pairs, table-heavy, <500 lines each
+- `.claude/guides/*.md` — "how the system works" — architecture, entities, data flow, gotchas
+- `CLAUDE.md` at repo root — index of both
 
-Frontend validation is UX only. **The backend re-validates every rule independently.** The SPA
-can be bypassed with curl/devtools, so every rule lives in two places: frontend for instant
-feedback, backend as the real gate. Never trust a client-sent role/id/flag.
-
-## Shared Contract (every task copies these VERBATIM — identical strings both sides)
-
-**Password policy (org AND anonymous):**
-- Length: min 8, max 64. Do not trim internal spaces; allow them.
-- Complexity regex (same on both sides):
-  `^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,64}$`
-- Breach check: SHA-1 the password, take first 5 hex chars (uppercase), GET
-  `https://api.pwnedpasswords.com/range/{prefix5}`, search response lines for the remaining
-  35 hex chars. Full password/hash never sent. Backend = HARD reject on signup. Frontend = soft
-  warning + block submit. **Fail OPEN on network error** (both sides) — never block on outage.
-
-**Email format (org users only):** lowercase + trim, then regex `^[^\s@]+@[^\s@]+\.[^\s@]+$`.
-Anonymous users have NO email — username rule instead: `^[a-zA-Z0-9_]+$`, length 3–30.
-
-**Canonical user-facing messages (verbatim, both sides):**
-| Code | Message |
-|---|---|
-| pwd too short | `Password must be at least 8 characters.` |
-| pwd too long | `Password must be at most 64 characters.` |
-| pwd complexity | `Password must include uppercase, lowercase, a number, and a special character.` |
-| pwd breached | `This password has appeared in a data breach. Please choose another.` |
-| email format | `Please enter a valid email address.` |
-| username format | `Username may only contain letters, digits, and underscores (3–30 chars).` |
-| passwords mismatch | `Passwords do not match.` |
-
-**Error shape:** backend controllers return `BadRequest(new { error = ex.Message })`. Frontend's
-`extractErrorMessage` (`src/services/userService.js:8-18`) reads `errors`/`error`/`title` — reuse it.
-
-## Important repo facts (verified — the plan is slightly wrong on these)
-
-- **`.claude/rules/` does NOT exist** in this repo. The source plan tells you to "follow
-  `.claude/rules/...`" — those files are absent. Conventions are inlined in each task instead.
-- **`OrganizationService/Controllers/UserController.cs` Create** has a generic
-  `catch (Exception) -> BadRequest(new { error })` (lines ~67-80), so a repo-thrown
-  `ArgumentException` already maps to 400. ✅
-- **`AnonymousUserService/Controllers/AnonymousUserController.cs` Create** (lines ~44-57) ONLY
-  catches `InvalidOperationException -> 409`. There is NO `ArgumentException` catch — a validation
-  throw would bubble to the global handler. Task 002 MUST add the 400 catch. ⚠️
-- A draft test `AnonymousUserServiceTest/AnonymousUserCreationDtoValidationTests.cs` was committed
-  on the base branch. It uses **DataAnnotations** validation, which CONFLICTS with the plan's
-  repo-layer-validator approach and currently fails (the DTO has no annotations). Task 002 must
-  reconcile it (rewrite to test the repo-layer validator, or delete in favor of new tests).
+This is an ASP.NET Core 8 microservices backend (11 services) behind an Nginx gateway,
+with a React 19 SPA frontend. Scope of rules/guides is the **backend**; frontend is
+already covered by the existing root CLAUDE.md and is out of scope except where the
+gateway contract touches it.
 
 ## Tasks
 
-| # | Name | Type | Dependencies |
-|---|---|---|---|
-| 001 | backend-org-validation | code | — |
-| 002 | backend-anon-validation | code | 001 |
-| 003 | backend-integration-tests | code | 001, 002 |
-| 004 | frontend-shared-validator | code | — |
-| 005 | frontend-org-signup-gates | code | 004 |
-| 006 | frontend-anon-signup-gates | code | 004 |
-| 007 | frontend-defect-fixes | code | — |
-| 008 | review-backend | research | 001, 002, 003 |
-| 009 | review-frontend | research | 004, 005, 006, 007 |
+| #   | Name                          | Type     | Dependencies      |
+|-----|-------------------------------|----------|-------------------|
+| 001 | inventory-scan-report         | research | —                 |
+| 002 | rule-controllers-and-errors   | code     | 001               |
+| 003 | rule-repositories-and-dtos    | code     | 001               |
+| 004 | rule-program-bootstrap        | code     | 001               |
+| 005 | rule-inter-service-calls      | code     | 001               |
+| 006 | rule-auth-jwt                 | code     | 001               |
+| 007 | rule-gateway-routing          | code     | 001               |
+| 008 | guide-architecture-overview   | both     | 001               |
+| 009 | guide-request-and-auth-flow   | both     | 001               |
+| 010 | guide-service-catalog         | both     | 001               |
+| 011 | guide-cross-service-contracts | both     | 001               |
+| 012 | index-claude-md               | code     | 002,003,004,005,006,007,008,009,010,011 |
 
-Immediately claimable at start: 001, 004, 007.
+001 is the **human-review gate**: it produces `.coordination/SCAN_REPORT.md`, which a
+human reviews before tasks 002–011 fan out.
 
-## Acceptance criteria (overall)
+## Acceptance criteria
 
-- `POST /api/User/` and `POST /api/AnonymousUser/` reject weak/breached passwords and bad
-  email/username with `400 { error: "<canonical message>" }`; accept strong+valid as today (201).
-- HIBP unreachable -> signup with a strong, complex password still succeeds (fail-open).
-- Frontend org + anon signup block malformed email / weak password inline (canonical message, no
-  network call); breached password shows warning and blocks submit.
-- `AnonymousLogin.jsx` surfaces errors inline (no `alert()`); submit button never stuck disabled
-  after a validation early-return; `systemUserService.js` uses `http://` not `https://`.
-- BCrypt hashing unchanged; no new endpoints, no migrations, no gateway changes; tokens stay in
-  localStorage (cookie migration is deferred — Appendix A, out of scope).
-- Login paths (org + anon) get only "all fields required" guards — NEVER run the strength gate on
-  login (existing users may predate the policy).
+- [ ] `.coordination/SCAN_REPORT.md` exists and covers every section listed in task 001.
+- [ ] 6 rule files exist under `.claude/rules/`, each <500 lines, table/WRONG-CORRECT heavy,
+      each backed by 3+ real grep occurrences cited in the task's Findings.
+- [ ] 4 guide files exist under `.claude/guides/`, each listing the files it actually read.
+- [ ] `CLAUDE.md` indexes all rules + guides with one-line scopes, an architecture table,
+      build/run commands, and a hard-constraints section.
+- [ ] No invented patterns. Every rule traces to real `file:line` evidence in THIS repo.
+- [ ] Repo-relative paths only; real class/method/file names, no generic placeholders.
+
+## Hard constraints (apply to every task)
+
+- DO NOT INVENT rules — 3+ real occurrences required, grep evidence mandatory in Findings.
+- Describe only what EXISTS, never what the system "should" do.
+- Skip `obj/`, `bin/`, `node_modules/`, migrations `*.Designer.cs`/`*ModelSnapshot.cs`,
+  lockfiles, binaries.
+- Local mode — NO pushes during task work.
+- The existing root `CLAUDE.md` is the starting point for task 012; extend/replace it,
+  don't duplicate the frontend detail it already has.
