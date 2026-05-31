@@ -50,6 +50,10 @@ namespace AnonymousAPI.Controllers
                 var result = _anonymousUserRepository.CreateUser(anonUser);
                 return Created("", result);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
             catch (InvalidOperationException ex)
             {
                 return Conflict(new { error = ex.Message });
