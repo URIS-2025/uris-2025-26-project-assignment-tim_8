@@ -2,12 +2,15 @@ using AnonymousDomain.Models.Organization;
 using AutoMapper;
 using BCrypt.Net;
 using Microsoft.IdentityModel.Tokens;
+using OrganizationService.Clients;
 using OrganizationService.Context;
 using OrganizationService.Models.DTOs;
+using OrganizationService.Validation;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace OrganizationService.Data
 {
@@ -16,12 +19,17 @@ namespace OrganizationService.Data
         private readonly OrganizationContext _context;
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
+        private readonly IPwnedPasswordsClient _pwned;
 
-        public UserRepository(OrganizationContext context, IMapper mapper, IConfiguration configuration)
+        private static readonly Regex EmailRegex = new(
+            @"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.Compiled);
+
+        public UserRepository(OrganizationContext context, IMapper mapper, IConfiguration configuration, IPwnedPasswordsClient pwned)
         {
             _context = context;
             _mapper = mapper;
             _configuration = configuration;
+            _pwned = pwned;
         }
 
         public bool SaveChanges() => _context.SaveChanges() > 0;
@@ -30,6 +38,14 @@ namespace OrganizationService.Data
         {
             var normalizedEmail = user.Email.Trim().ToLower();
             var normalizedUsername = user.Username.Trim().ToLower();
+
+            if (!EmailRegex.IsMatch(normalizedEmail))
+                throw new ArgumentException("Please enter a valid email address.");
+
+            PasswordPolicy.Validate(user.Password);
+
+            if (_pwned.IsBreachedAsync(user.Password, CancellationToken.None).GetAwaiter().GetResult())
+                throw new ArgumentException("This password has appeared in a data breach. Please choose another.");
 
             if (_context.Users.Any(u => u.Email == normalizedEmail))
                 throw new InvalidOperationException("An account with this email already exists.");
