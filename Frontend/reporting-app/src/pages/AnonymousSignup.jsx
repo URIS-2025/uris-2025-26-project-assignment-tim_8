@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, ArrowRight, UserPlus, ShieldCheck, AlertCircle } from 'lucide-react';
 import { AnonymousUserService } from '../services/anonymousUserService';
+import { validatePassword, validateUsername } from '../utils/validation';
+import { checkPwned } from '../services/pwnedService';
 import './Login.css';
 
 const passwordStrength = (password) => {
@@ -34,13 +36,26 @@ const AnonymousSignup = () => {
             return;
         }
 
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters.');
+        const uRes = validateUsername(username);
+        if (!uRes.valid) {
+            setError(uRes.message);
+            return;
+        }
+
+        const pRes = validatePassword(password);
+        if (!pRes.valid) {
+            setError(pRes.message);
             return;
         }
 
         if (password !== confirmPassword) {
             setError('Passwords do not match.');
+            return;
+        }
+
+        const pwned = await checkPwned(password);
+        if (pwned === 'breached') {
+            setError('This password has appeared in a data breach. Please choose another.');
             return;
         }
 
