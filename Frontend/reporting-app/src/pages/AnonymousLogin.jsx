@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, User, ArrowRight, Shield } from 'lucide-react';
+import { Lock, User, ArrowRight, Shield, AlertCircle } from 'lucide-react';
 import { AnonymousUserService } from '../services/anonymousUserService';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
@@ -9,15 +9,17 @@ const AnonymousLogin = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
 
         const username = e.target.username.value.trim();
         const password = e.target.password.value;
 
         if (!username || !password) {
-            alert('Please fill in all fields.');
+            setError('Please fill in all fields.');
             return;
         }
 
@@ -39,9 +41,9 @@ const AnonymousLogin = () => {
 
             // Navigate to the next page
             navigate('/portal');
-        } catch (error) {
-            console.error(error);
-            alert(error.message || 'Login failed. Please try again.');
+        } catch (err) {
+            console.error(err);
+            setError(err.message || 'Login failed. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -63,6 +65,18 @@ const AnonymousLogin = () => {
                     <h2>Anonymous Sign In</h2>
                     <p>Sign in with your anonymous credentials</p>
                 </div>
+
+                {error && (
+                  <div style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
+                    padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
+                    background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                    fontSize: '0.875rem', color: '#fca5a5', marginBottom: '0.5rem'
+                  }}>
+                    <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+                    <span>{error}</span>
+                  </div>
+                )}
 
                 <form className="auth-form" onSubmit={handleSubmit}>
                     <div className="input-group">
