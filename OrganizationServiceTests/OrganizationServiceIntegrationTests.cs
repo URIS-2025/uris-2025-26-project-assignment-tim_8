@@ -191,7 +191,7 @@ namespace OrganizationService.Tests.Integration
                 Name           = "Marko",
                 Surname        = "Markovic",
                 Email          = "marko@integration.com",
-                Password       = "tajnaSifra123",
+                Password       = "Zx9$mQ2!vK7w",
                 Username       = "markom_int",
                 RoleId         = Guid.NewGuid(),
                 OrganizationId = null
@@ -210,7 +210,7 @@ namespace OrganizationService.Tests.Integration
                 Name     = "Ana",
                 Surname  = "Anic",
                 Email    = "ana@integration.com",
-                Password = "sifra123",
+                Password = "Zx9$mQ2!vK7w",
                 Username = "anaa_int",
                 RoleId   = Guid.NewGuid()
             };

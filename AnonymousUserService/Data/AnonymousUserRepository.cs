@@ -1,7 +1,10 @@
 using AnonymousDomain.Models.AnonymousUser;
+using AnonymousUserService.Clients;
 using AnonymousUserService.Context;
 using AnonymousUserService.Models.DTOs.AnonymousUser;
+using AnonymousUserService.Validation;
 using AutoMapper;
+using System.Text.RegularExpressions;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,12 +18,17 @@ namespace AnonymousUserService.Data
         private readonly AnonymousUserContext _context;
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
+        private readonly IPwnedPasswordsClient _pwned;
 
-        public AnonymousUserRepository(AnonymousUserContext context, IMapper mapper, IConfiguration configuration)
+        private static readonly Regex UsernameRegex = new(
+            @"^[a-zA-Z0-9_]+$", RegexOptions.Compiled);
+
+        public AnonymousUserRepository(AnonymousUserContext context, IMapper mapper, IConfiguration configuration, IPwnedPasswordsClient pwned)
         {
             _mapper = mapper;
             _context = context;
             _configuration = configuration;
+            _pwned = pwned;
         }
 
         public bool SaveChanges() => _context.SaveChanges() > 0;
@@ -50,7 +58,18 @@ namespace AnonymousUserService.Data
 
         public AnonymousUserDTO CreateUser(AnonymousUserCreationDTO user)
         {
+            if (string.IsNullOrWhiteSpace(user.Username))
+                throw new ArgumentException("Username may only contain letters, digits, and underscores (3–30 chars).");
+
             var normalizedUsername = user.Username.Trim().ToLower();
+
+            if (!UsernameRegex.IsMatch(normalizedUsername) || normalizedUsername.Length < 3 || normalizedUsername.Length > 30)
+                throw new ArgumentException("Username may only contain letters, digits, and underscores (3–30 chars).");
+
+            PasswordPolicy.Validate(user.Password);
+
+            if (_pwned.IsBreachedAsync(user.Password, CancellationToken.None).GetAwaiter().GetResult())
+                throw new ArgumentException("This password has appeared in a data breach. Please choose another.");
 
             if (_context.AnonymousUsers.Any(u => u.Username == normalizedUsername))
                 throw new InvalidOperationException("Username is already taken.");
