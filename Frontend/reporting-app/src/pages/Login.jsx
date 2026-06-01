@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { UserService } from '../services/userService';
 import { UserRoleService } from '../services/userRoleService';
 import { OrganizationService } from '../services/organizationService';
+import { validateEmail, validatePassword } from '../utils/validation';
+import { checkPwned } from '../services/pwnedService';
 import './Login.css';
 
 const InputField = ({ icon: Icon, type, placeholder, name, required = true, minLength, maxLength, pattern }) => (
@@ -107,7 +109,6 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        setIsSubmitting(true);
 
         const email = e.target.email.value.toLowerCase().trim();
         const password = e.target.password.value;
@@ -119,6 +120,17 @@ const Login = () => {
                 const name = nameParts[0] || 'User';
                 const surname = nameParts.slice(1).join(' ') || 'Name';
 
+                const emailRes = validateEmail(email);
+                if (!emailRes.valid) {
+                    setError(emailRes.message);
+                    return;
+                }
+                const pwRes = validatePassword(password);
+                if (!pwRes.valid) {
+                    setError(pwRes.message);
+                    return;
+                }
+
                 if (!selectedRoleId) {
                     setError('Please select a role.');
                     return;
@@ -128,6 +140,13 @@ const Login = () => {
                     return;
                 }
 
+                const pwned = await checkPwned(password);
+                if (pwned === 'breached') {
+                    setError('This password has appeared in a data breach. Please choose another.');
+                    return;
+                }
+
+                setIsSubmitting(true);
                 await UserService.create({
                     name,
                     surname,
@@ -144,6 +163,12 @@ const Login = () => {
                 setSelectedOrgId('');
                 setIsManagerRoleSelected(false);
             } else {
+                if (!email || !password) {
+                    setError('Please enter your email and password.');
+                    return;
+                }
+
+                setIsSubmitting(true);
                 const loginResponse = await UserService.login({ username: email, password });
                 const userData = await login(loginResponse);
 
@@ -219,7 +244,7 @@ const Login = () => {
 
                     {mode === 'signup' && (
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '-0.25rem 0 0.25rem 0.25rem' }}>
-                            Min. 8 characters with at least one uppercase letter, digit, and special character.
+                            Min. 8 characters with uppercase, lowercase, a number, and a special character.
                         </p>
                     )}
 
