@@ -36,6 +36,9 @@ namespace OrganizationService.Data
 
         public UserCreatedDTO CreateUser(UserCreationDTO user)
         {
+            if (string.IsNullOrWhiteSpace(user.Email))
+                throw new ArgumentException("Please enter a valid email address.");
+
             var normalizedEmail = user.Email.Trim().ToLower();
             var normalizedUsername = user.Username.Trim().ToLower();
 

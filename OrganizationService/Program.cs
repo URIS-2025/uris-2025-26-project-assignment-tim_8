@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<OrganizationContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("OrganizationDb")));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(o => o.SuppressModelStateInvalidFilter = true);
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();

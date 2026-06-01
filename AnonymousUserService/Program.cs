@@ -26,7 +26,7 @@ builder.Services.AddScoped<AnonymousUserService.Clients.LoggerServiceClient>();
 builder.Services.AddHttpClient("PwnedPasswords", c => c.BaseAddress = new Uri("https://api.pwnedpasswords.com/"));
 builder.Services.AddScoped<AnonymousUserService.Clients.IPwnedPasswordsClient, AnonymousUserService.Clients.PwnedPasswordsClient>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(o => o.SuppressModelStateInvalidFilter = true);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

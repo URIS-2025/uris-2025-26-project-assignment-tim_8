@@ -58,6 +58,9 @@ namespace AnonymousUserService.Data
 
         public AnonymousUserDTO CreateUser(AnonymousUserCreationDTO user)
         {
+            if (string.IsNullOrWhiteSpace(user.Username))
+                throw new ArgumentException("Username may only contain letters, digits, and underscores (3–30 chars).");
+
             var normalizedUsername = user.Username.Trim().ToLower();
 
             if (!UsernameRegex.IsMatch(normalizedUsername) || normalizedUsername.Length < 3 || normalizedUsername.Length > 30)

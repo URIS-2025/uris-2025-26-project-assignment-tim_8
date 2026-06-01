@@ -110,6 +110,32 @@ namespace OrganizationService.Tests.Integration
         }
 
         [Fact]
+        public async Task CreateUser_EmptyEmail_Returns400_WithEmailMessage_AndErrorShape()
+        {
+            var dto = ValidUser();
+            dto.Email = "";   // empty -> repo email guard fires with canonical message
+
+            var response = await _client.PostAsJsonAsync("/api/User", dto);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            await AssertErrorBody(response, "Please enter a valid email address.");
+        }
+
+        [Fact]
+        public async Task CreateUser_EmptyPassword_Returns400_WithTooShortMessage_AndErrorShape()
+        {
+            var dto = ValidUser();
+            dto.Email    = $"emptypw_{Guid.NewGuid():N}@example.com";
+            dto.Username = $"emptypw_{Guid.NewGuid():N}".Substring(0, 20);
+            dto.Password = "";   // empty -> password too-short guard fires
+
+            var response = await _client.PostAsJsonAsync("/api/User", dto);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            await AssertErrorBody(response, "Password must be at least 8 characters.");
+        }
+
+        [Fact]
         public async Task CreateUser_WeakPassword_MissingLowercase_Returns400_WithComplexityMessage()
         {
             var dto = ValidUser();

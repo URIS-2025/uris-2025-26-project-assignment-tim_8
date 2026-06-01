@@ -13,9 +13,7 @@ public static class PasswordPolicy
 
     public static void Validate(string password)
     {
-        password ??= string.Empty;
-
-        if (password.Length < MinLength)
+        if (password is null || password.Length < MinLength)
             throw new ArgumentException("Password must be at least 8 characters.");
 
         if (password.Length > MaxLength)

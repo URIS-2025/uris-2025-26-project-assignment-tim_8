@@ -95,14 +95,43 @@ namespace AnonymousUserService.Tests.Integration
 
             var response = await _client.PostAsJsonAsync("/api/AnonymousUser", dto);
 
-            // The backend rejects the bad username at the HTTP boundary.
+            // The backend repository is now the single validation gate: the bad
+            // username is rejected at the HTTP boundary with the canonical message
+            // in the strict { "error": "<message>" } shape (no { errors }/{ message }).
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            await AssertErrorBody(response,
+                "Username may only contain letters, digits, and underscores (3–30 chars).");
+        }
 
-            // The canonical username message must be present in the body. (Username is
-            // validated by an identical DataAnnotation on the DTO and by the repository;
-            // whichever fires first, the rejection text is the shared-contract message.)
-            var json = await response.Content.ReadAsStringAsync();
-            Assert.Contains("Username may only contain letters, digits, and underscores", json);
+        [Fact]
+        public async Task Create_EmptyUsername_Returns400_WithUsernameMessage_AndErrorShape()
+        {
+            var dto = new AnonymousUserCreationDTO
+            {
+                Username = "",                // empty -> repo username guard fires
+                Password = "Zx9$mQ2!vK7w"
+            };
+
+            var response = await _client.PostAsJsonAsync("/api/AnonymousUser", dto);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            await AssertErrorBody(response,
+                "Username may only contain letters, digits, and underscores (3–30 chars).");
+        }
+
+        [Fact]
+        public async Task Create_EmptyPassword_Returns400_WithTooShortMessage_AndErrorShape()
+        {
+            var dto = new AnonymousUserCreationDTO
+            {
+                Username = "validuser_pw",
+                Password = ""                 // empty -> password too-short guard fires
+            };
+
+            var response = await _client.PostAsJsonAsync("/api/AnonymousUser", dto);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            await AssertErrorBody(response, "Password must be at least 8 characters.");
         }
 
         [Fact]
