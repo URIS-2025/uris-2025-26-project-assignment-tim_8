@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<OrganizationContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("OrganizationDb")));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(o => o.SuppressModelStateInvalidFilter = true);
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
@@ -25,6 +25,9 @@ builder.Services.AddHttpClient("LoggerService", client =>
     client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
 });
 builder.Services.AddScoped<OrganizationService.Clients.LoggerServiceClient>();
+
+builder.Services.AddHttpClient("PwnedPasswords", c => c.BaseAddress = new Uri("https://api.pwnedpasswords.com/"));
+builder.Services.AddScoped<OrganizationService.Clients.IPwnedPasswordsClient, OrganizationService.Clients.PwnedPasswordsClient>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

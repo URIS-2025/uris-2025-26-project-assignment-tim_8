@@ -3,10 +3,12 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using AnonymousUserService.Clients;
 using AnonymousUserService.Context;
 using AnonymousUserService.Data;
 using AnonymousUserService.Models.DTOs.AnonymousUser;
 using AnonymousUserService.Models.DTOs.BoxAccessLink;
+using Moq;
 using Xunit;
 
 namespace AnonymousUserService.Tests.Repositories
@@ -56,6 +58,15 @@ namespace AnonymousUserService.Tests.Repositories
                 .Build();
         }
 
+        // Pwned client that never reports a breach (network calls are not made in unit tests).
+        private static IPwnedPasswordsClient NotBreachedClient()
+        {
+            var mock = new Mock<IPwnedPasswordsClient>();
+            mock.Setup(c => c.IsBreachedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+            return mock.Object;
+        }
+
         private AnonymousUser SeedUser(AnonymousUserContext context)
         {
             var user = new AnonymousUser
@@ -74,7 +85,7 @@ namespace AnonymousUserService.Tests.Repositories
         public void GetAllAnonymousUsers_ReturnsEmpty_WhenNoneExist()
         {
             using var context = CreateInMemoryContext();
-            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration());
+            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
 
             var result = repo.GetAllAnonymousUsers();
 
@@ -86,7 +97,7 @@ namespace AnonymousUserService.Tests.Repositories
         public void GetAnonymousUserById_ReturnsNull_WhenNotFound()
         {
             using var context = CreateInMemoryContext();
-            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration());
+            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
 
             var result = repo.GetAnonymousUserById(Guid.NewGuid());
 
@@ -100,7 +111,7 @@ namespace AnonymousUserService.Tests.Repositories
         {
             // Za razliku od OrganizationService, ovaj repo ne baca exception — samo ignorise
             using var context = CreateInMemoryContext();
-            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration());
+            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
 
             var exception = Record.Exception(() => repo.DeleteAnonymousUser(Guid.NewGuid()));
 

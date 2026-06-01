@@ -156,7 +156,8 @@ namespace OrganizationService.Tests.Controllers
         public void Login_CallsRepository_Once()
         {
             var loginDto = new UserLoginDTO { Username = "markom", Password = "tajnaSifra123" };
-            _mockRepo.Setup(r => r.Login(It.IsAny<UserLoginDTO>())).Returns("token");
+            _mockRepo.Setup(r => r.Login(It.IsAny<UserLoginDTO>()))
+                .Returns(new LoginResponseDTO { AccessToken = "token", RefreshToken = "refresh" });
 
             _controller.Login(loginDto);
 
