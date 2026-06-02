@@ -47,5 +47,19 @@ namespace SubscriptionService.Data
             SaveChanges();
             return _mapper.Map<SubscriptionPlanDTO>(entity);
         }
+
+        public SubscriptionPlanDTO UpdatePlan(SubscriptionPlanDTO plan)
+        {
+            var entity = _context.SubscriptionPlans.FirstOrDefault(sp => sp.Id == plan.Id);
+
+            if (entity == null)
+                return null;
+
+            entity.Title = plan.Title;
+            entity.Description = plan.Description;
+
+            SaveChanges();
+            return _mapper.Map<SubscriptionPlanDTO>(entity);
+        }
     }
 }

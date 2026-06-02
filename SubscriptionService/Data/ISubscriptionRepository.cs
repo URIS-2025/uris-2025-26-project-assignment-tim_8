@@ -8,6 +8,8 @@ namespace SubscriptionService.Data
 
         SubscriptionDTO GetSubscriptionById(Guid id);
 
+        IEnumerable<SubscriptionDTO> GetSubscriptionsByPlanId(Guid planId);
+
         SubscriptionCreatedDTO CreateSubscription(SubscriptionCreationDTO subscription);
 
         SubscriptionCreatedDTO UpdateSubscription(SubscriptionDTO subscription);

@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SubscriptionService.Clients;
 using SubscriptionService.Data;
+using SubscriptionService.Enums;
 using SubscriptionService.Models.DTOs;
+using SubscriptionService.Models.ExternalDTOs;
+using SubscriptionService.ServiceCalls;
 using System.Text.Json;
 
 namespace AnonymousAPI.Controllers
@@ -11,11 +14,16 @@ namespace AnonymousAPI.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly IPaymentRepository _repository;
+        private readonly ISubscriptionRepository _subscriptionRepository;
+        private readonly BillingServiceCall _billingServiceCall;
         private readonly LoggerServiceClient _loggerClient;
 
-        public PaymentController(IPaymentRepository repository, LoggerServiceClient loggerClient)
+        public PaymentController(IPaymentRepository repository, ISubscriptionRepository subscriptionRepository,
+            BillingServiceCall billingServiceCall, LoggerServiceClient loggerClient)
         {
             _repository = repository;
+            _subscriptionRepository = subscriptionRepository;
+            _billingServiceCall = billingServiceCall;
             _loggerClient = loggerClient;
         }
 
@@ -57,6 +65,9 @@ namespace AnonymousAPI.Controllers
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
 
+                // Payment success → non-fatal billing notification to the paying org.
+                await NotifyPaymentAsync(dto.SubscriptionId, result.Id, "Payment processed successfully.");
+
                 return CreatedAtAction(nameof(GetPaymentById), new { id = result.Id }, result);
             }
             catch (Exception ex)
@@ -70,6 +81,9 @@ namespace AnonymousAPI.Controllers
                     ServiceName = "SubscriptionService",
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                // Payment failure → non-fatal billing notification to the paying org.
+                await NotifyPaymentAsync(dto.SubscriptionId, Guid.NewGuid(), "Payment failed.");
 
                 return BadRequest(new { error = ex.Message });
             }
@@ -110,6 +124,28 @@ namespace AnonymousAPI.Controllers
 
                 return BadRequest(new { error = ex.Message });
             }
+        }
+
+        // Non-fatal: resolve the paying org from the payment's subscription and fire a billing
+        // notification. Any failure (subscription missing, billing down) is swallowed so the
+        // payment operation is never broken.
+        private async Task NotifyPaymentAsync(Guid subscriptionId, Guid paymentId, string text)
+        {
+            try
+            {
+                var subscription = _subscriptionRepository.GetSubscriptionById(subscriptionId);
+                if (subscription == null)
+                    return;   // can't resolve org — skip notification
+
+                await _billingServiceCall.CreateBillingNotificationAsync(new BillingNotificationCreateDTO
+                {
+                    Text = text,
+                    OrganizationId = subscription.OrganizationId,
+                    PaymentId = paymentId,
+                    Type = TypeSubject.BillingNotification
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+            }
+            catch { }
         }
 
         [HttpDelete("{id}")]

@@ -37,6 +37,14 @@ namespace SubscriptionService.Data
             return _mapper.Map<SubscriptionDTO>(subscription);
         }
 
+        public IEnumerable<SubscriptionDTO> GetSubscriptionsByPlanId(Guid planId)
+        {
+            var subscriptions = _context.Subscriptions
+                .Where(s => s.SubscriptionPlanId == planId)
+                .ToList();
+            return _mapper.Map<IEnumerable<SubscriptionDTO>>(subscriptions);
+        }
+
         public SubscriptionCreatedDTO CreateSubscription(SubscriptionCreationDTO dto)
         {
             var subscription = _mapper.Map<Subscription>(dto);

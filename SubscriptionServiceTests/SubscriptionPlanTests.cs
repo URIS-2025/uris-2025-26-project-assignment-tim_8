@@ -1,7 +1,10 @@
 ﻿using Moq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SubscriptionService.Data;
 using SubscriptionService.Models.DTOs;
+using SubscriptionService.Models.ExternalDTOs;
+using SubscriptionService.ServiceCalls;
 using AnonymousAPI.Controllers;
 
 namespace SubscriptionServiceTests
@@ -9,12 +12,20 @@ namespace SubscriptionServiceTests
     public class SubscriptionPlanControllerTests
     {
         private readonly Mock<ISubscriptionPlanRepository> _mockRepo;
+        private readonly Mock<ISubscriptionRepository> _mockSubRepo;
+        private readonly Mock<BillingServiceCall> _billing;
         private readonly SubscriptionPlanController _controller;
 
         public SubscriptionPlanControllerTests()
         {
             _mockRepo = new Mock<ISubscriptionPlanRepository>();
-            _controller = new SubscriptionPlanController(_mockRepo.Object);
+            _mockSubRepo = new Mock<ISubscriptionRepository>();
+            _billing = new Mock<BillingServiceCall>();
+            _controller = new SubscriptionPlanController(_mockRepo.Object, _mockSubRepo.Object, _billing.Object);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
         }
 
         // =====================
@@ -286,6 +297,81 @@ namespace SubscriptionServiceTests
             _controller.GetById(id);
 
             _mockRepo.Verify(r => r.GetAllSubscriptionPlans(), Times.Never);
+        }
+
+        // =====================
+        // UPDATE — PLAN-CHANGE FAN-OUT (task 005)
+        // =====================
+
+        [Fact]
+        public async Task Update_PlanChange_FansOutOneNotificationPerSubscribedOrg()
+        {
+            var planId = Guid.NewGuid();
+            var plan = new SubscriptionPlanDTO { Id = planId, Title = "Pro", Description = "Updated" };
+            _mockRepo.Setup(r => r.UpdatePlan(plan)).Returns(plan);
+            _mockSubRepo.Setup(s => s.GetSubscriptionsByPlanId(planId)).Returns(new List<SubscriptionDTO>
+            {
+                new SubscriptionDTO { Id = Guid.NewGuid(), OrganizationId = Guid.NewGuid(), SubscriptionPlanId = planId },
+                new SubscriptionDTO { Id = Guid.NewGuid(), OrganizationId = Guid.NewGuid(), SubscriptionPlanId = planId },
+                new SubscriptionDTO { Id = Guid.NewGuid(), OrganizationId = Guid.NewGuid(), SubscriptionPlanId = planId }
+            });
+
+            var result = await _controller.Update(plan);
+
+            Assert.IsType<OkObjectResult>(result.Result);
+            _billing.Verify(b => b.CreateBillingNotificationAsync(
+                It.IsAny<BillingNotificationCreateDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(3));
+        }
+
+        [Fact]
+        public async Task Update_PlanNotFound_ReturnsNotFound_NoFanOut()
+        {
+            var plan = new SubscriptionPlanDTO { Id = Guid.NewGuid(), Title = "X" };
+            _mockRepo.Setup(r => r.UpdatePlan(plan)).Returns((SubscriptionPlanDTO)null);
+
+            var result = await _controller.Update(plan);
+
+            Assert.IsType<NotFoundResult>(result.Result);
+            _billing.Verify(b => b.CreateBillingNotificationAsync(
+                It.IsAny<BillingNotificationCreateDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+            _mockSubRepo.Verify(s => s.GetSubscriptionsByPlanId(It.IsAny<Guid>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Update_NoSubscribers_NoNotifications_StillOk()
+        {
+            var planId = Guid.NewGuid();
+            var plan = new SubscriptionPlanDTO { Id = planId, Title = "Pro" };
+            _mockRepo.Setup(r => r.UpdatePlan(plan)).Returns(plan);
+            _mockSubRepo.Setup(s => s.GetSubscriptionsByPlanId(planId)).Returns(new List<SubscriptionDTO>());
+
+            var result = await _controller.Update(plan);
+
+            Assert.IsType<OkObjectResult>(result.Result);
+            _billing.Verify(b => b.CreateBillingNotificationAsync(
+                It.IsAny<BillingNotificationCreateDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task Update_BillingThrows_StillOk()
+        {
+            var planId = Guid.NewGuid();
+            var plan = new SubscriptionPlanDTO { Id = planId, Title = "Pro" };
+            _mockRepo.Setup(r => r.UpdatePlan(plan)).Returns(plan);
+            _mockSubRepo.Setup(s => s.GetSubscriptionsByPlanId(planId)).Returns(new List<SubscriptionDTO>
+            {
+                new SubscriptionDTO { Id = Guid.NewGuid(), OrganizationId = Guid.NewGuid(), SubscriptionPlanId = planId }
+            });
+            _billing.Setup(b => b.CreateBillingNotificationAsync(
+                It.IsAny<BillingNotificationCreateDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("billing down"));
+
+            var result = await _controller.Update(plan);
+
+            Assert.IsType<OkObjectResult>(result.Result);
         }
     }
 }

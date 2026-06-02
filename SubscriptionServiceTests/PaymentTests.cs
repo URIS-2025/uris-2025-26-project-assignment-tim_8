@@ -1,9 +1,12 @@
 using Moq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SubscriptionService.Data;
 using SubscriptionService.Models.DTOs;
+using SubscriptionService.Models.ExternalDTOs;
 using AnonymousAPI.Controllers;
 using SubscriptionService.Clients;
+using SubscriptionService.ServiceCalls;
 
 
 namespace SubscriptionServiceTests
@@ -11,14 +14,22 @@ namespace SubscriptionServiceTests
     public class PaymentControllerTests
     {
         private readonly Mock<IPaymentRepository> _mockRepo;
+        private readonly Mock<ISubscriptionRepository> _mockSubRepo;
+        private readonly Mock<BillingServiceCall> _billing;
         private readonly PaymentController _controller;
         private readonly Mock<LoggerServiceClient> _logger;
 
         public PaymentControllerTests()
         {
             _mockRepo = new Mock<IPaymentRepository>();
+            _mockSubRepo = new Mock<ISubscriptionRepository>();
+            _billing = new Mock<BillingServiceCall>();
             _logger = new Mock<LoggerServiceClient>();
-            _controller = new PaymentController(_mockRepo.Object, _logger.Object);
+            _controller = new PaymentController(_mockRepo.Object, _mockSubRepo.Object, _billing.Object, _logger.Object);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
         }
 
         // =====================
@@ -326,7 +337,7 @@ namespace SubscriptionServiceTests
         public void CreatePayment_WithNegativeTotal_CallsRepository()
         {
             // Napomena: validacija negativnog Totala treba biti u repository/service sloju,
-            // controller je samo prosljeðuje - ovaj test provjerava da controller ne blokira
+            // controller je samo prosljeï¿½uje - ovaj test provjerava da controller ne blokira
             var dto = new PaymentCreationDTO
             {
                 SubscriptionId = Guid.NewGuid(),
@@ -412,6 +423,80 @@ namespace SubscriptionServiceTests
             _mockRepo.Setup(r => r.DeletePayment(id)).Throws(new Exception("DB error"));
 
             await Assert.ThrowsAsync<Exception>(() => _controller.DeletePayment(id));
+        }
+
+        // =====================
+        // BILLING PRODUCER (task 005)
+        // =====================
+
+        [Fact]
+        public async Task CreatePayment_Success_NotifiesPayingOrg_Once()
+        {
+            var subId = Guid.NewGuid();
+            var orgId = Guid.NewGuid();
+            var paymentId = Guid.NewGuid();
+            var dto = new PaymentCreationDTO { SubscriptionId = subId, Total = 100.0, Currency = "EUR", PaymentMethod = "PayPal" };
+
+            _mockRepo.Setup(r => r.CreatePayment(dto)).Returns(new PaymentCreatedDTO { Id = paymentId, Total = 100.0 });
+            _mockSubRepo.Setup(s => s.GetSubscriptionById(subId)).Returns(new SubscriptionDTO { Id = subId, OrganizationId = orgId });
+
+            var result = await _controller.CreatePayment(dto);
+
+            Assert.IsType<CreatedAtActionResult>(result.Result);
+            _billing.Verify(b => b.CreateBillingNotificationAsync(
+                It.Is<BillingNotificationCreateDTO>(d => d.OrganizationId == orgId && d.PaymentId == paymentId),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreatePayment_Failure_NotifiesPayingOrg_Once_AndReturnsBadRequest()
+        {
+            var subId = Guid.NewGuid();
+            var orgId = Guid.NewGuid();
+            var dto = new PaymentCreationDTO { SubscriptionId = subId, Total = 100.0, Currency = "EUR", PaymentMethod = "PayPal" };
+
+            _mockRepo.Setup(r => r.CreatePayment(dto)).Throws(new Exception("gateway declined"));
+            _mockSubRepo.Setup(s => s.GetSubscriptionById(subId)).Returns(new SubscriptionDTO { Id = subId, OrganizationId = orgId });
+
+            var result = await _controller.CreatePayment(dto);
+
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+            _billing.Verify(b => b.CreateBillingNotificationAsync(
+                It.Is<BillingNotificationCreateDTO>(d => d.OrganizationId == orgId && d.Text.Contains("failed")),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreatePayment_SubscriptionMissing_SkipsNotification_StillCreated()
+        {
+            var subId = Guid.NewGuid();
+            var dto = new PaymentCreationDTO { SubscriptionId = subId, Total = 100.0, Currency = "EUR", PaymentMethod = "PayPal" };
+
+            _mockRepo.Setup(r => r.CreatePayment(dto)).Returns(new PaymentCreatedDTO { Id = Guid.NewGuid() });
+            _mockSubRepo.Setup(s => s.GetSubscriptionById(subId)).Returns((SubscriptionDTO)null);
+
+            var result = await _controller.CreatePayment(dto);
+
+            Assert.IsType<CreatedAtActionResult>(result.Result);
+            _billing.Verify(b => b.CreateBillingNotificationAsync(
+                It.IsAny<BillingNotificationCreateDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreatePayment_BillingThrows_StillCreated()
+        {
+            var subId = Guid.NewGuid();
+            var dto = new PaymentCreationDTO { SubscriptionId = subId, Total = 100.0, Currency = "EUR", PaymentMethod = "PayPal" };
+
+            _mockRepo.Setup(r => r.CreatePayment(dto)).Returns(new PaymentCreatedDTO { Id = Guid.NewGuid() });
+            _mockSubRepo.Setup(s => s.GetSubscriptionById(subId)).Returns(new SubscriptionDTO { Id = subId, OrganizationId = Guid.NewGuid() });
+            _billing.Setup(b => b.CreateBillingNotificationAsync(
+                It.IsAny<BillingNotificationCreateDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("billing down"));
+
+            var result = await _controller.CreatePayment(dto);
+
+            Assert.IsType<CreatedAtActionResult>(result.Result);
         }
     }
 }

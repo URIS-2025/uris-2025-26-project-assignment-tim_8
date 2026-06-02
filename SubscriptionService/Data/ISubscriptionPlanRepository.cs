@@ -8,5 +8,7 @@ namespace SubscriptionService.Data
 
         SubscriptionPlanDTO GetSubscriptionPlanById(Guid id);
         SubscriptionPlanDTO CreatePlan(SubscriptionPlanCreationDTO subscriptionPlanDTO);
+
+        SubscriptionPlanDTO UpdatePlan(SubscriptionPlanDTO plan);
     }
 }

@@ -45,7 +45,8 @@ namespace AnonymousAPI.Controllers
             {
                 var result = _repository.CreateSubscription(dto);
 
-                await _billingServiceCall.CreateBillingNotificationAsync(new BillingNotificationCreateDTO
+                // Non-fatal: never breaks subscription creation even if billing is down.
+                await TryNotifyBillingAsync(new BillingNotificationCreateDTO
                 {
                     Text = "Subscription successfully created.",
                     OrganizationId = dto.OrganizationId,
@@ -124,6 +125,9 @@ namespace AnonymousAPI.Controllers
         {
             try
             {
+                // Resolve the owning org BEFORE delete (cancellation == delete in this codebase).
+                var subscription = _repository.GetSubscriptionById(id);
+
                 _repository.DeleteSubscription(id);
 
                 await _loggerClient.TryLogAsync(new LogCreationDTO
@@ -136,6 +140,18 @@ namespace AnonymousAPI.Controllers
                     ServiceName = "SubscriptionService",
                     HttpMethod = "DELETE"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                // Non-fatal billing notification for the cancellation.
+                if (subscription != null)
+                {
+                    await TryNotifyBillingAsync(new BillingNotificationCreateDTO
+                    {
+                        Text = "Subscription cancelled.",
+                        OrganizationId = subscription.OrganizationId,
+                        PaymentId = Guid.NewGuid(),
+                        Type = TypeSubject.BillingNotification
+                    });
+                }
 
                 return NoContent();
             }
@@ -154,6 +170,18 @@ namespace AnonymousAPI.Controllers
 
                 return NotFound(new { error = ex.Message });
             }
+        }
+
+        // Controller-level non-fatal guard: forwards the caller's bearer and swallows any
+        // failure so a billing-notification problem never breaks the subscription operation.
+        private async Task TryNotifyBillingAsync(BillingNotificationCreateDTO dto)
+        {
+            try
+            {
+                await _billingServiceCall.CreateBillingNotificationAsync(
+                    dto, Request.Headers["Authorization"], HttpContext.RequestAborted);
+            }
+            catch { }
         }
     }
 }

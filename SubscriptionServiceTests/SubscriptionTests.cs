@@ -1,22 +1,30 @@
 ﻿using AnonymousAPI.Controllers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SubscriptionService.Clients;
 using SubscriptionService.Data;
 using SubscriptionService.Models.DTOs;
+using SubscriptionService.Models.ExternalDTOs;
+using SubscriptionService.ServiceCalls;
 
 public class SubscriptionControllerTests
 {
     private readonly Mock<ISubscriptionRepository> _mockRepo;
+    private readonly Mock<BillingServiceCall> _billing;
     private readonly SubscriptionController _controller;
     private readonly Mock<LoggerServiceClient> _logger;
     public SubscriptionControllerTests()
     {
         _mockRepo = new Mock<ISubscriptionRepository>();
+        _billing = new Mock<BillingServiceCall>();
         _logger = new Mock<LoggerServiceClient>();
 
-        // BillingServiceCall — pass null, Create testove preskačemo
-        _controller = new SubscriptionController(_mockRepo.Object, null, _logger.Object);
+        _controller = new SubscriptionController(_mockRepo.Object, _billing.Object, _logger.Object);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
     }
 
     // =====================
@@ -291,5 +299,54 @@ public class SubscriptionControllerTests
         _mockRepo.Setup(r => r.DeleteSubscription(id)).Throws(new Exception("DB error"));
 
         await Assert.ThrowsAsync<Exception>(() => _controller.Delete(id));
+    }
+
+    // =====================
+    // CANCELLATION BILLING NOTIFICATION (task 005)
+    // =====================
+
+    [Fact]
+    public async Task Delete_Cancellation_NotifiesOwningOrg_Once()
+    {
+        var id = Guid.NewGuid();
+        var orgId = Guid.NewGuid();
+        _mockRepo.Setup(r => r.GetSubscriptionById(id)).Returns(new SubscriptionDTO { Id = id, OrganizationId = orgId });
+
+        var result = await _controller.Delete(id);
+
+        Assert.IsType<NoContentResult>(result);
+        _mockRepo.Verify(r => r.DeleteSubscription(id), Times.Once);
+        _billing.Verify(b => b.CreateBillingNotificationAsync(
+            It.Is<BillingNotificationCreateDTO>(d => d.OrganizationId == orgId),
+            It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Delete_SubscriptionMissing_SkipsNotification_StillDeletes()
+    {
+        var id = Guid.NewGuid();
+        _mockRepo.Setup(r => r.GetSubscriptionById(id)).Returns((SubscriptionDTO)null);
+
+        var result = await _controller.Delete(id);
+
+        Assert.IsType<NoContentResult>(result);
+        _mockRepo.Verify(r => r.DeleteSubscription(id), Times.Once);
+        _billing.Verify(b => b.CreateBillingNotificationAsync(
+            It.IsAny<BillingNotificationCreateDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Delete_BillingThrows_StillDeletes()
+    {
+        var id = Guid.NewGuid();
+        _mockRepo.Setup(r => r.GetSubscriptionById(id)).Returns(new SubscriptionDTO { Id = id, OrganizationId = Guid.NewGuid() });
+        _billing.Setup(b => b.CreateBillingNotificationAsync(
+            It.IsAny<BillingNotificationCreateDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("billing down"));
+
+        var result = await _controller.Delete(id);
+
+        Assert.IsType<NoContentResult>(result);
+        _mockRepo.Verify(r => r.DeleteSubscription(id), Times.Once);
     }
 }
