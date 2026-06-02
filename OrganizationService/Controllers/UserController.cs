@@ -16,11 +16,14 @@ namespace AnonymousAPI.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly LoggerServiceClient _loggerClient;
+        private readonly SystemNotificationServiceClient _notificationClient;
 
-        public UserController(IUserRepository userRepository, LoggerServiceClient loggerClient)
+        public UserController(IUserRepository userRepository, LoggerServiceClient loggerClient,
+            SystemNotificationServiceClient notificationClient)
         {
             _userRepository = userRepository;
             _loggerClient = loggerClient;
+            _notificationClient = notificationClient;
         }
 
         [Authorize]
@@ -57,6 +60,8 @@ namespace AnonymousAPI.Controllers
                     ServiceName = "OrganizationService",
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                await NotifyMemberAddedAsync(user);
 
                 return Created("", result);
             }
@@ -100,6 +105,8 @@ namespace AnonymousAPI.Controllers
                     ServiceName = "OrganizationService",
                     HttpMethod = "PUT"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                await NotifyRoleChangedAsync(oldUser, user);
 
                 return Ok(result);
             }
@@ -205,6 +212,48 @@ namespace AnonymousAPI.Controllers
             {
                 return Unauthorized(new { error = ex.Message });
             }
+        }
+
+        // Non-fatal: fire a system notification when a new member is added to an organization.
+        // The org is known directly off the creation DTO (no box lookup needed). Any failure is
+        // swallowed so user creation is never broken.
+        private async Task NotifyMemberAddedAsync(UserCreationDTO user)
+        {
+            try
+            {
+                if (user.OrganizationId == null)
+                    return;   // no organization context — nothing org-scoped to notify
+
+                await _notificationClient.TryNotifyAsync(new SystemNotificationCreationDTO
+                {
+                    Text = "A new member was added to your organization.",
+                    OrganizationId = user.OrganizationId
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+            }
+            catch { }
+        }
+
+        // Non-fatal: fire a system notification when a member's role actually changes
+        // (RoleId differs between the stored user and the update). Skipped when the role is
+        // unchanged or the org cannot be resolved. Any failure is swallowed.
+        private async Task NotifyRoleChangedAsync(UserDTO oldUser, UserUpdateDTO user)
+        {
+            try
+            {
+                if (oldUser == null || oldUser.RoleId == user.RoleId)
+                    return;   // role did not change — avoid noise
+
+                var organizationId = user.OrganizationId ?? oldUser.OrganizationId;
+                if (organizationId == null)
+                    return;   // no organization context
+
+                await _notificationClient.TryNotifyAsync(new SystemNotificationCreationDTO
+                {
+                    Text = "A member's role was changed.",
+                    OrganizationId = organizationId
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+            }
+            catch { }
         }
     }
 }

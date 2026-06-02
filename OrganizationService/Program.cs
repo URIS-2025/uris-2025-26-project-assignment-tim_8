@@ -26,6 +26,12 @@ builder.Services.AddHttpClient("LoggerService", client =>
 });
 builder.Services.AddScoped<OrganizationService.Clients.LoggerServiceClient>();
 
+builder.Services.AddHttpClient("SystemNotificationService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:SystemNotificationService"]!);
+});
+builder.Services.AddScoped<OrganizationService.Clients.SystemNotificationServiceClient>();
+
 builder.Services.AddHttpClient("PwnedPasswords", c => c.BaseAddress = new Uri("https://api.pwnedpasswords.com/"));
 builder.Services.AddScoped<OrganizationService.Clients.IPwnedPasswordsClient, OrganizationService.Clients.PwnedPasswordsClient>();
 
