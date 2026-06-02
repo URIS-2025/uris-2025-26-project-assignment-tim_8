@@ -14,12 +14,17 @@ namespace ProblemService.Controllers
         private readonly IProblemRepository _problemRepository;
         private readonly IMapper _mapper;
         private readonly LoggerServiceClient _loggerClient;
+        private readonly ProblemBoxServiceClient _problemBoxClient;
+        private readonly SystemNotificationServiceClient _notificationClient;
 
-        public ProblemController(IProblemRepository problemRepository, IMapper mapper, LoggerServiceClient loggerClient)
+        public ProblemController(IProblemRepository problemRepository, IMapper mapper, LoggerServiceClient loggerClient,
+            ProblemBoxServiceClient problemBoxClient, SystemNotificationServiceClient notificationClient)
         {
             _problemRepository = problemRepository;
             _mapper = mapper;
             _loggerClient = loggerClient;
+            _problemBoxClient = problemBoxClient;
+            _notificationClient = notificationClient;
         }
 
         [HttpGet]
@@ -60,6 +65,8 @@ namespace ProblemService.Controllers
                     ServiceName = "ProblemService",
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                await NotifyProblemSubmittedAsync(result);
 
                 return Created("", result);
             }
@@ -150,6 +157,29 @@ namespace ProblemService.Controllers
 
                 return NotFound(new { error = ex.Message });
             }
+        }
+
+        // Non-fatal: resolve the owning org from the problem's box and fire a system
+        // notification. Any failure (box missing, notification error) is swallowed so the
+        // problem create is never broken.
+        private async Task NotifyProblemSubmittedAsync(ProblemCreatedDTO result)
+        {
+            try
+            {
+                var bearer = Request.Headers["Authorization"];
+                var ct = HttpContext.RequestAborted;
+
+                var organizationId = await _problemBoxClient.TryGetOrganizationIdAsync(result.ProblemBoxId, bearer, ct);
+                if (organizationId == null)
+                    return;   // box missing/unresolvable — skip the notification
+
+                await _notificationClient.TryNotifyAsync(new SystemNotificationCreationDTO
+                {
+                    Text = "A new problem was submitted.",
+                    OrganizationId = organizationId
+                }, bearer, ct);
+            }
+            catch { }
         }
     }
 }

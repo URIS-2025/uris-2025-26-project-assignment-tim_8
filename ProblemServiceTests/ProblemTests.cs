@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProblemService.Clients;
@@ -17,13 +18,22 @@ namespace ProblemService.Tests
         private readonly Mock<IMapper> _mockMapper;
         private readonly ProblemController _controller;
         private readonly Mock<LoggerServiceClient> _logger;
+        private readonly Mock<ProblemBoxServiceClient> _boxClient;
+        private readonly Mock<SystemNotificationServiceClient> _notificationClient;
 
         public ProblemControllerTests()
         {
             _mockRepo = new Mock<IProblemRepository>();
             _mockMapper = new Mock<IMapper>();
             _logger = new Mock<LoggerServiceClient>();
-            _controller = new ProblemController(_mockRepo.Object, _mockMapper.Object, _logger.Object);
+            _boxClient = new Mock<ProblemBoxServiceClient>();
+            _notificationClient = new Mock<SystemNotificationServiceClient>();
+            _controller = new ProblemController(_mockRepo.Object, _mockMapper.Object, _logger.Object,
+                _boxClient.Object, _notificationClient.Object);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
         }
 
         // GET ALL
@@ -166,6 +176,68 @@ namespace ProblemService.Tests
                      .Throws(new ArgumentException("Problem with that Id does not exist."));
 
             await Assert.ThrowsAsync<ArgumentException>(() => _controller.DeleteProblem(id));
+        }
+
+        // NOTIFICATION PRODUCER (task 002)
+
+        private ProblemCreationDTO SampleCreationDTO() => new ProblemCreationDTO
+        {
+            Title = "New problem",
+            Description = "Something is wrong",
+            ProblemBoxId = Guid.NewGuid()
+        };
+
+        [Fact]
+        public async Task CreateProblem_SendsNotification_WithResolvedOrganizationId()
+        {
+            var boxId = Guid.NewGuid();
+            var orgId = Guid.NewGuid();
+            var created = new ProblemCreatedDTO { Id = Guid.NewGuid(), Title = "New problem", ProblemBoxId = boxId };
+
+            _mockRepo.Setup(r => r.CreateProblem(It.IsAny<ProblemCreationDTO>())).Returns(created);
+            _boxClient.Setup(b => b.TryGetOrganizationIdAsync(boxId, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(orgId);
+
+            var result = await _controller.CreateProblem(SampleCreationDTO());
+
+            Assert.IsType<CreatedResult>(result.Result);
+            _notificationClient.Verify(n => n.TryNotifyAsync(
+                It.Is<SystemNotificationCreationDTO>(d => d.OrganizationId == orgId && !string.IsNullOrWhiteSpace(d.Text)),
+                It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateProblem_BoxMissing_SkipsNotification_StillCreated()
+        {
+            var created = new ProblemCreatedDTO { Id = Guid.NewGuid(), Title = "New problem", ProblemBoxId = Guid.NewGuid() };
+
+            _mockRepo.Setup(r => r.CreateProblem(It.IsAny<ProblemCreationDTO>())).Returns(created);
+            _boxClient.Setup(b => b.TryGetOrganizationIdAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                      .ReturnsAsync((Guid?)null);
+
+            var result = await _controller.CreateProblem(SampleCreationDTO());
+
+            Assert.IsType<CreatedResult>(result.Result);
+            _notificationClient.Verify(n => n.TryNotifyAsync(
+                It.IsAny<SystemNotificationCreationDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateProblem_NotificationThrows_StillCreated()
+        {
+            var orgId = Guid.NewGuid();
+            var created = new ProblemCreatedDTO { Id = Guid.NewGuid(), Title = "New problem", ProblemBoxId = Guid.NewGuid() };
+
+            _mockRepo.Setup(r => r.CreateProblem(It.IsAny<ProblemCreationDTO>())).Returns(created);
+            _boxClient.Setup(b => b.TryGetOrganizationIdAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                      .ReturnsAsync(orgId);
+            _notificationClient.Setup(n => n.TryNotifyAsync(
+                It.IsAny<SystemNotificationCreationDTO>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                      .ThrowsAsync(new Exception("notification service down"));
+
+            var result = await _controller.CreateProblem(SampleCreationDTO());
+
+            Assert.IsType<CreatedResult>(result.Result);
         }
     }
 }

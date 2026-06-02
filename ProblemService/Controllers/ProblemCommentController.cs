@@ -12,14 +12,22 @@ namespace ProblemService.Controllers
     public class ProblemCommentController : Controller
     {
         private readonly IProblemCommentRepository _problemCommentRepository;
+        private readonly IProblemRepository _problemRepository;
         private readonly IMapper _mapper;
         private readonly LoggerServiceClient _loggerClient;
+        private readonly ProblemBoxServiceClient _problemBoxClient;
+        private readonly SystemNotificationServiceClient _notificationClient;
 
-        public ProblemCommentController(IProblemCommentRepository problemCommentRepository, IMapper mapper, LoggerServiceClient loggerClient)
+        public ProblemCommentController(IProblemCommentRepository problemCommentRepository, IProblemRepository problemRepository,
+            IMapper mapper, LoggerServiceClient loggerClient, ProblemBoxServiceClient problemBoxClient,
+            SystemNotificationServiceClient notificationClient)
         {
             _problemCommentRepository = problemCommentRepository;
+            _problemRepository = problemRepository;
             _mapper = mapper;
             _loggerClient = loggerClient;
+            _problemBoxClient = problemBoxClient;
+            _notificationClient = notificationClient;
         }
 
         [HttpGet]
@@ -53,6 +61,8 @@ namespace ProblemService.Controllers
                     ServiceName = "ProblemService",
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                await NotifyCommentCreatedAsync(result);
 
                 return Created("", result);
             }
@@ -143,6 +153,34 @@ namespace ProblemService.Controllers
 
                 return NotFound(new { error = ex.Message });
             }
+        }
+
+        // Non-fatal: resolve the owning org through the comment's parent problem -> box,
+        // then fire a system notification carrying the comment id. Any failure is swallowed
+        // so comment creation is never broken.
+        private async Task NotifyCommentCreatedAsync(ProblemCommentCreatedDTO result)
+        {
+            try
+            {
+                var bearer = Request.Headers["Authorization"];
+                var ct = HttpContext.RequestAborted;
+
+                var problem = _problemRepository.GetProblemById(result.ProblemId);
+                if (problem == null)
+                    return;   // parent problem unresolvable — skip the notification
+
+                var organizationId = await _problemBoxClient.TryGetOrganizationIdAsync(problem.ProblemBoxId, bearer, ct);
+                if (organizationId == null)
+                    return;   // box missing/unresolvable — skip the notification
+
+                await _notificationClient.TryNotifyAsync(new SystemNotificationCreationDTO
+                {
+                    Text = "A new comment was added to a problem.",
+                    OrganizationId = organizationId,
+                    ProblemCommentId = result.Id
+                }, bearer, ct);
+            }
+            catch { }
         }
     }
 }
