@@ -50,8 +50,9 @@ must be deployed together (see Cross-cutting observations).
   payments carry no status, and cancellation == delete — so "plan/price change" = plan PUT,
   payment success/fail = create try/catch, cancellation = delete. Documented in the task file.
 - **Task 004's task file is incomplete** (empty `## Solution` / `## Branch`) even though the
-  branch `task/004-organizationservice-producer` exists and the code is correct and
-  contract-compliant. Documentation gap only — see Remaining work.
+  branch `task/004-organizationservice-producer` exists, the code is correct and
+  contract-compliant, and its tests pass (**78/78**, verified during this compile).
+  Documentation gap only — see Remaining work.
 - **Combined size:** ~1,715 insertions / ~37 deletions across 55 files. Roughly half is tests
   (002: +161 test lines, 003: +271, 004: +117, 005: +238, 006: ~+190). Scope did not balloon
   beyond the plan.
@@ -60,18 +61,19 @@ must be deployed together (see Cross-cutting observations).
 
 ## Changes per task
 
-| # | Task | Type | Branch | Review verdict | Summary |
+| # | Task | Type | Branch | Verification | Summary |
 |---|---|---|---|---|---|
 | 001 | notification-contract | both | — (contract only) | n/a | Locked DTOs/routes, non-fatal client template, `[Authorize]`+JWT rule, box→org resolution rule. Unblocked all others. |
-| 002 | problemservice-producer | code | task/002-problemservice-producer | n/a (self-verified) | Notify on new problem + new problem comment; org via `ProblemBox`. 22 controller tests pass. |
-| 003 | suggestionservice-producer | code | task/003-suggestionservice-producer | n/a (self-verified) | Notify on new suggestion, comment, and vote; org via `SuggestionBox`. 49 tests pass. |
-| 004 | organizationservice-producer | code | task/004-organizationservice-producer ⚠️ | n/a (task file empty) | Notify on member-added + role-change (guarded on real RoleId change); org direct off DTO. Code correct; **task file lacks Solution/Branch**. |
-| 005 | subscriptionservice-billing-producers | code | task/005-subscriptionservice-billing-producers | n/a (self-verified) | Plan-update fan-out (1/ subscribed org), payment success/fail, cancellation; made create call non-fatal; new PUT + by-planId lookup. 102 tests pass. |
-| 006 | notification-controllers-authorize | code | task/006-notification-controllers-authorize | n/a (self-verified) | `[Authorize]` on both notification controllers + multi-issuer JWT wiring; tests attach valid bearer. System 12/12, Billing 31/31. |
-| 007 | frontend-comment-dedup | code | task/007-frontend-comment-dedup | n/a (self-verified) | Removed duplicate `SystemNotificationService.create` in `SubmissionDetails.jsx` (+ unused import/var). Build clean. |
+| 002 | problemservice-producer | code | task/002-problemservice-producer | 22 tests pass | Notify on new problem + new problem comment; org via `ProblemBox`. |
+| 003 | suggestionservice-producer | code | task/003-suggestionservice-producer | 49 tests pass | Notify on new suggestion, comment, and vote; org via `SuggestionBox`. |
+| 004 | organizationservice-producer | code | task/004-organizationservice-producer ⚠️ | **78 tests pass** (verified in compile) | Notify on member-added + role-change (guarded on real RoleId change); org direct off DTO. Code correct; **task file lacks Solution/Branch**. |
+| 005 | subscriptionservice-billing-producers | code | task/005-subscriptionservice-billing-producers | 102 tests pass | Plan-update fan-out (1/ subscribed org), payment success/fail, cancellation; made create call non-fatal; new PUT + by-planId lookup. |
+| 006 | notification-controllers-authorize | code | task/006-notification-controllers-authorize | System 12/12, Billing 31/31 | `[Authorize]` on both notification controllers + multi-issuer JWT wiring; tests attach valid bearer. |
+| 007 | frontend-comment-dedup | code | task/007-frontend-comment-dedup | `npm run build` clean | Removed duplicate `SystemNotificationService.create` in `SubmissionDetails.jsx` (+ unused import/var). |
 
-*No `## Review` sections were present on any task — no `/task-review` pass was run. "Verdict"
-reflects each task's own verification, except 004 which has no recorded verification.*
+*No `## Review` sections were present on any task — no `/task-review` pass was run. The
+"Verification" column reflects each task's own test run; 002/003/004/007 were also
+re-verified during this compile.*
 
 ---
 
@@ -111,22 +113,22 @@ reflects each task's own verification, except 004 which has no recorded verifica
    resolution strategies, all converging on the same contract guarantee (no throw, skip on
    unresolved). Consistent by design across agents who never saw each other's code.
 
-6. **Test posture is uneven.** 003/005/006 added/repaired substantial suites (and 006 fixed
+6. **Test posture, reconciled.** 003/005/006 added/repaired substantial suites (006 also fixed
    two *pre-existing* base-branch test failures as a side effect). 004 added 117 test lines but
-   its results were never recorded in the task file, so its pass/fail status is **unconfirmed
-   in writing** — the one place the parallel workflow's "agent forgot to document" failure mode
-   bit.
+   never recorded its result in the task file — the parallel workflow's "agent forgot to
+   document" failure mode. This compile ran those tests directly: **78/78 pass**, so the gap is
+   documentation only, not correctness.
 
 ---
 
 ## Remaining work
 
-- **Task 004 documentation + verification gap (action before merge):** the task file has empty
-  `## Solution` / `## Branch`. The code on `task/004-organizationservice-producer` is correct
-  and contract-compliant (verified by diff in this compile), but its build/test run was never
-  recorded. **Run `dotnet test OrganizationServiceTests` on that branch before merging.**
-- **No independent review pass.** No `/task-review` was run on any task; verdicts above are
-  self-reported. Consider a review of 004/005/006 (the three completed by parallel agents)
+- **Task 004 documentation gap (cosmetic):** the task file has empty `## Solution` / `## Branch`.
+  The code on `task/004-organizationservice-producer` is correct, contract-compliant, and its
+  tests pass (78/78, run during this compile). Optionally backfill the task file's resolution
+  fields for the record; no code action needed.
+- **No independent review pass.** No `/task-review` was run; verifications above are test runs,
+  not code review. Consider a review of 004/005/006 (the three completed by parallel agents)
   before merge if this is going to production.
 - **Deferred from the plan (intentional, not done):** new-box-created notifications; making GET
   endpoints org-scoped from the JWT (still `getAll()` + client filter); read-state UX,
@@ -148,7 +150,7 @@ the gateway-auth change as one set, then the dedup:
 |---|---|---|---|
 | 1 | task/002-problemservice-producer | ProblemService/*, ProblemServiceTests/* | none |
 | 2 | task/003-suggestionservice-producer | SuggestionService/*, SuggestionServiceTests/* | none |
-| 3 | task/004-organizationservice-producer | OrganizationService/*, OrganizationServiceTests/* | none — ⚠️ verify tests first |
+| 3 | task/004-organizationservice-producer | OrganizationService/*, OrganizationServiceTests/* | none |
 | 4 | task/005-subscriptionservice-billing-producers | SubscriptionService/*, SubscriptionServiceTests/* | none |
 | 5 | task/006-notification-controllers-authorize | BillingNotificationService/*, SystemNotificationService/* (+tests) | none — **deploy with 1–4, not before** |
 | 6 | task/007-frontend-comment-dedup | Frontend/.../SubmissionDetails.jsx | none — depends on 002+003 being live |
@@ -178,5 +180,5 @@ Expected producers/events from PLAN.md, cross-referenced against the branches' d
 | Remove duplicate frontend comment create | 007 | ✅ `SubmissionDetails.jsx` |
 
 **Missing: none. Duplicates: none.** Every in-scope event has exactly one producer, and the
-one duplicate path (frontend comment notification) was removed. The only audit caveat is that
-task 004's pass/fail is documented nowhere — its *implementation* is present and complete.
+one duplicate path (frontend comment notification) was removed. All seven task branches build
+and their unit suites pass (002: 22, 003: 49, 004: 78, 005: 102, 006: 12+31, 007: build clean).
