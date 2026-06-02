@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SystemNotificationService.Context;
 using SystemNotificationService.Data;
 
@@ -26,6 +29,25 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Accept JWTs minted by any of the system's issuers (AnonymousUserService, OrganizationService)
+// so that producer calls forwarding either an anonymous-user or an org-user bearer validate here.
+// Keys/issuers/audiences come from the "Jwt" config section (env-overridable in Docker).
+var jwtKeys = builder.Configuration.GetSection("Jwt:Keys").Get<string[]>() ?? Array.Empty<string>();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuers = builder.Configuration.GetSection("Jwt:ValidIssuers").Get<string[]>(),
+            ValidAudiences = builder.Configuration.GetSection("Jwt:ValidAudiences").Get<string[]>(),
+            IssuerSigningKeys = jwtKeys.Select(k => (SecurityKey)new SymmetricSecurityKey(Encoding.UTF8.GetBytes(k)))
+        };
+    });
+
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(8080);
@@ -47,6 +69,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.UseExceptionHandler(errorApp =>
 {

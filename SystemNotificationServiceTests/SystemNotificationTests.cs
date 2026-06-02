@@ -30,7 +30,7 @@ namespace SystemNotificationService.Tests
             var result = _controller.GetNotifications();
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returnValue = Assert.IsType<List<SystemNotificationCreatedDTO>>(okResult.Value);
+            var returnValue = Assert.IsAssignableFrom<IEnumerable<SystemNotificationCreatedDTO>>(okResult.Value);
             Assert.Empty(returnValue);
         }
 

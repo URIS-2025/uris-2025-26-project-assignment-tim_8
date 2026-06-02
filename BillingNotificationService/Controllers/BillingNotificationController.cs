@@ -3,12 +3,13 @@ using BillingNotificationService.Clients;
 using BillingNotificationService.Data;
 using BillingNotificationService.Models.DTOs.BillingNotificationDTO;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
 namespace AnonymousAPI.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class BillingNotificationController : Controller

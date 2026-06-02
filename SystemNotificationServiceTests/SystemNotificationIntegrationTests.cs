@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using SystemNotificationService.Context;
 using SystemNotificationService.Models.DTOs.SystemNotification;
@@ -39,6 +40,9 @@ namespace SystemNotificationService.Tests.Integration
         {
             _factory = factory;
             _client  = factory.CreateClient();
+            // Controller is [Authorize]d — present a valid system-issued bearer for the CRUD tests.
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", TestJwt.Create());
         }
 
         private Guid SeedNotification(string text = "Test", Guid? problemCommentId = null, Guid? suggestionCommentId = null)
@@ -83,6 +87,15 @@ namespace SystemNotificationService.Tests.Integration
         [Fact]
         public async Task GetNotifications_ReturnsEmptyList()
         {
+            // The in-memory store is shared across the class fixture; clear it so this
+            // test is independent of sibling Create tests' execution order.
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<SystemNotificationContext>();
+                context.SystemNotifications.RemoveRange(context.SystemNotifications);
+                context.SaveChanges();
+            }
+
             var response = await _client.GetAsync("/api/SystemNotification");
             var returned = await response.Content.ReadFromJsonAsync<IEnumerable<SystemNotificationCreatedDTO>>();
 

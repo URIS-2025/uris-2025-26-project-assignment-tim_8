@@ -1,5 +1,6 @@
 ﻿using AnonymousDomain.Models.SystemNotification;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -9,6 +10,7 @@ using SystemNotificationService.Models.DTOs.SystemNotification;
 
 namespace AnonymousAPI.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class SystemNotificationController : Controller

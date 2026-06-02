@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AnonymousDomain.Models.BillingNotification;
 using BillingNotificationService.Context;
@@ -39,6 +40,9 @@ namespace BillingNotificationService.Tests.Integration
         {
             _factory = factory;
             _client  = factory.CreateClient();
+            // Controller is [Authorize]d — present a valid system-issued bearer for the CRUD tests.
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", TestJwt.Create());
         }
 
         private Guid SeedNotification(string text = "Test notifikacija", bool isRead = false)
