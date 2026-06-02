@@ -13,14 +13,22 @@ namespace AnonymousAPI.Controllers
     public class SuggestionCommentController : Controller
     {
         private readonly ISuggestionCommentRepository _suggestionCommentRepository;
+        private readonly ISuggestionRepository _suggestionRepository;
         private readonly IMapper _mapper;
         private readonly LoggerServiceClient _loggerClient;
+        private readonly SuggestionBoxServiceClient _suggestionBoxClient;
+        private readonly SystemNotificationServiceClient _notificationClient;
 
-        public SuggestionCommentController(ISuggestionCommentRepository suggestionCommentRepository, IMapper mapper, LoggerServiceClient loggerClient)
+        public SuggestionCommentController(ISuggestionCommentRepository suggestionCommentRepository, ISuggestionRepository suggestionRepository,
+            IMapper mapper, LoggerServiceClient loggerClient,
+            SuggestionBoxServiceClient suggestionBoxClient, SystemNotificationServiceClient notificationClient)
         {
             _suggestionCommentRepository = suggestionCommentRepository;
+            _suggestionRepository = suggestionRepository;
             _mapper = mapper;
             _loggerClient = loggerClient;
+            _suggestionBoxClient = suggestionBoxClient;
+            _notificationClient = notificationClient;
         }
 
         [HttpGet]
@@ -58,6 +66,8 @@ namespace AnonymousAPI.Controllers
                     ServiceName = "SuggestionService",
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                await NotifyCommentCreatedAsync(result);
 
                 return Created("", result);
             }
@@ -148,6 +158,34 @@ namespace AnonymousAPI.Controllers
 
                 return NotFound(new { error = ex.Message });
             }
+        }
+
+        // Non-fatal: resolve the owning org through the comment's parent suggestion -> box,
+        // then fire a system notification carrying the comment id. Any failure is swallowed
+        // so comment creation is never broken.
+        private async Task NotifyCommentCreatedAsync(SuggestionCommentCreationDTO result)
+        {
+            try
+            {
+                var bearer = Request.Headers["Authorization"];
+                var ct = HttpContext.RequestAborted;
+
+                var suggestion = _suggestionRepository.GetById(result.SuggestionId);
+                if (suggestion == null)
+                    return;   // parent suggestion unresolvable — skip the notification
+
+                var organizationId = await _suggestionBoxClient.TryGetOrganizationIdAsync(suggestion.SuggestionBoxId, bearer, ct);
+                if (organizationId == null)
+                    return;   // box missing/unresolvable — skip the notification
+
+                await _notificationClient.TryNotifyAsync(new SystemNotificationCreationDTO
+                {
+                    Text = "A new comment was added to a suggestion.",
+                    OrganizationId = organizationId,
+                    SuggestionCommentId = result.Id
+                }, bearer, ct);
+            }
+            catch { }
         }
     }
 }

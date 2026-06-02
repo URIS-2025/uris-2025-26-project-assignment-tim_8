@@ -13,14 +13,21 @@ namespace AnonymousAPI.Controllers
     public class VoteController : Controller
     {
         private readonly IVoteRepository _voteRepository;
+        private readonly ISuggestionRepository _suggestionRepository;
         private readonly IMapper _mapper;
         private readonly LoggerServiceClient _loggerClient;
+        private readonly SuggestionBoxServiceClient _suggestionBoxClient;
+        private readonly SystemNotificationServiceClient _notificationClient;
 
-        public VoteController(IVoteRepository voteRepository, IMapper mapper, LoggerServiceClient loggerClient)
+        public VoteController(IVoteRepository voteRepository, ISuggestionRepository suggestionRepository, IMapper mapper,
+            LoggerServiceClient loggerClient, SuggestionBoxServiceClient suggestionBoxClient, SystemNotificationServiceClient notificationClient)
         {
             _voteRepository = voteRepository;
+            _suggestionRepository = suggestionRepository;
             _mapper = mapper;
             _loggerClient = loggerClient;
+            _suggestionBoxClient = suggestionBoxClient;
+            _notificationClient = notificationClient;
         }
 
         [HttpGet]
@@ -52,6 +59,8 @@ namespace AnonymousAPI.Controllers
                     ServiceName = "SuggestionService",
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                await NotifyVoteCreatedAsync(result);
 
                 return Created("", result);
             }
@@ -106,6 +115,32 @@ namespace AnonymousAPI.Controllers
 
                 return NotFound(new { error = ex.Message });
             }
+        }
+
+        // Non-fatal: resolve the owning org through the vote's suggestion -> box, then fire
+        // a system notification. Any failure is swallowed so vote creation is never broken.
+        private async Task NotifyVoteCreatedAsync(VoteCreationDTO result)
+        {
+            try
+            {
+                var bearer = Request.Headers["Authorization"];
+                var ct = HttpContext.RequestAborted;
+
+                var suggestion = _suggestionRepository.GetById(result.SuggestionId);
+                if (suggestion == null)
+                    return;   // suggestion unresolvable — skip the notification
+
+                var organizationId = await _suggestionBoxClient.TryGetOrganizationIdAsync(suggestion.SuggestionBoxId, bearer, ct);
+                if (organizationId == null)
+                    return;   // box missing/unresolvable — skip the notification
+
+                await _notificationClient.TryNotifyAsync(new SystemNotificationCreationDTO
+                {
+                    Text = "A suggestion received a new vote.",
+                    OrganizationId = organizationId
+                }, bearer, ct);
+            }
+            catch { }
         }
     }
 }

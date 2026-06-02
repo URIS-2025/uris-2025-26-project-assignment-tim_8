@@ -14,12 +14,17 @@ namespace AnonymousAPI.Controllers
         private readonly ISuggestionRepository _suggestionRepository;
         private readonly IMapper _mapper;
         private readonly LoggerServiceClient _loggerClient;
+        private readonly SuggestionBoxServiceClient _suggestionBoxClient;
+        private readonly SystemNotificationServiceClient _notificationClient;
 
-        public SuggestionController(ISuggestionRepository suggestionRepository, IMapper mapper, LoggerServiceClient loggerClient)
+        public SuggestionController(ISuggestionRepository suggestionRepository, IMapper mapper, LoggerServiceClient loggerClient,
+            SuggestionBoxServiceClient suggestionBoxClient, SystemNotificationServiceClient notificationClient)
         {
             _suggestionRepository = suggestionRepository;
             _mapper = mapper;
             _loggerClient = loggerClient;
+            _suggestionBoxClient = suggestionBoxClient;
+            _notificationClient = notificationClient;
         }
 
         [HttpGet]
@@ -57,6 +62,8 @@ namespace AnonymousAPI.Controllers
                     ServiceName = "SuggestionService",
                     HttpMethod = "POST"
                 }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                await NotifySuggestionSubmittedAsync(result);
 
                 return Created("", result);
             }
@@ -147,6 +154,29 @@ namespace AnonymousAPI.Controllers
 
                 return NotFound(new { error = ex.Message });
             }
+        }
+
+        // Non-fatal: resolve the owning org from the suggestion's box and fire a system
+        // notification. Any failure (box missing, notification error) is swallowed so the
+        // suggestion create is never broken.
+        private async Task NotifySuggestionSubmittedAsync(SuggestionCreatedDTO result)
+        {
+            try
+            {
+                var bearer = Request.Headers["Authorization"];
+                var ct = HttpContext.RequestAborted;
+
+                var organizationId = await _suggestionBoxClient.TryGetOrganizationIdAsync(result.SuggestionBoxId, bearer, ct);
+                if (organizationId == null)
+                    return;   // box missing/unresolvable — skip the notification
+
+                await _notificationClient.TryNotifyAsync(new SystemNotificationCreationDTO
+                {
+                    Text = "A new suggestion was submitted.",
+                    OrganizationId = organizationId
+                }, bearer, ct);
+            }
+            catch { }
         }
     }
 }
