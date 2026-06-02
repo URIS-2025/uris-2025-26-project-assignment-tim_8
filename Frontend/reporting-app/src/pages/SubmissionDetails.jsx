@@ -7,7 +7,6 @@ import { AttachmentService } from '../services/attachmentService';
 import { SuggestionCategoryService } from '../services/suggestionCategoryService';
 import { SuggestionCommentService } from '../services/suggestionCommentService';
 import { ProblemCommentService } from '../services/problemCommentService';
-import { SystemNotificationService } from '../services/systemNotificationService';
 import { useAuth } from '../context/AuthContext';
 import './SubmissionDetails.css';
 
@@ -168,10 +167,9 @@ const SubmissionDetails = () => {
         setSendingReply(true);
         try {
             const isProblem = submissionType === 'problem';
-            let createdComment;
 
             if (isProblem) {
-                createdComment = await ProblemCommentService.create({
+                await ProblemCommentService.create({
                     problemId: submissionId,
                     commentText: replyText,
                     isAnonymous: false,
@@ -180,7 +178,7 @@ const SubmissionDetails = () => {
                     createdBy: user?.email || user?.name || 'Staff'
                 });
             } else {
-                createdComment = await SuggestionCommentService.create({
+                await SuggestionCommentService.create({
                     suggestionId: submissionId,
                     text: replyText,
                     isAnonymous: false,
@@ -190,20 +188,11 @@ const SubmissionDetails = () => {
                 });
             }
 
-            // 2. Create SystemNotification
-            try {
-                await SystemNotificationService.create({
-                    text: replyText,
-                    suggestionCommentId: !isProblem ? (createdComment.id || null) : null,
-                    problemCommentId: isProblem ? (createdComment.id || null) : null,
-                    organizationId: suggestion?.organizationId || null,
-                    anonymousUserId: suggestion?.anonymousUserId || null
-                });
-            } catch (notifErr) {
-                console.error('Failed to create system notification:', notifErr);
-            }
+            // The comment system-notification is now produced by the backend
+            // (ProblemService / SuggestionService) when the comment is created, so
+            // there is no longer a frontend-side notification create here.
 
-            // 3. Refresh comments and clear input
+            // Refresh comments and clear input
             setReplyText('');
             await fetchComments();
         } catch (err) {
