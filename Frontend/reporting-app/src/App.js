@@ -26,7 +26,13 @@ import './index.css';
 
 // Simple Protected Route wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user } = useAuth();
+  const { user, initializing } = useAuth();
+
+  // Wait for the session to rehydrate from storage before deciding. Without this,
+  // a page reload renders with user=null for one frame and redirects to /login.
+  if (initializing) {
+    return <div className="app-loading">Loading…</div>;
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />;

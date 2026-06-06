@@ -43,6 +43,10 @@ namespace SubscriptionService.Context
 
                 entity.Property(sp => sp.Description)
                       .HasMaxLength(500);
+
+                // Each plan title must be unique — prevents duplicate plans (e.g. "basic" twice).
+                entity.HasIndex(sp => sp.Title)
+                      .IsUnique();
             });
 
             // =============================

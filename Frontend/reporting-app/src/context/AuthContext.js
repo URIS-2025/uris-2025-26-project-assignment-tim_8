@@ -19,6 +19,10 @@ const isTokenExpired = (token) => {
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    // True until the initial rehydration from storage finishes. Lets route guards
+    // distinguish "still restoring the session" from "genuinely logged out", so a
+    // page reload no longer bounces an authenticated user to /login.
+    const [initializing, setInitializing] = useState(true);
 
     const login = async (loginResponse) => {
         const accessToken = loginResponse?.accessToken ?? loginResponse;
@@ -104,10 +108,10 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const initializeAuth = async () => {
-            const storedUser = localStorage.getItem('authUser');
-            if (!storedUser) return;
-
             try {
+                const storedUser = localStorage.getItem('authUser');
+                if (!storedUser) return;
+
                 const parsedUser = JSON.parse(storedUser);
 
                 if (isTokenExpired(parsedUser.token)) {
@@ -130,6 +134,8 @@ export const AuthProvider = ({ children }) => {
                 }
             } catch {
                 logout();
+            } finally {
+                setInitializing(false);
             }
         };
 
@@ -138,7 +144,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ user, login, logout, initializing }}>
             {children}
         </AuthContext.Provider>
     );
