@@ -1,5 +1,10 @@
 const API_BASE_URL = 'http://127.0.0.1:80';
 
+const getAuthHeader = () => {
+    const token = localStorage.getItem('authToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const OrganizationService = {
     // GET /api/Organization
     getAll: async () => {
@@ -21,6 +26,7 @@ export const OrganizationService = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...getAuthHeader(),
             },
             body: JSON.stringify(data),
         });
@@ -34,6 +40,7 @@ export const OrganizationService = {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                ...getAuthHeader(),
             },
             body: JSON.stringify(data),
         });
@@ -45,6 +52,9 @@ export const OrganizationService = {
     delete: async (id) => {
         const response = await fetch(`${API_BASE_URL}/api/Organization/${id}/`, {
             method: 'DELETE',
+            headers: {
+                ...getAuthHeader(),
+            },
         });
         if (!response.ok) throw new Error('Failed to delete organization');
         return true;

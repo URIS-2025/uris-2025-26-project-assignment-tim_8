@@ -76,3 +76,13 @@ Local: `Server=localhost\\TEW_SQLEXPRESS;Database=<Name>DB;Trusted_Connection=Tr
 
 ### Testing
 Backend test projects use xUnit + Moq + `EF InMemory` for unit tests. Integration tests use `WebApplicationFactory` and may require Docker running. Test projects are co-located in the solution as `<ServiceName>Tests/`.
+
+## Knowledge base
+
+| File | Purpose |
+|------|---------|
+| .claude/rules/service-to-service-calls.md | Non-fatal client pattern for log/notify/lookup calls; JWT forwarding; mockable clients |
+| .claude/rules/frontend-testing.md | CRA-5/Jest can't resolve react-router-dom v7 — test below the router; running single suites |
+| .claude/rules/spa-auth-session.md | AuthContext rehydration race (`initializing` guard, not sessionStorage); bearer on `[Authorize]` fetches |
+| .claude/rules/ef-migrations.md | Dedupe + repoint FKs before a unique index; empty-only idempotent seeding |
+| .claude/guides/notifications.md | How org system/billing notifications are produced, resolved, and authorized |

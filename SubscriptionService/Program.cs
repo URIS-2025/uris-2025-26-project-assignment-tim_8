@@ -62,7 +62,10 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<SubscriptionContext>();
     if (!app.Environment.IsEnvironment("Testing"))
+    {
         db.Database.Migrate();
+        SubscriptionPlanSeeder.Seed(db);
+    }
 }
 
 // ===============================
