@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Write",
+      "Edit",
+      "Bash(Get-ChildItem -Force)",
+      "Bash(Select-Object Name)"
+    ]
+  }
+}
