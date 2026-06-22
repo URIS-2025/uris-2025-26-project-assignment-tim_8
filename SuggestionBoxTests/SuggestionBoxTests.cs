@@ -1,6 +1,8 @@
 using Moq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SuggestionBoxService.Data;
+using SuggestionBoxService.Enums;
 using SuggestionBoxService.Models.DTOs;
 using AnonymousAPI.Controllers;
 using SuggestionBoxService.Clients;
@@ -406,6 +408,40 @@ namespace SuggestionBoxServiceTests
             _controller.Update(dto);
 
             _mockRepo.Verify(r => r.Update(dto), Times.Once);
+        }
+
+        // =====================
+        // UPDATE STATUS
+        // =====================
+
+        [Fact]
+        public async Task UpdateSuggestionBoxStatus_ReturnsOk_WithUpdatedBox()
+        {
+            var id = Guid.NewGuid();
+            var dto = new BoxStatusUpdateDTO { Status = BoxStatus.Inactive };
+            var updated = new SuggestionBoxDTO { Id = id, Name = "Box", Status = BoxStatus.Inactive };
+            _mockRepo.Setup(r => r.SetStatus(id, BoxStatus.Inactive)).Returns(updated);
+            _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+
+            var result = await _controller.UpdateSuggestionBoxStatus(id, dto);
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returned = Assert.IsType<SuggestionBoxDTO>(okResult.Value);
+            Assert.Equal(BoxStatus.Inactive, returned.Status);
+            _mockRepo.Verify(r => r.SetStatus(id, BoxStatus.Inactive), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateSuggestionBoxStatus_ReturnsNotFound_WhenBoxDoesNotExist()
+        {
+            var id = Guid.NewGuid();
+            var dto = new BoxStatusUpdateDTO { Status = BoxStatus.Active };
+            _mockRepo.Setup(r => r.SetStatus(id, dto.Status)).Returns((SuggestionBoxDTO)null);
+            _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+
+            var result = await _controller.UpdateSuggestionBoxStatus(id, dto);
+
+            Assert.IsType<NotFoundObjectResult>(result.Result);
         }
 
         // =====================

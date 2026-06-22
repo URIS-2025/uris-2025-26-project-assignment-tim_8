@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using SuggestionBoxService.Context;
+using SuggestionBoxService.Enums;
 using SuggestionBoxService.Models;
 using SuggestionBoxService.Models.DTOs;
 
@@ -71,6 +72,21 @@ namespace SuggestionBoxService.Data
                 return null;
 
             _mapper.Map(dto, entity);
+
+            SaveChanges();
+
+            return _mapper.Map<SuggestionBoxDTO>(entity);
+        }
+
+        public SuggestionBoxDTO SetStatus(Guid id, BoxStatus status)
+        {
+            var entity = _context.SuggestionBoxes
+                .FirstOrDefault(x => x.Id == id);
+
+            if (entity == null)
+                return null;
+
+            entity.Status = status;
 
             SaveChanges();
 

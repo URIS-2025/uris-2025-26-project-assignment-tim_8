@@ -52,6 +52,19 @@ export const SuggestionBoxService = {
         return await response.json();
     },
 
+    // PUT /api/SuggestionBox/{id}/status
+    setStatus: async (id, status) => {
+        const response = await fetch(`${API_BASE_URL}/api/SuggestionBox/${id}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status }),
+        });
+        if (!response.ok) throw new Error('Failed to update suggestion box status');
+        return await response.json();
+    },
+
     // DELETE /api/SuggestionBox/{id}
     delete: async (id) => {
         const response = await fetch(`${API_BASE_URL}/api/SuggestionBox/${id}`, {

@@ -14,12 +14,14 @@ namespace AnonymousAPI.Controllers
         private readonly ISuggestionRepository _suggestionRepository;
         private readonly IMapper _mapper;
         private readonly LoggerServiceClient _loggerClient;
+        private readonly SuggestionBoxServiceClient _suggestionBoxClient;
 
-        public SuggestionController(ISuggestionRepository suggestionRepository, IMapper mapper, LoggerServiceClient loggerClient)
+        public SuggestionController(ISuggestionRepository suggestionRepository, IMapper mapper, LoggerServiceClient loggerClient, SuggestionBoxServiceClient suggestionBoxClient)
         {
             _suggestionRepository = suggestionRepository;
             _mapper = mapper;
             _loggerClient = loggerClient;
+            _suggestionBoxClient = suggestionBoxClient;
         }
 
         [HttpGet]
@@ -45,6 +47,21 @@ namespace AnonymousAPI.Controllers
         {
             try
             {
+                var boxActive = await _suggestionBoxClient.IsBoxActiveAsync(suggestion.SuggestionBoxId, Request.Headers["Authorization"], HttpContext.RequestAborted);
+                if (!boxActive)
+                {
+                    await _loggerClient.TryLogAsync(new LogCreationDTO
+                    {
+                        UserId = User.Identity?.Name,
+                        Action = "CREATE_SUGGESTION",
+                        EntityName = "Suggestion",
+                        IsSuccess = false,
+                        ServiceName = "SuggestionService",
+                        HttpMethod = "POST"
+                    }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+                    return Conflict(new { error = "This suggestion box is not accepting submissions." });
+                }
+
                 var result = _suggestionRepository.Create(suggestion);
 
                 await _loggerClient.TryLogAsync(new LogCreationDTO

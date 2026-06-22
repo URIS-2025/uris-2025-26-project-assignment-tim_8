@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SuggestionService.Clients;
 using SuggestionService.Models.DTOs;
 using System.Net;
 using System.Net.Http.Json;
@@ -12,6 +13,13 @@ using Xunit;
 
 namespace SuggestionService.Tests.Integration
 {
+    // Test stub: always reports the box as active so create flows succeed.
+    public class ActiveSuggestionBoxServiceClient : SuggestionBoxServiceClient
+    {
+        public override Task<bool> IsBoxActiveAsync(Guid boxId, string? bearerHeader, CancellationToken requestCt)
+            => Task.FromResult(true);
+    }
+
     public class SuggestionServiceWebAppFactory : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -25,6 +33,13 @@ namespace SuggestionService.Tests.Integration
 
                 services.AddDbContext<SuggestionContext>(options =>
                     options.UseInMemoryDatabase("SuggestionIntegrationTestDb"));
+
+                // Replace the box-status gate with a stub that always allows submissions
+                var boxClientDescriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(SuggestionBoxServiceClient));
+                if (boxClientDescriptor != null)
+                    services.Remove(boxClientDescriptor);
+                services.AddScoped<SuggestionBoxServiceClient, ActiveSuggestionBoxServiceClient>();
             });
 
             builder.UseEnvironment("Testing");

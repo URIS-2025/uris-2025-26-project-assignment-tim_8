@@ -58,6 +58,9 @@ namespace SuggestionBoxService.Context
 
                 entity.Property(sb => sb.BoxAccessLinkId)
                       .IsRequired();
+
+                entity.Property(sb => sb.Status)
+                      .IsRequired();
             });
         }
     }

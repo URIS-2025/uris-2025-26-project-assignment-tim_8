@@ -7,13 +7,10 @@ import { AlertOctagon, Plus, Loader2 } from 'lucide-react';
 import { ProblemBoxService } from '../services/problemBoxService';
 import { OrganizationService } from '../services/organizationService';
 
-// Map numeric status to readable label
-const statusMap = {
-    0: 'New',
-    1: 'In Progress',
-    2: 'Reviewing',
-    3: 'Resolved',
-    4: 'Closed'
+// Map numeric box status to readable label
+const boxStatusMap = {
+    0: 'Active',
+    1: 'Inactive'
 };
 
 const ProblemBoxes = () => {
@@ -113,7 +110,7 @@ const ProblemBoxes = () => {
             header: 'Status',
             accessor: 'status',
             render: (row) => {
-                const label = typeof row.status === 'number' ? statusMap[row.status] || 'Unknown' : row.status;
+                const label = typeof row.status === 'number' ? boxStatusMap[row.status] || 'Unknown' : row.status;
                 return <StatusBadge type="status" status={label} />;
             }
         },

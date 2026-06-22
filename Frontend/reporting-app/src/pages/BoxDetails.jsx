@@ -18,6 +18,12 @@ const statusMap = {
     4: 'Closed'
 };
 
+// Map numeric BOX status to readable label (Active/Inactive) — distinct from the submission statusMap above
+const boxStatusMap = {
+    0: 'Active',
+    1: 'Inactive'
+};
+
 // Map numeric priority to readable label
 const priorityMap = {
     0: 'Low',
@@ -44,6 +50,7 @@ const BoxDetails = () => {
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchValue, setSearchValue] = useState('');
+    const [togglingStatus, setTogglingStatus] = useState(false);
 
     useEffect(() => {
         fetchBoxData();
@@ -108,6 +115,25 @@ const BoxDetails = () => {
         } catch (err) {
             console.error(`Error deleting ${itemLabel}:`, err);
             alert(`Failed to delete ${itemLabel}.`);
+        }
+    };
+
+    const handleToggleStatus = async () => {
+        if (!box) return;
+        const newStatus = box.status === 0 ? 1 : 0;
+        try {
+            setTogglingStatus(true);
+            if (boxType === 'problem') {
+                await ProblemBoxService.setStatus(box.id, newStatus);
+            } else {
+                await SuggestionBoxService.setStatus(box.id, newStatus);
+            }
+            await fetchBoxData();
+        } catch (err) {
+            console.error('Error updating box status:', err);
+            alert('Failed to update box status.');
+        } finally {
+            setTogglingStatus(false);
         }
     };
 
@@ -329,9 +355,17 @@ const BoxDetails = () => {
                             <code style={{ color: 'var(--accent-primary)' }}>{box.boxAccessLinkId}</code>
                         </div>
                     )}
-                    <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Status: </span>
-                        <StatusBadge type="status" status={typeof box.status === 'number' ? statusMap[box.status] || 'Unknown' : box.status} />
+                        <StatusBadge type="status" status={typeof box.status === 'number' ? boxStatusMap[box.status] || 'Unknown' : box.status} />
+                        <button
+                            className="btn btn-ghost"
+                            style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}
+                            onClick={handleToggleStatus}
+                            disabled={togglingStatus}
+                        >
+                            {togglingStatus ? 'Saving…' : (box.status === 0 ? 'Deactivate' : 'Activate')}
+                        </button>
                     </div>
                 </div>
             )}

@@ -1,4 +1,6 @@
-﻿namespace SuggestionBoxService.Models.DTOs
+﻿using SuggestionBoxService.Enums;
+
+namespace SuggestionBoxService.Models.DTOs
 {
     public class SuggestionBoxDTO
     {
@@ -10,5 +12,6 @@
         public string CreatedBy { get; set; }
         public Guid OrganizationId { get; set; }
         public Guid BoxAccessLinkId { get; set; }
+        public BoxStatus Status { get; set; }
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
+using ProblemService.Clients;
 using ProblemService.Context;
 using ProblemService.Enums;
 using ProblemService.Models.DTOs;
@@ -12,6 +13,13 @@ using Xunit;
 
 namespace ProblemServiceIntegrationTests
 {
+    // Test stub: always reports the box as active so create flows succeed.
+    public class ActiveProblemBoxServiceClient : ProblemBoxServiceClient
+    {
+        public override Task<bool> IsBoxActiveAsync(Guid boxId, string? bearerHeader, CancellationToken requestCt)
+            => Task.FromResult(true);
+    }
+
     public class ProblemIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
@@ -41,6 +49,13 @@ namespace ProblemServiceIntegrationTests
                         d => d.ServiceType == typeof(IHttpClientFactory));
                     if (attachmentDescriptor != null)
                         services.Remove(attachmentDescriptor);
+
+                    // Replace the box-status gate with a stub that always allows submissions
+                    var boxClientDescriptor = services.SingleOrDefault(
+                        d => d.ServiceType == typeof(ProblemBoxServiceClient));
+                    if (boxClientDescriptor != null)
+                        services.Remove(boxClientDescriptor);
+                    services.AddScoped<ProblemBoxServiceClient, ActiveProblemBoxServiceClient>();
                 });
             });
 

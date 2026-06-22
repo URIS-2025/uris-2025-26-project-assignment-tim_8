@@ -22,11 +22,17 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 builder.Services.AddScoped<IProblemCommentAuthorUserService, ProblemCommentAuthorUserService>();
 builder.Services.AddScoped<ProblemService.Clients.LoggerServiceClient>();
+builder.Services.AddScoped<ProblemService.Clients.ProblemBoxServiceClient>();
 
 
 builder.Services.AddHttpClient("LoggerService", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Services:LoggerServiceBaseUrl"]!);
+});
+
+builder.Services.AddHttpClient("ProblemBoxService", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:ProblemBoxService"]!);
 });
 
 builder.Services.AddHttpClient("AttachmentService", client =>

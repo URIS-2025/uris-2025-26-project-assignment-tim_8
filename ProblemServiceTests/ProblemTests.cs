@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProblemService.Clients;
@@ -17,13 +18,19 @@ namespace ProblemService.Tests
         private readonly Mock<IMapper> _mockMapper;
         private readonly ProblemController _controller;
         private readonly Mock<LoggerServiceClient> _logger;
+        private readonly Mock<ProblemBoxServiceClient> _boxClient;
 
         public ProblemControllerTests()
         {
             _mockRepo = new Mock<IProblemRepository>();
             _mockMapper = new Mock<IMapper>();
             _logger = new Mock<LoggerServiceClient>();
-            _controller = new ProblemController(_mockRepo.Object, _mockMapper.Object, _logger.Object);
+            _boxClient = new Mock<ProblemBoxServiceClient>();
+            _boxClient
+                .Setup(c => c.IsBoxActiveAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _controller = new ProblemController(_mockRepo.Object, _mockMapper.Object, _logger.Object, _boxClient.Object);
+            _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         }
 
         // GET ALL
@@ -129,6 +136,43 @@ namespace ProblemService.Tests
         }
 
         // POST
+
+        [Fact]
+        public async Task CreateProblem_ReturnsCreated_WhenBoxIsActive()
+        {
+            var creationDTO = new ProblemCreationDTO
+            {
+                Title = "New Problem",
+                Description = "Desc",
+                ProblemBoxId = Guid.NewGuid()
+            };
+            var created = new ProblemCreatedDTO { Id = Guid.NewGuid(), Title = "New Problem" };
+            _mockRepo.Setup(repo => repo.CreateProblem(creationDTO)).Returns(created);
+
+            var result = await _controller.CreateProblem(creationDTO);
+
+            Assert.IsType<CreatedResult>(result.Result);
+            _mockRepo.Verify(repo => repo.CreateProblem(It.IsAny<ProblemCreationDTO>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateProblem_ReturnsConflict_WhenBoxIsNotActive()
+        {
+            var creationDTO = new ProblemCreationDTO
+            {
+                Title = "New Problem",
+                Description = "Desc",
+                ProblemBoxId = Guid.NewGuid()
+            };
+            _boxClient
+                .Setup(c => c.IsBoxActiveAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _controller.CreateProblem(creationDTO);
+
+            Assert.IsType<ConflictObjectResult>(result.Result);
+            _mockRepo.Verify(repo => repo.CreateProblem(It.IsAny<ProblemCreationDTO>()), Times.Never);
+        }
 
         [Fact]
         public async Task UpdateProblem_ThrowsException_WhenProblemNotFound()
