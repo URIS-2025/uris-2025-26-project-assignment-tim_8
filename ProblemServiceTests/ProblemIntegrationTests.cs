@@ -13,11 +13,14 @@ using Xunit;
 
 namespace ProblemServiceIntegrationTests
 {
-    // Test stub: always reports the box as active so create flows succeed.
+    // Test stub: always reports the box as active and public so create flows succeed.
     public class ActiveProblemBoxServiceClient : ProblemBoxServiceClient
     {
         public override Task<bool> IsBoxActiveAsync(Guid boxId, string? bearerHeader, CancellationToken requestCt)
             => Task.FromResult(true);
+
+        public override Task<bool> HasPasswordAsync(Guid boxId, string? bearerHeader, CancellationToken requestCt)
+            => Task.FromResult(false);
     }
 
     public class ProblemIntegrationTests : IClassFixture<WebApplicationFactory<Program>>

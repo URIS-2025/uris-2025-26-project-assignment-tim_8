@@ -62,6 +62,24 @@ namespace AnonymousAPI.Controllers
                     return Conflict(new { error = "This suggestion box is not accepting submissions." });
                 }
 
+                if (await _suggestionBoxClient.HasPasswordAsync(suggestion.SuggestionBoxId, Request.Headers["Authorization"], HttpContext.RequestAborted))
+                {
+                    var passwordOk = await _suggestionBoxClient.VerifyPasswordAsync(suggestion.SuggestionBoxId, suggestion.BoxPassword, Request.Headers["Authorization"], HttpContext.RequestAborted);
+                    if (!passwordOk)
+                    {
+                        await _loggerClient.TryLogAsync(new LogCreationDTO
+                        {
+                            UserId = User.Identity?.Name,
+                            Action = "CREATE_SUGGESTION",
+                            EntityName = "Suggestion",
+                            IsSuccess = false,
+                            ServiceName = "SuggestionService",
+                            HttpMethod = "POST"
+                        }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+                        return Unauthorized(new { error = "Invalid box password." });
+                    }
+                }
+
                 var result = _suggestionRepository.Create(suggestion);
 
                 await _loggerClient.TryLogAsync(new LogCreationDTO

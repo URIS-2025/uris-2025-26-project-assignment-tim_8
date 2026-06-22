@@ -9,10 +9,11 @@ namespace ProblemBoxService.Data
         IEnumerable<ProblemBoxDTO> GetAll();
         IEnumerable<ProblemBoxDTO> GetProblemBoxByOrganizationId(Guid organizationId);
         ProblemBoxDTO GetProblemBoxById(Guid id);
-        ProblemBoxDTO GetProblemBoxByAccessLinkId(Guid boxAccessLinkId);
         ProblemBoxCreatedDTO CreateProblemBox(ProblemBoxCreationDTO problemBox);
         ProblemBoxDTO UpdateProblemBox(ProblemBoxUpdateDTO problemBox);
         ProblemBoxDTO SetStatus(Guid id, ProblemSuggestionStatus status);
+        ProblemBoxDTO SetPassword(Guid id, string password);
+        bool VerifyPassword(Guid id, string password);
         void DeleteProblemBox(Guid id);
     }
 }

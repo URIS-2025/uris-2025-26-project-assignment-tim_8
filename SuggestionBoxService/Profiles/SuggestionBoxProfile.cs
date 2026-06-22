@@ -15,7 +15,9 @@ namespace SuggestionBoxService.Profiles
                 .ReverseMap();
 
             CreateMap<SuggestionBox, SuggestionBoxDTO>()
-                .ReverseMap();
+                .ForMember(d => d.HasPassword, o => o.MapFrom(s => !string.IsNullOrWhiteSpace(s.Password)));
+
+            CreateMap<SuggestionBoxDTO, SuggestionBox>();
         }
     }
 }

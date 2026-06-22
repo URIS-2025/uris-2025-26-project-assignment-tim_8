@@ -62,6 +62,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = organizationId,
                 IsDarkTheme = false,
             };
@@ -89,6 +90,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
                 IsDarkTheme = false,
             };
@@ -108,34 +110,6 @@ namespace ProblemBoxServiceIntegrationTests
             Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         }
 
-        // GET BY ACCESS LINK ID
-        [Fact]
-        public async Task GetProblemBoxByAccessLinkId_ReturnsOk_WhenExists()
-        {
-            var boxAccessLinkId = Guid.NewGuid();
-            var creationDTO = new ProblemBoxCreationDTO
-            {
-                Name = "Test Box",
-                Description = "Test Description",
-                Password = "password123",
-                OrganizationId = Guid.NewGuid(),
-                IsDarkTheme = false,
-            };
-            await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
-
-            var response = await _client.GetAsync($"/api/ProblemBox/boxaccesslink/{boxAccessLinkId}");
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task GetProblemBoxByAccessLinkId_ReturnsInternalServerError_WhenNotFound()
-        {
-            var response = await _client.GetAsync($"/api/ProblemBox/boxaccesslink/{Guid.NewGuid()}");
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
         // CREATE
         [Fact]
         public async Task CreateProblemBox_ReturnsCreated_WhenValidData()
@@ -145,6 +119,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
                 IsDarkTheme = false,
             };
@@ -155,73 +130,76 @@ namespace ProblemBoxServiceIntegrationTests
         }
 
         [Fact]
-        public async Task CreateProblemBox_ReturnsInternalServerError_WhenOrganizationIdIsEmpty()
+        public async Task CreateProblemBox_ReturnsBadRequest_WhenOrganizationIdIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.Empty,
                 IsDarkTheme = false,
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
-        public async Task CreateProblemBox_ReturnsInternalServerError_WhenNameIsEmpty()
+        public async Task CreateProblemBox_ReturnsBadRequest_WhenNameIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
                 Name = "",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
                 IsDarkTheme = false,
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
-        public async Task CreateProblemBox_ReturnsInternalServerError_WhenDescriptionIsEmpty()
+        public async Task CreateProblemBox_ReturnsBadRequest_WhenDescriptionIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
                 Name = "Test Box",
                 Description = "",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
-                
                 IsDarkTheme = false,
-                
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
-        public async Task CreateProblemBox_ReturnsInternalServerError_WhenPasswordIsEmpty()
+        public async Task CreateProblemBox_ReturnsCreated_WhenPasswordIsEmpty()
         {
+            // Password is now OPTIONAL: an empty password creates a public (no-password) box.
             var creationDTO = new ProblemBoxCreationDTO
             {
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
                 IsDarkTheme = false,
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
         // UPDATE
@@ -233,6 +211,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
                 IsDarkTheme = false,
             };
@@ -281,6 +260,7 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
                 IsDarkTheme = false,
             };

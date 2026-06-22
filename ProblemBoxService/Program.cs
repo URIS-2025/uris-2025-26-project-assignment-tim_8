@@ -47,6 +47,20 @@ using (var scope = app.Services.CreateScope())
     if (!env.IsEnvironment("Testing"))
     {
         db.Database.Migrate();
+
+        // Backfill: re-hash any legacy plaintext passwords (BCrypt hashes start with "$2").
+        var boxes = db.ProblemBoxes.ToList();
+        var changed = false;
+        foreach (var box in boxes)
+        {
+            if (!string.IsNullOrWhiteSpace(box.Password) && !box.Password.StartsWith("$2"))
+            {
+                box.Password = BCrypt.Net.BCrypt.HashPassword(box.Password);
+                changed = true;
+            }
+        }
+        if (changed)
+            db.SaveChanges();
     }
     else
     {

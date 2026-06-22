@@ -31,6 +31,10 @@ namespace SuggestionServiceTest
             _boxClient
                 .Setup(c => c.IsBoxActiveAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
+            // Default: treat boxes as public (no password) so existing happy-path tests skip verify.
+            _boxClient
+                .Setup(c => c.HasPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
             _controller = new SuggestionController(_mockRepo.Object, _mapper, _logger.Object, _boxClient.Object);
             _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         }
@@ -74,6 +78,105 @@ namespace SuggestionServiceTest
 
             Assert.IsType<ConflictObjectResult>(result.Result);
             _mockRepo.Verify(repo => repo.Create(It.IsAny<SuggestionCreationDTO>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateSuggestion_ReturnsUnauthorized_WhenBoxIsProtected_AndPasswordWrong()
+        {
+            var dto = new SuggestionCreationDTO
+            {
+                Title = "New Suggestion",
+                Description = "Desc",
+                SuggestionBoxId = Guid.NewGuid(),
+                AnonymousUserId = Guid.NewGuid(),
+                CategoryIds = new List<Guid>(),
+                BoxPassword = "wrong"
+            };
+            _boxClient
+                .Setup(c => c.HasPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _boxClient
+                .Setup(c => c.VerifyPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _controller.CreateSuggestion(dto);
+
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
+            _mockRepo.Verify(repo => repo.Create(It.IsAny<SuggestionCreationDTO>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateSuggestion_ReturnsUnauthorized_WhenBoxIsProtected_AndPasswordMissing()
+        {
+            var dto = new SuggestionCreationDTO
+            {
+                Title = "New Suggestion",
+                Description = "Desc",
+                SuggestionBoxId = Guid.NewGuid(),
+                AnonymousUserId = Guid.NewGuid(),
+                CategoryIds = new List<Guid>()
+                // BoxPassword omitted
+            };
+            _boxClient
+                .Setup(c => c.HasPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _boxClient
+                .Setup(c => c.VerifyPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _controller.CreateSuggestion(dto);
+
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
+            _mockRepo.Verify(repo => repo.Create(It.IsAny<SuggestionCreationDTO>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateSuggestion_ReturnsCreated_WhenBoxIsProtected_AndPasswordCorrect()
+        {
+            var dto = new SuggestionCreationDTO
+            {
+                Title = "New Suggestion",
+                Description = "Desc",
+                SuggestionBoxId = Guid.NewGuid(),
+                AnonymousUserId = Guid.NewGuid(),
+                CategoryIds = new List<Guid>(),
+                BoxPassword = "correct"
+            };
+            var created = new SuggestionCreatedDTO { Id = Guid.NewGuid(), Title = "New Suggestion" };
+            _mockRepo.Setup(repo => repo.Create(dto)).Returns(created);
+            _boxClient
+                .Setup(c => c.HasPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _boxClient
+                .Setup(c => c.VerifyPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            var result = await _controller.CreateSuggestion(dto);
+
+            Assert.IsType<CreatedResult>(result.Result);
+            _mockRepo.Verify(repo => repo.Create(It.IsAny<SuggestionCreationDTO>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateSuggestion_ReturnsCreated_WhenBoxIsPublic_WithoutVerifyingPassword()
+        {
+            var dto = new SuggestionCreationDTO
+            {
+                Title = "New Suggestion",
+                Description = "Desc",
+                SuggestionBoxId = Guid.NewGuid(),
+                AnonymousUserId = Guid.NewGuid(),
+                CategoryIds = new List<Guid>()
+            };
+            var created = new SuggestionCreatedDTO { Id = Guid.NewGuid(), Title = "New Suggestion" };
+            _mockRepo.Setup(repo => repo.Create(dto)).Returns(created);
+            // HasPasswordAsync defaults to false in the ctor (public box).
+
+            var result = await _controller.CreateSuggestion(dto);
+
+            Assert.IsType<CreatedResult>(result.Result);
+            _mockRepo.Verify(repo => repo.Create(It.IsAny<SuggestionCreationDTO>()), Times.Once);
+            _boxClient.Verify(c => c.VerifyPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

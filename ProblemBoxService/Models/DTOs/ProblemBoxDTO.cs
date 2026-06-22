@@ -11,5 +11,6 @@ namespace ProblemBoxService.Models.DTOs
         public DateTime CreatedAt { get; set; }
         public Guid OrganizationId { get; set; }
         public ProblemSuggestionStatus Status { get; set; }
+        public bool HasPassword { get; set; }
     }
 }

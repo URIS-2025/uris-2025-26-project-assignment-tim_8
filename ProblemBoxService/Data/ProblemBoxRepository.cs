@@ -49,15 +49,6 @@ namespace ProblemBoxService.Data
             return dto;
         }
 
-        public ProblemBoxDTO GetProblemBoxByAccessLinkId(Guid boxAccessLinkId)
-        {
-            var problemBox = _context.ProblemBoxes.FirstOrDefault(pb => pb.BoxAccessLinkId == boxAccessLinkId);
-            if (problemBox == null)
-                throw new ArgumentException("ProblemBox with that AccessLinkId does not exist.");
-            var dto = _mapper.Map<ProblemBoxDTO>(problemBox);
-            return dto;
-        }
-
         public ProblemBoxCreatedDTO CreateProblemBox(ProblemBoxCreationDTO problemBox)
         {
             if (problemBox.OrganizationId == Guid.Empty)
@@ -66,12 +57,13 @@ namespace ProblemBoxService.Data
                 throw new ArgumentException("Name must be provided.");
             if (string.IsNullOrWhiteSpace(problemBox.Description))
                 throw new ArgumentException("Description must be provided.");
-            if (string.IsNullOrWhiteSpace(problemBox.Password))
-                throw new ArgumentException("Password must be provided.");
 
             var entity = _mapper.Map<ProblemBox>(problemBox);
             entity.Id = Guid.NewGuid();
             entity.CreatedAt = DateTime.UtcNow;
+            entity.Password = string.IsNullOrWhiteSpace(problemBox.Password)
+                ? null
+                : BCrypt.Net.BCrypt.HashPassword(problemBox.Password);
             _context.ProblemBoxes.Add(entity);
             SaveChanges();
             return _mapper.Map<ProblemBoxCreatedDTO>(entity);
@@ -106,6 +98,40 @@ namespace ProblemBoxService.Data
             _context.ProblemBoxes.Update(entity);
             SaveChanges();
             return _mapper.Map<ProblemBoxDTO>(entity);
+        }
+
+        public ProblemBoxDTO SetPassword(Guid id, string password)
+        {
+            var entity = _context.ProblemBoxes.FirstOrDefault(pb => pb.Id == id);
+            if (entity == null)
+                throw new ArgumentException("ProblemBox with that Id does not exist.");
+
+            entity.Password = string.IsNullOrWhiteSpace(password)
+                ? null
+                : BCrypt.Net.BCrypt.HashPassword(password);
+
+            _context.ProblemBoxes.Update(entity);
+            SaveChanges();
+            return _mapper.Map<ProblemBoxDTO>(entity);
+        }
+
+        public bool VerifyPassword(Guid id, string password)
+        {
+            var entity = _context.ProblemBoxes.FirstOrDefault(pb => pb.Id == id);
+            if (entity == null)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(entity.Password))
+                return true;
+
+            try
+            {
+                return BCrypt.Net.BCrypt.Verify(password ?? "", entity.Password);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public void DeleteProblemBox(Guid id)

@@ -69,8 +69,7 @@ namespace SuggestionBoxServiceTests.Integration
                 CreatedAt = DateTime.UtcNow,
                 Password = "test123",
                 CreatedBy = "TestUser",
-                OrganizationId = organizationId ?? Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid()
+                OrganizationId = organizationId ?? Guid.NewGuid()
             };
             context.SuggestionBoxes.Add(box);
             context.SaveChanges();

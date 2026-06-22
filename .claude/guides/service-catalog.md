@@ -102,7 +102,7 @@ Cross-cutting contracts (error shapes, `LogCreationDTO`, inter-service calls) â†
 
 | Controller | Route prefix | Key actions |
 |---|---|---|
-| `ProblemBoxController` | `api/ProblemBox` | `GET /`, `GET /{id}`, `GET /organization/{id}`, `GET /boxaccesslink/{boxAccessLinkId}`, `POST /`, `PUT /`, `DELETE /{id}` |
+| `ProblemBoxController` | `api/ProblemBox` | `GET /`, `GET /{id}`, `GET /organization/{id}`, `POST /`, `PUT /`, `DELETE /{id}` |
 
 ### Key entities (`Models/`)
 

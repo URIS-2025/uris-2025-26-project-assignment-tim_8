@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProblemBoxService.Context;
 
@@ -11,9 +12,11 @@ using ProblemBoxService.Context;
 namespace ProblemBoxService.Migrations
 {
     [DbContext(typeof(ProblemBoxContext))]
-    partial class ProblemBoxContextModelSnapshot : ModelSnapshot
+    [Migration("20260622143710_RemoveBoxAccessLinkIdFromProblemBox")]
+    partial class RemoveBoxAccessLinkIdFromProblemBox
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,6 +51,7 @@ namespace ProblemBoxService.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Password")
+                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 

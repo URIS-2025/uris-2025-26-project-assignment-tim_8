@@ -43,7 +43,6 @@ namespace ProblemBoxService.Context
                     entity.Property(pb => pb.CreatedAt)
                           .IsRequired();
                     entity.Property(pb => pb.Password)
-                          .IsRequired()
                           .HasMaxLength(200);
                     entity.Property(pb => pb.Status)
                           .IsRequired();

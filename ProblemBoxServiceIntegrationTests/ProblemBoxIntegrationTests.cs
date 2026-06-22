@@ -62,10 +62,9 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = organizationId,
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
@@ -91,10 +90,9 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             var createResponse = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
             var created = await createResponse.Content.ReadFromJsonAsync<ProblemBoxCreatedDTO>();
@@ -112,36 +110,6 @@ namespace ProblemBoxServiceIntegrationTests
             Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         }
 
-        // GET BY ACCESS LINK ID
-        [Fact]
-        public async Task GetProblemBoxByAccessLinkId_ReturnsOk_WhenExists()
-        {
-            var boxAccessLinkId = Guid.NewGuid();
-            var creationDTO = new ProblemBoxCreationDTO
-            {
-                Name = "Test Box",
-                Description = "Test Description",
-                Password = "password123",
-                OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = boxAccessLinkId,
-                IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
-            };
-            await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
-
-            var response = await _client.GetAsync($"/api/ProblemBox/boxaccesslink/{boxAccessLinkId}");
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task GetProblemBoxByAccessLinkId_ReturnsInternalServerError_WhenNotFound()
-        {
-            var response = await _client.GetAsync($"/api/ProblemBox/boxaccesslink/{Guid.NewGuid()}");
-
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
         // CREATE
         [Fact]
         public async Task CreateProblemBox_ReturnsCreated_WhenValidData()
@@ -151,10 +119,9 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
@@ -163,79 +130,75 @@ namespace ProblemBoxServiceIntegrationTests
         }
 
         [Fact]
-        public async Task CreateProblemBox_ReturnsInternalServerError_WhenOrganizationIdIsEmpty()
+        public async Task CreateProblemBox_ReturnsBadRequest_WhenOrganizationIdIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.Empty,
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
-        public async Task CreateProblemBox_ReturnsInternalServerError_WhenNameIsEmpty()
+        public async Task CreateProblemBox_ReturnsBadRequest_WhenNameIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
                 Name = "",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
-        public async Task CreateProblemBox_ReturnsInternalServerError_WhenDescriptionIsEmpty()
+        public async Task CreateProblemBox_ReturnsBadRequest_WhenDescriptionIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
                 Name = "Test Box",
                 Description = "",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
-        public async Task CreateProblemBox_ReturnsInternalServerError_WhenPasswordIsEmpty()
+        public async Task CreateProblemBox_ReturnsBadRequest_WhenPasswordIsEmpty()
         {
             var creationDTO = new ProblemBoxCreationDTO
             {
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
 
             var response = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         // UPDATE
@@ -247,10 +210,9 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             var createResponse = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
             var created = await createResponse.Content.ReadFromJsonAsync<ProblemBoxCreatedDTO>();
@@ -297,10 +259,9 @@ namespace ProblemBoxServiceIntegrationTests
                 Name = "Test Box",
                 Description = "Test Description",
                 Password = "password123",
+                CreatedBy = "TestUser",
                 OrganizationId = Guid.NewGuid(),
-                BoxAccessLinkId = Guid.NewGuid(),
                 IsDarkTheme = false,
-                Status = ProblemSuggestionStatus.Active
             };
             var createResponse = await _client.PostAsJsonAsync("/api/ProblemBox", creationDTO);
             var created = await createResponse.Content.ReadFromJsonAsync<ProblemBoxCreatedDTO>();

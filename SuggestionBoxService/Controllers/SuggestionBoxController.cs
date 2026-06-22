@@ -149,6 +149,50 @@ namespace AnonymousAPI.Controllers
             }
         }
 
+        [HttpPut("{id}/password")]
+        public async Task<ActionResult<SuggestionBoxDTO>> UpdateSuggestionBoxPassword(Guid id, [FromBody] BoxPasswordDTO dto)
+        {
+            try
+            {
+                var result = _repository.SetPassword(id, dto.Password);
+                if (result == null) return NotFound(new { error = "SuggestionBox with that Id does not exist." });
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_SUGGESTION_BOX_PASSWORD",
+                    EntityName = "SuggestionBox",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_SUGGESTION_BOX_PASSWORD",
+                    EntityName = "SuggestionBox",
+                    IsSuccess = false,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/verify-password")]
+        public ActionResult VerifySuggestionBoxPassword(Guid id, [FromBody] BoxPasswordDTO dto)
+        {
+            var valid = _repository.VerifyPassword(id, dto.Password);
+            return Ok(new { valid });
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
