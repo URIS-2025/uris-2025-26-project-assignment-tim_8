@@ -330,10 +330,6 @@ const BoxDetails = () => {
                         </div>
                     )}
                     <div>
-                        <span style={{ color: 'var(--text-muted)' }}>Theme: </span>
-                        <span>{box.isDarkTheme ? '🌙 Dark' : '☀️ Light'}</span>
-                    </div>
-                    <div>
                         <span style={{ color: 'var(--text-muted)' }}>Status: </span>
                         <StatusBadge type="status" status={typeof box.status === 'number' ? statusMap[box.status] || 'Unknown' : box.status} />
                     </div>

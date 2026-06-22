@@ -41,7 +41,6 @@ const OrganizationDetails = () => {
         type: 'suggestion',
         description: '',
         password: '',
-        isDarkTheme: false,
         createdBy: ''
     });
 
@@ -195,7 +194,6 @@ const OrganizationDetails = () => {
                 await SuggestionBoxService.create({
                     name: newBox.name,
                     description: newBox.description,
-                    isDarkTheme: newBox.isDarkTheme,
                     password: newBox.password,
                     createdBy: user?.id,
                     organizationId: orgId
@@ -204,7 +202,6 @@ const OrganizationDetails = () => {
                 await ProblemBoxService.create({
                     name: newBox.name,
                     description: newBox.description,
-                    isDarkTheme: newBox.isDarkTheme,
                     password: newBox.password,
                     createdBy: newBox.createdBy || user?.username || '',
                     organizationId: orgId,
@@ -213,7 +210,7 @@ const OrganizationDetails = () => {
             }
 
             setBoxModalOpen(false);
-            setNewBox({ name: '', type: 'suggestion', description: '', password: '', isDarkTheme: false, createdBy: '' });
+            setNewBox({ name: '', type: 'suggestion', description: '', password: '', createdBy: '' });
             if (newBox.type === 'suggestion') {
                 fetchSuggestionBoxes();
             } else {
@@ -522,18 +519,6 @@ const OrganizationDetails = () => {
                         onChange={(e) => setNewBox({ ...newBox, password: e.target.value })}
                         required
                     />
-                </div>
-                <div className="form-group">
-                    <label>Theme</label>
-                    <div className="flex items-center gap-2 mt-2">
-                        <input
-                            type="checkbox"
-                            id="darkThemeCheck"
-                            checked={newBox.isDarkTheme}
-                            onChange={(e) => setNewBox({ ...newBox, isDarkTheme: e.target.checked })}
-                        />
-                        <label htmlFor="darkThemeCheck" className="text-sm m-0">Enable Dark Theme on Public View</label>
-                    </div>
                 </div>
                 <div className="form-group mt-3">
                     <label>Description </label>

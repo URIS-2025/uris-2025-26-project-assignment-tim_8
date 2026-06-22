@@ -19,7 +19,6 @@ const SuggestionBoxes = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        isDarkTheme: false,
         password: '',
         createdBy: '',
         organizationId: ''
@@ -51,12 +50,11 @@ const SuggestionBoxes = () => {
             await SuggestionBoxService.create({
                 name: formData.name,
                 description: formData.description,
-                isDarkTheme: formData.isDarkTheme,
                 password: formData.password,
                 createdBy: formData.createdBy,
                 organizationId: formData.organizationId
             });
-            setFormData({ name: '', description: '', isDarkTheme: false, password: '', createdBy: '', organizationId: '' });
+            setFormData({ name: '', description: '', password: '', createdBy: '', organizationId: '' });
             setBoxModalOpen(false);
             await fetchSuggestionBoxes();
         } catch (err) {
@@ -93,21 +91,6 @@ const SuggestionBoxes = () => {
             header: 'Created By',
             accessor: 'createdBy',
             render: (row) => <span>{row.createdBy || '—'}</span>
-        },
-        {
-            header: 'Theme',
-            accessor: 'isDarkTheme',
-            render: (row) => (
-                <span style={{
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '0.8rem',
-                    background: row.isDarkTheme ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-                    color: row.isDarkTheme ? 'var(--accent-primary)' : 'var(--text-muted)'
-                }}>
-                    {row.isDarkTheme ? '🌙 Dark' : '☀️ Light'}
-                </span>
-            )
         },
         {
             header: 'Created At',
@@ -253,16 +236,6 @@ const SuggestionBoxes = () => {
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     />
-                </div>
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <input
-                        type="checkbox"
-                        id="isDarkTheme"
-                        checked={formData.isDarkTheme}
-                        onChange={(e) => setFormData({ ...formData, isDarkTheme: e.target.checked })}
-                        style={{ width: 'auto' }}
-                    />
-                    <label htmlFor="isDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
                 </div>
             </Modal>
         </div>
