@@ -22,6 +22,9 @@ import { BillingNotificationService } from '../services/billingNotificationServi
 
 const AdminDashboard = () => {
     const { user } = useAuth();
+    const role = user?.role || 'user';
+    const isManager = role === 'manager';
+    const orgId = user?.organizationId || null;
     const [isOrgModalOpen, setOrgModalOpen] = useState(false);
     const [isProblemBoxModalOpen, setProblemBoxModalOpen] = useState(false);
     const [isSuggestionBoxModalOpen, setSuggestionBoxModalOpen] = useState(false);
@@ -35,7 +38,6 @@ const AdminDashboard = () => {
     const [subscriptionPlans, setSubscriptionPlans] = useState([]);
     const [selectedPlanId, setSelectedPlanId] = useState('');
     const [isCreating, setIsCreating] = useState(false);
-    const role = user?.role || 'user';
 
     // Form state for creating organization
     const [newOrg, setNewOrg] = useState({ name: '' });
@@ -46,7 +48,7 @@ const AdminDashboard = () => {
         description: '',
         password: '',
         createdBy: '',
-        organizationId: ''
+        organizationId: isManager ? (orgId || '') : ''
     });
 
     // Form state for creating suggestion box
@@ -55,7 +57,7 @@ const AdminDashboard = () => {
         description: '',
         password: '',
         createdBy: '',
-        organizationId: ''
+        organizationId: isManager ? (orgId || '') : ''
     });
 
     const navigate = useNavigate();
@@ -71,8 +73,15 @@ const AdminDashboard = () => {
     const fetchOrganizations = async () => {
         try {
             setIsLoading(true);
-            const data = await OrganizationService.getAll();
-            setOrganizations(data);
+            if (isManager) {
+                // Managers see only their own organization.
+                if (!orgId) { setOrganizations([]); return; }
+                const org = await OrganizationService.getById(orgId);
+                setOrganizations(org ? [org] : []);
+            } else {
+                const data = await OrganizationService.getAll();
+                setOrganizations(data);
+            }
         } catch (error) {
             console.error("Failed to fetch organizations", error);
         } finally {
@@ -92,7 +101,10 @@ const AdminDashboard = () => {
     const fetchSuggestionBoxes = async () => {
         try {
             setIsLoading(true);
-            const data = await SuggestionBoxService.getAll();
+            if (isManager && !orgId) { setSuggestionBoxes([]); return; }
+            const data = isManager
+                ? await SuggestionBoxService.getByOrganizationId(orgId)
+                : await SuggestionBoxService.getAll();
             setSuggestionBoxes(data);
         } catch (error) {
             console.error("Failed to fetch suggestion boxes", error);
@@ -104,7 +116,10 @@ const AdminDashboard = () => {
     const fetchProblemBoxes = async () => {
         try {
             setIsLoading(true);
-            const data = await ProblemBoxService.getAll();
+            if (isManager && !orgId) { setProblemBoxes([]); return; }
+            const data = isManager
+                ? await ProblemBoxService.getByOrganizationId(orgId)
+                : await ProblemBoxService.getAll();
             setProblemBoxes(data);
         } catch (error) {
             console.error("Failed to fetch problem boxes", error);
@@ -116,7 +131,10 @@ const AdminDashboard = () => {
     const fetchSuggestions = async () => {
         try {
             setIsLoading(true);
-            const data = await SuggestionBoxService.getAll();
+            if (isManager && !orgId) { setSuggestions([]); return; }
+            const data = isManager
+                ? await SuggestionBoxService.getByOrganizationId(orgId)
+                : await SuggestionBoxService.getAll();
             setSuggestions(data);
         } catch (error) {
             console.error("Failed to fetch suggestion boxes", error);
@@ -196,7 +214,7 @@ const AdminDashboard = () => {
                 organizationId: newProblemBox.organizationId
             });
             setProblemBoxModalOpen(false);
-            setNewProblemBox({ name: '', description: '', password: '', createdBy: '', organizationId: '' });
+            setNewProblemBox({ name: '', description: '', password: '', createdBy: '', organizationId: isManager ? (orgId || '') : '' });
             await fetchProblemBoxes(); // Re-fetch to update "Active Problem Boxes" counter
         } catch (error) {
             console.error("Failed to create problem box", error);
@@ -217,7 +235,7 @@ const AdminDashboard = () => {
                 createdBy: suggestionBoxForm.createdBy,
                 organizationId: suggestionBoxForm.organizationId
             });
-            setSuggestionBoxForm({ name: '', description: '', password: '', createdBy: '', organizationId: '' });
+            setSuggestionBoxForm({ name: '', description: '', password: '', createdBy: '', organizationId: isManager ? (orgId || '') : '' });
             setSuggestionBoxModalOpen(false);
             await fetchSuggestionBoxes();
             navigate(`/admin/boxes/${created.id}`);
@@ -251,6 +269,12 @@ const AdminDashboard = () => {
                     )}
                 </div>
             </div>
+
+            {isManager && !orgId && (
+                <div className="glass-panel" style={{ color: 'var(--danger)', padding: '1rem', marginBottom: '1.5rem' }}>
+                    No organization is assigned to your account. The figures below may be incomplete — try signing out and back in.
+                </div>
+            )}
 
             {/* Stats Grid */}
             <div className="stats-grid">
@@ -411,6 +435,7 @@ const AdminDashboard = () => {
                         value={newProblemBox.organizationId}
                         onChange={(e) => setNewProblemBox({ ...newProblemBox, organizationId: e.target.value })}
                         required
+                        disabled={isManager}
                     >
                         <option value="">Select an organization...</option>
                         {organizations.map((org) => (
@@ -486,6 +511,7 @@ const AdminDashboard = () => {
                         value={suggestionBoxForm.organizationId}
                         onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, organizationId: e.target.value })}
                         required
+                        disabled={isManager}
                     >
                         <option value="">Select an organization...</option>
                         {organizations.map((org) => (

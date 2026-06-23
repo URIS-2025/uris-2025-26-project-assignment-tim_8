@@ -6,6 +6,7 @@ import Modal from '../components/Modal';
 import { AlertOctagon, Plus, Loader2 } from 'lucide-react';
 import { ProblemBoxService } from '../services/problemBoxService';
 import { OrganizationService } from '../services/organizationService';
+import { useAuth } from '../context/AuthContext';
 
 // Map numeric box status to readable label
 const boxStatusMap = {
@@ -15,6 +16,9 @@ const boxStatusMap = {
 
 const ProblemBoxes = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const isManager = (user?.role || 'user') === 'manager';
+    const orgId = user?.organizationId || null;
     const [isBoxModalOpen, setBoxModalOpen] = useState(false);
     const [problemBoxes, setProblemBoxes] = useState([]);
     const [organizations, setOrganizations] = useState([]);
@@ -30,7 +34,7 @@ const ProblemBoxes = () => {
         description: '',
         password: '',
         createdBy: '',
-        organizationId: ''
+        organizationId: isManager ? (orgId || '') : ''
     });
 
     useEffect(() => {
@@ -42,7 +46,14 @@ const ProblemBoxes = () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await ProblemBoxService.getAll();
+            if (isManager && !orgId) {
+                setProblemBoxes([]);
+                setError('No organization is assigned to your account.');
+                return;
+            }
+            const data = isManager
+                ? await ProblemBoxService.getByOrganizationId(orgId)
+                : await ProblemBoxService.getAll();
             setProblemBoxes(data);
         } catch (err) {
             console.error('Error fetching problem boxes:', err);
@@ -54,8 +65,15 @@ const ProblemBoxes = () => {
 
     const fetchOrganizations = async () => {
         try {
-            const data = await OrganizationService.getAll();
-            setOrganizations(data);
+            if (isManager) {
+                // Managers can only create boxes in their own org.
+                if (!orgId) { setOrganizations([]); return; }
+                const org = await OrganizationService.getById(orgId);
+                setOrganizations(org ? [org] : []);
+            } else {
+                const data = await OrganizationService.getAll();
+                setOrganizations(data);
+            }
         } catch (err) {
             console.error('Error fetching organizations:', err);
         }
@@ -73,7 +91,7 @@ const ProblemBoxes = () => {
                 createdBy: formData.createdBy,
                 organizationId: formData.organizationId
             });
-            setFormData({ name: '', description: '', password: '', createdBy: '', organizationId: '' });
+            setFormData({ name: '', description: '', password: '', createdBy: '', organizationId: isManager ? (orgId || '') : '' });
             setBoxModalOpen(false);
             await fetchProblemBoxes();
         } catch (err) {
@@ -236,6 +254,7 @@ const ProblemBoxes = () => {
                         className="form-control"
                         value={formData.organizationId}
                         onChange={(e) => setFormData({ ...formData, organizationId: e.target.value })}
+                        disabled={isManager}
                     >
                         <option value="">Select an organization...</option>
                         {organizations.map((org) => (

@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 import { Lightbulb, Plus, Loader2 } from 'lucide-react';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
+import { useAuth } from '../context/AuthContext';
 
 // Map numeric box status to readable label
 const boxStatusMap = {
@@ -14,6 +15,9 @@ const boxStatusMap = {
 
 const SuggestionBoxes = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const isManager = (user?.role || 'user') === 'manager';
+    const orgId = user?.organizationId || null;
     const [isBoxModalOpen, setBoxModalOpen] = useState(false);
     const [suggestionBoxes, setSuggestionBoxes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -27,7 +31,7 @@ const SuggestionBoxes = () => {
         description: '',
         password: '',
         createdBy: '',
-        organizationId: ''
+        organizationId: isManager ? (orgId || '') : ''
     });
 
     useEffect(() => {
@@ -38,7 +42,14 @@ const SuggestionBoxes = () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await SuggestionBoxService.getAll();
+            if (isManager && !orgId) {
+                setSuggestionBoxes([]);
+                setError('No organization is assigned to your account.');
+                return;
+            }
+            const data = isManager
+                ? await SuggestionBoxService.getByOrganizationId(orgId)
+                : await SuggestionBoxService.getAll();
             setSuggestionBoxes(data);
         } catch (err) {
             console.error('Error fetching suggestion boxes:', err);
@@ -60,7 +71,7 @@ const SuggestionBoxes = () => {
                 createdBy: formData.createdBy,
                 organizationId: formData.organizationId
             });
-            setFormData({ name: '', description: '', password: '', createdBy: '', organizationId: '' });
+            setFormData({ name: '', description: '', password: '', createdBy: '', organizationId: isManager ? (orgId || '') : '' });
             setBoxModalOpen(false);
             await fetchSuggestionBoxes();
         } catch (err) {
@@ -219,6 +230,7 @@ const SuggestionBoxes = () => {
                         placeholder="Enter organization GUID"
                         value={formData.organizationId}
                         onChange={(e) => setFormData({ ...formData, organizationId: e.target.value })}
+                        readOnly={isManager}
                     />
                 </div>
                 <div className="form-group">

@@ -10,6 +10,8 @@ const CommunityDashboard = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [loading, setLoading] = useState(false);
     const { user } = useAuth();
+    const isManager = (user?.role || 'user') === 'manager';
+    const orgId = user?.organizationId || null;
 
     // Organization & box selection
     const [organizations, setOrganizations] = useState([]);
@@ -18,8 +20,13 @@ const CommunityDashboard = () => {
     const [selectedBoxId, setSelectedBoxId] = useState('');
     const [loadingBoxes, setLoadingBoxes] = useState(false);
 
-    // Fetch organizations on mount
+    // Fetch organizations on mount (admin only). Managers are scoped to their own org,
+    // so there is no org picker — we just pin the selection to their organizationId.
     useEffect(() => {
+        if (isManager) {
+            if (orgId) setSelectedOrgId(orgId);
+            return;
+        }
         const fetchOrgs = async () => {
             try {
                 const orgs = await OrganizationService.getAll();
@@ -29,6 +36,7 @@ const CommunityDashboard = () => {
             }
         };
         fetchOrgs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // When organization changes, fetch suggestion boxes for that org
@@ -97,22 +105,24 @@ const CommunityDashboard = () => {
 
             {/* Filters */}
             <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        Organization
-                    </label>
-                    <select
-                        className="form-control"
-                        value={selectedOrgId}
-                        onChange={(e) => setSelectedOrgId(e.target.value)}
-                        style={{ width: '100%' }}
-                    >
-                        <option value="">— Select an organization —</option>
-                        {organizations.map(org => (
-                            <option key={org.id} value={org.id}>{org.name}</option>
-                        ))}
-                    </select>
-                </div>
+                {!isManager && (
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Organization
+                        </label>
+                        <select
+                            className="form-control"
+                            value={selectedOrgId}
+                            onChange={(e) => setSelectedOrgId(e.target.value)}
+                            style={{ width: '100%' }}
+                        >
+                            <option value="">— Select an organization —</option>
+                            {organizations.map(org => (
+                                <option key={org.id} value={org.id}>{org.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 <div style={{ flex: 1, minWidth: '200px' }}>
                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -150,7 +160,7 @@ const CommunityDashboard = () => {
             <div className="page-content" style={{ maxWidth: '800px', margin: '0 auto' }}>
                 {!selectedOrgId ? (
                     <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                        <p>Please select an organization to view suggestions.</p>
+                        <p>{isManager ? 'No organization is assigned to your account.' : 'Please select an organization to view suggestions.'}</p>
                     </div>
                 ) : !selectedBoxId ? (
                     <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
