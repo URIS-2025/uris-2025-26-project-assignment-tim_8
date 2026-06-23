@@ -112,6 +112,43 @@ namespace AnonymousAPI.Controllers
             }
         }
 
+        [HttpPut("{id}/status")]
+        public async Task<ActionResult<SuggestionBoxDTO>> UpdateSuggestionBoxStatus(Guid id, [FromBody] BoxStatusUpdateDTO dto)
+        {
+            try
+            {
+                var result = _repository.SetStatus(id, dto.Status);
+                if (result == null) return NotFound(new { error = "SuggestionBox with that Id does not exist." });
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_SUGGESTION_BOX_STATUS",
+                    EntityName = "SuggestionBox",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_SUGGESTION_BOX_STATUS",
+                    EntityName = "SuggestionBox",
+                    IsSuccess = false,
+                    ServiceName = "SuggestionBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {

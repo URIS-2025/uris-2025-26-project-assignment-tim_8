@@ -5,6 +5,7 @@ using AnonymousAPI.Controllers;
 using AnonymousRepository.Interfaces;
 using AnonymousRepository.Profiles;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SuggestionService.Data;
@@ -20,12 +21,59 @@ namespace SuggestionServiceTest
         private readonly IMapper _mapper;
         private readonly SuggestionController _controller;
         private readonly Mock<LoggerServiceClient> _logger;
+        private readonly Mock<SuggestionBoxServiceClient> _boxClient;
         public SuggestionControllerTests()
         {
             _mockRepo = new Mock<ISuggestionRepository>();
             _mapper = Mock.Of<IMapper>();
             _logger = new Mock<LoggerServiceClient>();
-            _controller = new SuggestionController(_mockRepo.Object, _mapper, _logger.Object);
+            _boxClient = new Mock<SuggestionBoxServiceClient>();
+            _boxClient
+                .Setup(c => c.IsBoxActiveAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _controller = new SuggestionController(_mockRepo.Object, _mapper, _logger.Object, _boxClient.Object);
+            _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        }
+
+        [Fact]
+        public async Task CreateSuggestion_ReturnsCreated_WhenBoxIsActive()
+        {
+            var dto = new SuggestionCreationDTO
+            {
+                Title = "New Suggestion",
+                Description = "Desc",
+                SuggestionBoxId = Guid.NewGuid(),
+                AnonymousUserId = Guid.NewGuid(),
+                CategoryIds = new List<Guid>()
+            };
+            var created = new SuggestionCreatedDTO { Id = Guid.NewGuid(), Title = "New Suggestion" };
+            _mockRepo.Setup(repo => repo.Create(dto)).Returns(created);
+
+            var result = await _controller.CreateSuggestion(dto);
+
+            Assert.IsType<CreatedResult>(result.Result);
+            _mockRepo.Verify(repo => repo.Create(It.IsAny<SuggestionCreationDTO>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateSuggestion_ReturnsConflict_WhenBoxIsNotActive()
+        {
+            var dto = new SuggestionCreationDTO
+            {
+                Title = "New Suggestion",
+                Description = "Desc",
+                SuggestionBoxId = Guid.NewGuid(),
+                AnonymousUserId = Guid.NewGuid(),
+                CategoryIds = new List<Guid>()
+            };
+            _boxClient
+                .Setup(c => c.IsBoxActiveAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _controller.CreateSuggestion(dto);
+
+            Assert.IsType<ConflictObjectResult>(result.Result);
+            _mockRepo.Verify(repo => repo.Create(It.IsAny<SuggestionCreationDTO>()), Times.Never);
         }
 
         [Fact]

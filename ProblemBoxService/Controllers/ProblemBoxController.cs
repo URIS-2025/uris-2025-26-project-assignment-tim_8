@@ -122,6 +122,42 @@ namespace ProblemBoxService.Controllers
             }
         }
 
+        [HttpPut("{id}/status")]
+        public async Task<ActionResult<ProblemBoxDTO>> UpdateProblemBoxStatus(Guid id, [FromBody] BoxStatusUpdateDTO dto)
+        {
+            try
+            {
+                var result = _problemBoxRepository.SetStatus(id, dto.Status);
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_PROBLEM_BOX_STATUS",
+                    EntityName = "ProblemBox",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "ProblemBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_PROBLEM_BOX_STATUS",
+                    EntityName = "ProblemBox",
+                    IsSuccess = false,
+                    ServiceName = "ProblemBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProblemBox(Guid id)
         {

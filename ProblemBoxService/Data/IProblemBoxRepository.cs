@@ -1,4 +1,5 @@
-﻿using ProblemBoxService.Models.DTOs;
+﻿using ProblemBoxService.Enums;
+using ProblemBoxService.Models.DTOs;
 
 namespace ProblemBoxService.Data
 {
@@ -11,6 +12,7 @@ namespace ProblemBoxService.Data
         ProblemBoxDTO GetProblemBoxByAccessLinkId(Guid boxAccessLinkId);
         ProblemBoxCreatedDTO CreateProblemBox(ProblemBoxCreationDTO problemBox);
         ProblemBoxDTO UpdateProblemBox(ProblemBoxUpdateDTO problemBox);
+        ProblemBoxDTO SetStatus(Guid id, ProblemSuggestionStatus status);
         void DeleteProblemBox(Guid id);
     }
 }

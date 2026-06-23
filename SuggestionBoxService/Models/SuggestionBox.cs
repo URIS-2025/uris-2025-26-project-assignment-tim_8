@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SuggestionBoxService.Enums;
 
 namespace SuggestionBoxService.Models
 {
@@ -13,9 +14,10 @@ namespace SuggestionBoxService.Models
         public string Description { get; set; }
         public bool IsDarkTheme { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string Password { get; set; } 
+        public string Password { get; set; }
         public string CreatedBy { get; set; }
         public Guid OrganizationId { get; set; }
         public Guid BoxAccessLinkId { get; set; }
+        public BoxStatus Status { get; set; }
     }
 }

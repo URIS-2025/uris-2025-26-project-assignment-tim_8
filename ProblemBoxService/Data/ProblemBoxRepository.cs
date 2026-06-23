@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ProblemBoxService.Context;
+using ProblemBoxService.Enums;
 using ProblemBoxService.Models;
 using ProblemBoxService.Models.DTOs;
 
@@ -92,6 +93,19 @@ namespace ProblemBoxService.Data
             SaveChanges();
             var dto = _mapper.Map<ProblemBoxDTO>(entity);
             return dto;
+        }
+
+        public ProblemBoxDTO SetStatus(Guid id, ProblemSuggestionStatus status)
+        {
+            var entity = _context.ProblemBoxes.FirstOrDefault(pb => pb.Id == id);
+            if (entity == null)
+                throw new ArgumentException("ProblemBox with that Id does not exist.");
+
+            entity.Status = status;
+
+            _context.ProblemBoxes.Update(entity);
+            SaveChanges();
+            return _mapper.Map<ProblemBoxDTO>(entity);
         }
 
         public void DeleteProblemBox(Guid id)

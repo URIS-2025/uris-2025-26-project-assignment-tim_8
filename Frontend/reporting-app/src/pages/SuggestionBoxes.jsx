@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DataTable from '../components/DataTable';
-// StatusBadge not needed on this page currently
+import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 import { Lightbulb, Plus, Loader2 } from 'lucide-react';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
+
+// Map numeric box status to readable label
+const boxStatusMap = {
+    0: 'Active',
+    1: 'Inactive'
+};
 
 const SuggestionBoxes = () => {
     const navigate = useNavigate();
@@ -91,6 +97,14 @@ const SuggestionBoxes = () => {
             header: 'Created By',
             accessor: 'createdBy',
             render: (row) => <span>{row.createdBy || '—'}</span>
+        },
+        {
+            header: 'Status',
+            accessor: 'status',
+            render: (row) => {
+                const label = typeof row.status === 'number' ? boxStatusMap[row.status] || 'Unknown' : row.status;
+                return <StatusBadge type="status" status={label} />;
+            }
         },
         {
             header: 'Created At',

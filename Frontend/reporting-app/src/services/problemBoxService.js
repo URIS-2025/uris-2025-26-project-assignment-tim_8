@@ -55,6 +55,19 @@ export const ProblemBoxService = {
         return await response.json();
     },
 
+    // PUT /api/ProblemBox/{id}/status
+    setStatus: async (id, status) => {
+        const response = await fetch(`${API_BASE_URL}/api/ProblemBox/${id}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status }),
+        });
+        if (!response.ok) throw new Error('Failed to update problem box status');
+        return await response.json();
+    },
+
     // DELETE /api/ProblemBox/{id}
     delete: async (id) => {
         const response = await fetch(`${API_BASE_URL}/api/ProblemBox/${id}`, {

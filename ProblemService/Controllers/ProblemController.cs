@@ -14,12 +14,14 @@ namespace ProblemService.Controllers
         private readonly IProblemRepository _problemRepository;
         private readonly IMapper _mapper;
         private readonly LoggerServiceClient _loggerClient;
+        private readonly ProblemBoxServiceClient _problemBoxClient;
 
-        public ProblemController(IProblemRepository problemRepository, IMapper mapper, LoggerServiceClient loggerClient)
+        public ProblemController(IProblemRepository problemRepository, IMapper mapper, LoggerServiceClient loggerClient, ProblemBoxServiceClient problemBoxClient)
         {
             _problemRepository = problemRepository;
             _mapper = mapper;
             _loggerClient = loggerClient;
+            _problemBoxClient = problemBoxClient;
         }
 
         [HttpGet]
@@ -48,6 +50,21 @@ namespace ProblemService.Controllers
         {
             try
             {
+                var boxActive = await _problemBoxClient.IsBoxActiveAsync(problem.ProblemBoxId, Request.Headers["Authorization"], HttpContext.RequestAborted);
+                if (!boxActive)
+                {
+                    await _loggerClient.TryLogAsync(new LogCreationDTO
+                    {
+                        UserId = User.Identity?.Name,
+                        Action = "CREATE_PROBLEM",
+                        EntityName = "Problem",
+                        IsSuccess = false,
+                        ServiceName = "ProblemService",
+                        HttpMethod = "POST"
+                    }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+                    return Conflict(new { error = "This problem box is not accepting submissions." });
+                }
+
                 var result = _problemRepository.CreateProblem(problem);
 
                 await _loggerClient.TryLogAsync(new LogCreationDTO

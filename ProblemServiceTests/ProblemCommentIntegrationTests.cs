@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using ProblemService.Clients;
 using ProblemService.Context;
 using ProblemService.Enums;
 using ProblemService.Models.DTOs;
@@ -32,6 +33,13 @@ namespace ProblemServiceIntegrationTests
                     {
                         options.UseInMemoryDatabase("TestProblemCommentDb");
                     });
+
+                    // Replace the box-status gate with a stub that always allows submissions
+                    var boxClientDescriptor = services.SingleOrDefault(
+                        d => d.ServiceType == typeof(ProblemBoxServiceClient));
+                    if (boxClientDescriptor != null)
+                        services.Remove(boxClientDescriptor);
+                    services.AddScoped<ProblemBoxServiceClient, ActiveProblemBoxServiceClient>();
                 });
             });
 

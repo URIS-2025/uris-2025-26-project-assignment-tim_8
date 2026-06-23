@@ -1,4 +1,5 @@
-﻿using SuggestionBoxService.Models.DTOs;
+﻿using SuggestionBoxService.Enums;
+using SuggestionBoxService.Models.DTOs;
 
 namespace SuggestionBoxService.Data
 {
@@ -15,6 +16,8 @@ namespace SuggestionBoxService.Data
         SuggestionBoxDTO Create(SuggestionBoxCreateDTO dto);
 
         SuggestionBoxDTO Update(SuggestionBoxUpdateDTO dto);
+
+        SuggestionBoxDTO SetStatus(Guid id, BoxStatus status);
 
         void Delete(Guid id);
 

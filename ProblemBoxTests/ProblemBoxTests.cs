@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using ProblemBoxService.Clients;
@@ -202,6 +203,39 @@ namespace ProblemBoxService.Tests
                      .Throws(new ArgumentException("ProblemBox with that Id does not exist."));
 
             await Assert.ThrowsAsync<ArgumentException>(() => _controller.DeleteProblemBox(id));
+        }
+
+        // UPDATE STATUS
+
+        [Fact]
+        public async Task UpdateProblemBoxStatus_ReturnsOk_WithUpdatedBox()
+        {
+            var id = Guid.NewGuid();
+            var dto = new BoxStatusUpdateDTO { Status = ProblemSuggestionStatus.Inactive };
+            var updated = new ProblemBoxDTO { Id = id, Name = "Box", Status = ProblemSuggestionStatus.Inactive };
+            _mockRepo.Setup(repo => repo.SetStatus(id, ProblemSuggestionStatus.Inactive)).Returns(updated);
+            _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+
+            var result = await _controller.UpdateProblemBoxStatus(id, dto);
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnValue = Assert.IsType<ProblemBoxDTO>(okResult.Value);
+            Assert.Equal(ProblemSuggestionStatus.Inactive, returnValue.Status);
+            _mockRepo.Verify(repo => repo.SetStatus(id, ProblemSuggestionStatus.Inactive), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateProblemBoxStatus_ReturnsBadRequest_WhenProblemBoxNotFound()
+        {
+            var id = Guid.NewGuid();
+            var dto = new BoxStatusUpdateDTO { Status = ProblemSuggestionStatus.Active };
+            _mockRepo.Setup(repo => repo.SetStatus(id, dto.Status))
+                     .Throws(new ArgumentException("ProblemBox with that Id does not exist."));
+            _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+
+            var result = await _controller.UpdateProblemBoxStatus(id, dto);
+
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
     }
 }
