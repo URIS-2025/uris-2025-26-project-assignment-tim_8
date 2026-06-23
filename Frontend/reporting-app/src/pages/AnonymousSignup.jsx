@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, ArrowRight, UserPlus, ShieldCheck, AlertCircle } from 'lucide-react';
 import { AnonymousUserService } from '../services/anonymousUserService';
 import { validatePassword, validateUsername } from '../utils/validation';
 import { checkPwned } from '../services/pwnedService';
+import TurnstileWidget from '../components/TurnstileWidget';
 import './Login.css';
 
 const passwordStrength = (password) => {
@@ -21,6 +22,8 @@ const AnonymousSignup = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [password, setPassword] = useState('');
+    const [captchaToken, setCaptchaToken] = useState('');
+    const captchaRef = useRef(null);
 
     const strength = passwordStrength(password);
 
@@ -53,6 +56,11 @@ const AnonymousSignup = () => {
             return;
         }
 
+        if (!captchaToken) {
+            setError('Please complete the captcha.');
+            return;
+        }
+
         const pwned = await checkPwned(password);
         if (pwned === 'breached') {
             setError('This password has appeared in a data breach. Please choose another.');
@@ -61,10 +69,13 @@ const AnonymousSignup = () => {
 
         try {
             setIsSubmitting(true);
-            await AnonymousUserService.create({ username, password });
+            await AnonymousUserService.create({ username, password, captchaToken });
             navigate('/anonymous/login');
         } catch (err) {
             setError(err.message || 'Failed to create anonymous account.');
+            // Turnstile tokens are single-use — get a fresh one for the retry.
+            setCaptchaToken('');
+            captchaRef.current?.reset();
         } finally {
             setIsSubmitting(false);
         }
@@ -157,10 +168,16 @@ const AnonymousSignup = () => {
                         <span>No email required. Your identity stays completely anonymous.</span>
                     </div>
 
+                    <TurnstileWidget
+                        ref={captchaRef}
+                        onVerify={setCaptchaToken}
+                        onError={() => setError('Security check failed to load. Disable any ad/script blockers and refresh the page.')}
+                    />
+
                     <button
                         type="submit"
                         className="btn btn-primary btn-full bounce-hover"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !captchaToken}
                     >
                         {isSubmitting ? 'Creating...' : 'Create Anonymous Account'} {!isSubmitting && <ArrowRight size={18} />}
                     </button>

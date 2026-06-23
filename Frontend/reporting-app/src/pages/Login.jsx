@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, Building2, Shield, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -7,6 +7,7 @@ import { UserRoleService } from '../services/userRoleService';
 import { OrganizationService } from '../services/organizationService';
 import { validateEmail, validatePassword } from '../utils/validation';
 import { checkPwned } from '../services/pwnedService';
+import TurnstileWidget from '../components/TurnstileWidget';
 import './Login.css';
 
 const InputField = ({ icon: Icon, type, placeholder, name, required = true, minLength, maxLength, pattern }) => (
@@ -56,6 +57,8 @@ const Login = () => {
     const [mode, setMode] = useState(initialMode);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [captchaToken, setCaptchaToken] = useState('');
+    const captchaRef = useRef(null);
 
     const [roles, setRoles] = useState([]);
     const [organizations, setOrganizations] = useState([]);
@@ -113,6 +116,11 @@ const Login = () => {
         const email = e.target.email.value.toLowerCase().trim();
         const password = e.target.password.value;
 
+        if (!captchaToken) {
+            setError('Please complete the captcha.');
+            return;
+        }
+
         try {
             if (mode === 'signup') {
                 const fullName = e.target.name ? e.target.name.value : '';
@@ -155,6 +163,7 @@ const Login = () => {
                     username: email,
                     roleId: selectedRoleId,
                     organizationId: isManagerRoleSelected ? selectedOrgId : null,
+                    captchaToken,
                 });
 
                 setMode('login');
@@ -162,6 +171,9 @@ const Login = () => {
                 setSelectedRoleId('');
                 setSelectedOrgId('');
                 setIsManagerRoleSelected(false);
+                // The signup token is now spent; clear it so the login step gets a fresh one.
+                setCaptchaToken('');
+                captchaRef.current?.reset();
             } else {
                 if (!email || !password) {
                     setError('Please enter your email and password.');
@@ -169,7 +181,7 @@ const Login = () => {
                 }
 
                 setIsSubmitting(true);
-                const loginResponse = await UserService.login({ username: email, password });
+                const loginResponse = await UserService.login({ username: email, password, captchaToken });
                 const userData = await login(loginResponse);
 
                 if (userData?.role === 'billingmanager') {
@@ -180,6 +192,9 @@ const Login = () => {
             }
         } catch (err) {
             setError(err.message || 'An error occurred. Please try again.');
+            // Turnstile tokens are single-use — get a fresh one for the retry.
+            setCaptchaToken('');
+            captchaRef.current?.reset();
         } finally {
             setIsSubmitting(false);
         }
@@ -259,10 +274,16 @@ const Login = () => {
                         </div>
                     )}
 
+                    <TurnstileWidget
+                        ref={captchaRef}
+                        onVerify={setCaptchaToken}
+                        onError={() => setError('Security check failed to load. Disable any ad/script blockers and refresh the page.')}
+                    />
+
                     <button
                         type="submit"
                         className="btn btn-primary btn-full bounce-hover"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !captchaToken}
                     >
                         {isSubmitting
                             ? (mode === 'login' ? 'Signing in...' : 'Creating...')

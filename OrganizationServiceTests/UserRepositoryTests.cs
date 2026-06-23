@@ -48,6 +48,15 @@ namespace OrganizationService.Tests.Repositories
             return mock.Object;
         }
 
+        // Mock ICaptchaVerifierClient koji uvijek prolazi (verifikacija uspješna).
+        private static ICaptchaVerifierClient PassingCaptchaClient()
+        {
+            var mock = new Mock<ICaptchaVerifierClient>();
+            mock.Setup(c => c.VerifyAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            return mock.Object;
+        }
+
         // Fake IConfiguration sa JWT postavkama potrebnim za GenerateJwtToken
         private IConfiguration CreateConfiguration()
         {
@@ -93,7 +102,7 @@ namespace OrganizationService.Tests.Repositories
             using var context = CreateInMemoryContext();
             SeedUser(context, "markom",  "sifra1", "marko@test.com");
             SeedUser(context, "anaa",    "sifra2", "ana@test.com");
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
 
             var result = repo.GetAllUsers();
 
@@ -104,7 +113,7 @@ namespace OrganizationService.Tests.Repositories
         public void GetAllUsers_ReturnsEmpty_WhenNoneExist()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
 
             var result = repo.GetAllUsers();
 
@@ -118,7 +127,7 @@ namespace OrganizationService.Tests.Repositories
         {
             using var context = CreateInMemoryContext();
             var seeded = SeedUser(context);
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
 
             var result = repo.GetUserById(seeded.Id);
 
@@ -132,7 +141,7 @@ namespace OrganizationService.Tests.Repositories
         public void GetUserById_ThrowsKeyNotFoundException_WhenNotFound()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
 
             Assert.Throws<KeyNotFoundException>(() => repo.GetUserById(Guid.NewGuid()));
         }
@@ -143,7 +152,7 @@ namespace OrganizationService.Tests.Repositories
         public void CreateUser_SavesAndReturnsCreatedDTO()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
             var dto = new UserCreationDTO
             {
                 Name           = "Marko",
@@ -168,7 +177,7 @@ namespace OrganizationService.Tests.Repositories
         public void CreateUser_HashesPassword()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
             var dto = new UserCreationDTO
             {
                 Name     = "Marko",
@@ -192,7 +201,7 @@ namespace OrganizationService.Tests.Repositories
         public void CreateUser_WithNullOrganizationId_SavesSuccessfully()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
             var dto = new UserCreationDTO
             {
                 Name           = "Slobodan",
@@ -217,7 +226,7 @@ namespace OrganizationService.Tests.Repositories
         {
             using var context = CreateInMemoryContext();
             var seeded = SeedUser(context);
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
             var updateDto = new UserUpdateDTO
             {
                 Id             = seeded.Id,
@@ -238,7 +247,7 @@ namespace OrganizationService.Tests.Repositories
         public void UpdateUser_ThrowsKeyNotFoundException_WhenNotFound()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
             var updateDto = new UserUpdateDTO { Id = Guid.NewGuid(), Username = "ghost" };
 
             Assert.Throws<KeyNotFoundException>(() => repo.UpdateUser(updateDto));
@@ -251,7 +260,7 @@ namespace OrganizationService.Tests.Repositories
         {
             using var context = CreateInMemoryContext();
             var seeded = SeedUser(context);
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
 
             repo.DeleteUser(seeded.Id);
 
@@ -262,7 +271,7 @@ namespace OrganizationService.Tests.Repositories
         public void DeleteUser_ThrowsKeyNotFoundException_WhenNotFound()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
 
             Assert.Throws<KeyNotFoundException>(() => repo.DeleteUser(Guid.NewGuid()));
         }
@@ -274,7 +283,7 @@ namespace OrganizationService.Tests.Repositories
         {
             using var context = CreateInMemoryContext();
             SeedUser(context, "markom", "tajnaSifra123");
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
             var loginDto = new UserLoginDTO { Username = "markom", Password = "tajnaSifra123" };
 
             var token = repo.Login(loginDto);
@@ -290,7 +299,7 @@ namespace OrganizationService.Tests.Repositories
         public void Login_ThrowsUnauthorizedAccessException_WhenUserNotFound()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
             var loginDto = new UserLoginDTO { Username = "nepostoji", Password = "sifra" };
 
             Assert.Throws<UnauthorizedAccessException>(() => repo.Login(loginDto));
@@ -301,7 +310,7 @@ namespace OrganizationService.Tests.Repositories
         {
             using var context = CreateInMemoryContext();
             SeedUser(context, "markom", "ispravnaSifra");
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), PassingCaptchaClient());
             var loginDto = new UserLoginDTO { Username = "markom", Password = "pogresanaSifra" };
 
             Assert.Throws<UnauthorizedAccessException>(() => repo.Login(loginDto));

@@ -9,5 +9,7 @@ namespace AnonymousUserService.Models.DTOs.AnonymousUser
 
         [Required]
         public string Password { get; set; }
+
+        public string? CaptchaToken { get; set; }
     }
 }

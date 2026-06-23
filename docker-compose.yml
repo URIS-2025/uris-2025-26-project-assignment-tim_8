@@ -45,6 +45,8 @@ services:
       - Jwt__Key=AnonSvc-Docker-Secret-Key-tim8-uris-2026-secure!!
       - Jwt__Issuer=AnonymousUserService
       - Jwt__Audience=AnonymousUserService
+      # Cloudflare Turnstile test secret (always passes) — replace with the real secret in production
+      - Captcha__SecretKey=1x0000000000000000000000000000000AA
     depends_on:
       - sql-server
     restart: always
@@ -61,6 +63,8 @@ services:
       - Jwt__Key=OrgSvc-Docker-Secret-Key-tim8-uris-2026-secure!!
       - Jwt__Issuer=OrganizationService
       - Jwt__Audience=OrganizationService
+      # Cloudflare Turnstile test secret (always passes) — replace with the real secret in production
+      - Captcha__SecretKey=1x0000000000000000000000000000000AA
     depends_on:
       - sql-server
     restart: always

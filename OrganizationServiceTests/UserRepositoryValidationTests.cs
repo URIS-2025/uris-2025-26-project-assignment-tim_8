@@ -58,6 +58,14 @@ namespace OrganizationService.Tests.Repositories
             return mock.Object;
         }
 
+        private ICaptchaVerifierClient PassingCaptchaClient()
+        {
+            var mock = new Mock<ICaptchaVerifierClient>();
+            mock.Setup(c => c.VerifyAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            return mock.Object;
+        }
+
         private UserCreationDTO ValidDto() => new UserCreationDTO
         {
             Name           = "Marko",
@@ -73,7 +81,7 @@ namespace OrganizationService.Tests.Repositories
         public void CreateUser_InvalidEmail_ThrowsCanonicalMessage()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), PwnedClient(false));
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), PwnedClient(false), PassingCaptchaClient());
             var dto = ValidDto();
             dto.Email = "not-an-email";
 
@@ -86,7 +94,7 @@ namespace OrganizationService.Tests.Repositories
         public void CreateUser_WeakPassword_ThrowsPolicyMessage()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), PwnedClient(false));
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), PwnedClient(false), PassingCaptchaClient());
             var dto = ValidDto();
             dto.Password = "alllowercase1!"; // missing uppercase
 
@@ -99,7 +107,7 @@ namespace OrganizationService.Tests.Repositories
         public void CreateUser_BreachedPassword_ThrowsBreachMessage()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), PwnedClient(true));
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), PwnedClient(true), PassingCaptchaClient());
             var dto = ValidDto();
 
             var ex = Assert.Throws<ArgumentException>(() => repo.CreateUser(dto));
@@ -111,7 +119,7 @@ namespace OrganizationService.Tests.Repositories
         public void CreateUser_NotBreachedValidInput_Succeeds()
         {
             using var context = CreateInMemoryContext();
-            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), PwnedClient(false));
+            var repo = new UserRepository(context, CreateMapper(), CreateConfiguration(), PwnedClient(false), PassingCaptchaClient());
 
             var result = repo.CreateUser(ValidDto());
 

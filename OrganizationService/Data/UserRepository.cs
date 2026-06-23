@@ -20,22 +20,27 @@ namespace OrganizationService.Data
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly IPwnedPasswordsClient _pwned;
+        private readonly ICaptchaVerifierClient _captcha;
 
         private static readonly Regex EmailRegex = new(
             @"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.Compiled);
 
-        public UserRepository(OrganizationContext context, IMapper mapper, IConfiguration configuration, IPwnedPasswordsClient pwned)
+        public UserRepository(OrganizationContext context, IMapper mapper, IConfiguration configuration, IPwnedPasswordsClient pwned, ICaptchaVerifierClient captcha)
         {
             _context = context;
             _mapper = mapper;
             _configuration = configuration;
             _pwned = pwned;
+            _captcha = captcha;
         }
 
         public bool SaveChanges() => _context.SaveChanges() > 0;
 
         public UserCreatedDTO CreateUser(UserCreationDTO user)
         {
+            if (!_captcha.VerifyAsync(user.CaptchaToken, CancellationToken.None).GetAwaiter().GetResult())
+                throw new ArgumentException("Captcha verification failed. Please try again.");
+
             if (string.IsNullOrWhiteSpace(user.Email))
                 throw new ArgumentException("Please enter a valid email address.");
 
@@ -104,6 +109,9 @@ namespace OrganizationService.Data
 
         public LoginResponseDTO Login(UserLoginDTO login)
         {
+            if (!_captcha.VerifyAsync(login.CaptchaToken, CancellationToken.None).GetAwaiter().GetResult())
+                throw new ArgumentException("Captcha verification failed. Please try again.");
+
             var normalizedUsername = login.Username.Trim().ToLower();
             var user = _context.Users.FirstOrDefault(u => u.Username == normalizedUsername);
             if (user == null || !BCrypt.Net.BCrypt.Verify(login.Password, user.Password))
