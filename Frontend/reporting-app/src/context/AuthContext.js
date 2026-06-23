@@ -17,6 +17,13 @@ const isTokenExpired = (token) => {
     }
 };
 
+// The OrganizationId claim is an empty string for users with no org (e.g. admin);
+// normalize "" (and a missing claim) to null so consumers can branch on truthiness.
+const extractOrganizationId = (decoded) => {
+    const raw = decoded?.['OrganizationId'];
+    return raw ? raw : null;
+};
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     // True until the initial rehydration from storage finishes. Lets route guards
@@ -54,6 +61,7 @@ export const AuthProvider = ({ children }) => {
                 name: emailIdentifier,
                 roleId,
                 role: roleName,
+                organizationId: extractOrganizationId(decoded),
                 token: accessToken,
                 refreshToken,
             };
@@ -97,6 +105,15 @@ export const AuthProvider = ({ children }) => {
                 token: newTokens.accessToken,
                 refreshToken: newTokens.refreshToken,
             };
+            // A stale session (stored before organizationId was captured) has no organizationId;
+            // derive it from the freshly issued token so scoping works without a forced re-login.
+            if (updated.organizationId === undefined) {
+                try {
+                    updated.organizationId = extractOrganizationId(jwtDecode(newTokens.accessToken));
+                } catch {
+                    updated.organizationId = null;
+                }
+            }
             setUser(updated);
             localStorage.setItem('authUser', JSON.stringify(updated));
             localStorage.setItem('authToken', newTokens.accessToken);
@@ -128,6 +145,16 @@ export const AuthProvider = ({ children }) => {
                             localStorage.setItem('authUser', JSON.stringify(parsedUser));
                         } catch {
                             parsedUser.role = 'user';
+                        }
+                    }
+                    // Self-heal a session stored before organizationId was captured: derive it
+                    // from the already-stored token (no network call) so manager scoping works.
+                    if (parsedUser.organizationId === undefined) {
+                        try {
+                            parsedUser.organizationId = extractOrganizationId(jwtDecode(parsedUser.token));
+                            localStorage.setItem('authUser', JSON.stringify(parsedUser));
+                        } catch {
+                            parsedUser.organizationId = null;
                         }
                     }
                     setUser(parsedUser);

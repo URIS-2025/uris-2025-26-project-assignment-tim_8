@@ -22,7 +22,7 @@ const Sidebar = () => {
 
     // Navigation items based on role (Admin, Manager, Billing)
     const navItems = [
-        { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard, roles: ['admin'] },
+        { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard, roles: ['admin', 'manager'] },
         { name: 'Community Board', path: '/admin/community', icon: MessageSquareWarning, roles: ['admin', 'manager'] },
         { name: 'Suggestion Boxes', path: '/admin/suggestions', icon: MessageSquareWarning, roles: ['admin', 'manager'] },
         { name: 'Problem Boxes', path: '/admin/problems', icon: AlertOctagon, roles: ['admin', 'manager'] },
