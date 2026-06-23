@@ -1,0 +1,243 @@
+/* CommunityFeed — page-scoped styles (prefix: cf-)
+   Reuses global tokens/utilities from index.css (.glass-panel, .btn, .form-control).
+   Canonical tokens only (no --text/--bg-card/--primary aliases).
+   Static layout lives here; runtime-computed values (liked color, reply-aware
+   radii/sizes) stay inline in the JSX. */
+
+/* ---- Feed shell ---- */
+.cf-feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-5);
+}
+
+.cf-feed-title {
+    margin: 0;
+    font-size: var(--text-xl);
+    color: var(--text-primary);
+}
+
+/* Sort dropdown: compact override of .form-control */
+.cf-sort-select {
+    width: auto;
+    margin-bottom: 0;
+    padding: 0.4rem 0.8rem;
+}
+
+.cf-empty {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--text-muted);
+}
+
+/* ---- Post card ---- */
+.cf-post {
+    margin-bottom: var(--space-5);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+}
+
+.cf-post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.cf-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    margin-right: var(--space-4);
+    flex-shrink: 0;
+}
+
+.cf-post-title {
+    margin: 0;
+    font-size: var(--text-lg);
+}
+
+.cf-post-time {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.cf-post-body {
+    margin-bottom: var(--space-5);
+}
+
+.cf-post-body p {
+    line-height: 1.6;
+}
+
+/* ---- Post actions ---- */
+.cf-post-actions {
+    display: flex;
+    gap: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--space-4);
+}
+
+.cf-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.cf-action-count {
+    font-weight: var(--font-semibold);
+}
+
+/* ---- Comments section ---- */
+.cf-comments-section {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.cf-comments-list {
+    margin-bottom: var(--space-4);
+}
+
+.cf-comments-empty {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.cf-replies {
+    margin-left: 2.5rem;
+    padding-left: var(--space-4);
+    border-left: 2px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Reply-to banner above the comment input */
+.cf-reply-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    font-size: var(--text-sm);
+}
+
+.cf-reply-cancel {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+/* ---- Comment form ---- */
+.cf-comment-form {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.cf-comment-input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.cf-comment-send {
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ---- Comment item ---- */
+.cf-comment {
+    display: flex;
+    margin-bottom: var(--space-4);
+}
+
+.cf-comment.cf-comment-reply {
+    margin-bottom: var(--space-3);
+}
+
+.cf-comment-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    margin-right: var(--space-3);
+    flex-shrink: 0;
+}
+
+.cf-comment-reply .cf-comment-avatar {
+    width: 24px;
+    height: 24px;
+}
+
+.cf-comment-content {
+    flex: 1;
+}
+
+.cf-comment-bubble {
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+}
+
+.cf-comment-author {
+    font-weight: var(--font-semibold);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-1);
+}
+
+.cf-comment-time {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    margin-left: var(--space-2);
+}
+
+.cf-comment-text {
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
+.cf-comment-actions {
+    display: flex;
+    align-items: center;
+    margin-top: var(--space-1);
+    padding-left: var(--space-2);
+    gap: var(--space-4);
+}
+
+.cf-comment-like {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-sm);
+    height: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.cf-comment-like-label {
+    margin-left: 2px;
+}
+
+.cf-comment-reply-btn {
+    padding: 0.2rem var(--space-2);
+    font-size: var(--text-sm);
+    height: auto;
+    color: var(--text-muted);
+}

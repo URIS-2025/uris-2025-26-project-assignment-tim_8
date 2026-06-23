@@ -24,6 +24,12 @@
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
 }
 
+.org-logo-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
 .org-info {
     flex: 1;
     display: flex;
@@ -99,6 +105,11 @@
     gap: 1.5rem;
 }
 
+/* Tab content fade-in (markup used .fade-in; real global is .animate-fade-in) */
+.org-details-container .fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -120,8 +131,29 @@
     align-items: center;
 }
 
+.org-details-container .justify-center {
+    justify-content: center;
+}
+
+.org-details-container .justify-between {
+    justify-content: space-between;
+}
+
 .gap-2 {
     gap: 0.5rem;
+}
+
+.org-details-container .w-full {
+    width: 100%;
+}
+
+.org-details-container .py-8 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.org-details-container .mt-3 {
+    margin-top: 0.75rem;
 }
 
 .text-warning {
@@ -130,6 +162,28 @@
 
 .text-success {
     color: var(--success);
+}
+
+/* Danger button (delete actions) — page-scoped */
+.org-btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.org-btn-danger:hover {
+    background: var(--danger);
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+/* Notification type label (was inline) */
+.notification-type-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: block;
+    opacity: 0.6;
+    margin-bottom: 2px;
 }
 
 @media (max-width: 768px) {
@@ -161,7 +215,7 @@
     position: absolute;
     top: 2px;
     right: 2px;
-    background: var(--danger, #ef4444);
+    background: var(--danger);
     color: white;
     font-size: 0.65rem;
     font-weight: 700;
@@ -196,7 +250,7 @@
     width: 360px;
     max-height: 420px;
     z-index: 200;
-    border-radius: var(--radius-lg, 12px);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border-subtle);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
     display: flex;
@@ -322,6 +376,14 @@
     align-items: center;
     justify-content: center;
     margin-top: 2px;
+}
+
+.notif-icon-billing {
+    color: var(--accent-primary);
+}
+
+.notif-icon-system {
+    color: var(--warning);
 }
 
 .notification-item.billing .notification-icon-small {

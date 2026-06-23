@@ -165,13 +165,13 @@ const BoxDetails = () => {
         {
             header: 'Title',
             accessor: 'title',
-            render: (row) => <span style={{ fontWeight: 500 }}>{row.title}</span>
+            render: (row) => <span className="box-cell-title">{row.title}</span>
         },
         {
             header: 'Description',
             accessor: 'description',
             render: (row) => (
-                <span style={{ color: 'var(--text-secondary)' }}>
+                <span className="box-cell-description">
                     {row.description?.length > 60
                         ? row.description.substring(0, 60) + '...'
                         : row.description || '—'}
@@ -197,7 +197,7 @@ const BoxDetails = () => {
             header: 'Categories',
             accessor: 'categories',
             render: (row) => (
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                <span className="box-cell-categories">
                     {row.categories && row.categories.length > 0
                         ? row.categories.map((c) => c.name).join(', ')
                         : '—'}
@@ -210,8 +210,7 @@ const BoxDetails = () => {
             width: '100px',
             render: (row) => (
                 <button
-                    className="btn btn-ghost"
-                    style={{ color: 'var(--danger)', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                    className="btn btn-ghost box-row-delete"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteItem(row.id);
@@ -228,13 +227,13 @@ const BoxDetails = () => {
         {
             header: 'Title',
             accessor: 'title',
-            render: (row) => <span style={{ fontWeight: 500 }}>{row.title}</span>
+            render: (row) => <span className="box-cell-title">{row.title}</span>
         },
         {
             header: 'Description',
             accessor: 'description',
             render: (row) => (
-                <span style={{ color: 'var(--text-secondary)' }}>
+                <span className="box-cell-description">
                     {row.description?.length > 60
                         ? row.description.substring(0, 60) + '...'
                         : row.description || '—'}
@@ -258,14 +257,7 @@ const BoxDetails = () => {
                 const label = typeof row.priority === 'number' ? priorityMap[row.priority] || 'Unknown' : row.priority;
                 const color = typeof row.priority === 'number' ? priorityColorMap[row.priority] || 'var(--text-muted)' : 'var(--text-muted)';
                 return (
-                    <span style={{
-                        fontWeight: 600,
-                        color: color,
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.8rem',
-                        background: `${color}15`
-                    }}>
+                    <span className="priority-pill" style={{ color: color, background: `${color}15` }}>
                         {label}
                     </span>
                 );
@@ -283,8 +275,7 @@ const BoxDetails = () => {
             width: '100px',
             render: (row) => (
                 <button
-                    className="btn btn-ghost"
-                    style={{ color: 'var(--danger)', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                    className="btn btn-ghost box-row-delete"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteItem(row.id);
@@ -304,9 +295,9 @@ const BoxDetails = () => {
 
     if (loading) {
         return (
-            <div className="box-details-container animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
+            <div className="box-details-container box-details-loading animate-fade-in">
+                <div className="box-details-loading-inner">
+                    <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
                     <p>Loading box details...</p>
                 </div>
             </div>
@@ -316,12 +307,12 @@ const BoxDetails = () => {
     if (error) {
         return (
             <div className="box-details-container animate-fade-in">
-                <div className="back-link" onClick={() => navigate(-1)}>
+                <button type="button" className="back-link" onClick={() => navigate(-1)}>
                     <ArrowLeft size={16} /> Back to Boxes
-                </div>
-                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+                </button>
+                <div className="glass-panel box-details-error">
                     <p>{error}</p>
-                    <button className="btn btn-ghost" onClick={fetchBoxData} style={{ marginTop: '1rem' }}>
+                    <button className="btn btn-ghost" onClick={fetchBoxData}>
                         Retry
                     </button>
                 </div>
@@ -342,9 +333,9 @@ const BoxDetails = () => {
 
     return (
         <div className="box-details-container animate-fade-in">
-            <div className="back-link" onClick={() => navigate(-1)}>
+            <button type="button" className="back-link" onClick={() => navigate(-1)}>
                 <ArrowLeft size={16} /> Back to Boxes
-            </div>
+            </button>
 
             <div className="page-header">
                 <div>
@@ -363,35 +354,33 @@ const BoxDetails = () => {
 
             {/* Box info panel */}
             {box && (
-                <div className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                <div className="glass-panel box-info-panel">
                     <div>
-                        <span style={{ color: 'var(--text-muted)' }}>Box ID: </span>
-                        <code style={{ color: 'var(--text-secondary)' }}>{box.id}</code>
+                        <span className="box-info-label">Box ID: </span>
+                        <code>{box.id}</code>
                     </div>
                     <div>
-                        <span style={{ color: 'var(--text-muted)' }}>Organization ID: </span>
-                        <code style={{ color: 'var(--text-secondary)' }}>{box.organizationId}</code>
+                        <span className="box-info-label">Organization ID: </span>
+                        <code>{box.organizationId}</code>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Status: </span>
+                    <div className="box-info-item">
+                        <span className="box-info-label">Status: </span>
                         <StatusBadge type="status" status={typeof box.status === 'number' ? boxStatusMap[box.status] || 'Unknown' : box.status} />
                         <button
-                            className="btn btn-ghost"
-                            style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}
+                            className="btn btn-ghost box-info-action"
                             onClick={handleToggleStatus}
                             disabled={togglingStatus}
                         >
                             {togglingStatus ? 'Saving…' : (box.status === 0 ? 'Deactivate' : 'Activate')}
                         </button>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Access: </span>
+                    <div className="box-info-item">
+                        <span className="box-info-label">Access: </span>
                         <span style={{ color: box.hasPassword ? 'var(--warning)' : 'var(--text-secondary)' }}>
                             {box.hasPassword ? '🔒 Password-protected' : '🌐 Public'}
                         </span>
                         <button
-                            className="btn btn-ghost"
-                            style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}
+                            className="btn btn-ghost box-info-action"
                             onClick={() => { setNewBoxPassword(''); setPasswordModalOpen(true); }}
                         >
                             {box.hasPassword ? 'Change password' : 'Set password'}
@@ -407,15 +396,15 @@ const BoxDetails = () => {
                 </div>
                 <div className="mini-stat glass-panel">
                     <span className="mini-stat-label">New</span>
-                    <span className="mini-stat-value" style={{ color: 'var(--accent-primary)' }}>{newCount}</span>
+                    <span className="mini-stat-value mini-stat-new">{newCount}</span>
                 </div>
                 <div className="mini-stat glass-panel">
                     <span className="mini-stat-label">In Progress</span>
-                    <span className="mini-stat-value" style={{ color: 'var(--warning)' }}>{inProgressCount}</span>
+                    <span className="mini-stat-value mini-stat-progress">{inProgressCount}</span>
                 </div>
                 <div className="mini-stat glass-panel">
                     <span className="mini-stat-label">Resolved</span>
-                    <span className="mini-stat-value" style={{ color: 'var(--success)' }}>{resolvedCount}</span>
+                    <span className="mini-stat-value mini-stat-resolved">{resolvedCount}</span>
                 </div>
             </div>
 
@@ -460,7 +449,7 @@ const BoxDetails = () => {
                         value={newBoxPassword}
                         onChange={(e) => setNewBoxPassword(e.target.value)}
                     />
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.35rem' }}>
+                    <p className="box-password-hint">
                         Submitters must enter this password to submit to this box. Leave empty to make the box public.
                     </p>
                 </div>

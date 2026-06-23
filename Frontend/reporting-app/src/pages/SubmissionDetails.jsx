@@ -216,9 +216,9 @@ const SubmissionDetails = () => {
 
     if (loading) {
         return (
-            <div className="submission-details-container animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
+            <div className="submission-details-container submission-details-loading animate-fade-in">
+                <div className="submission-details-loading-inner">
+                    <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
                     <p>Loading submission details...</p>
                 </div>
             </div>
@@ -228,12 +228,12 @@ const SubmissionDetails = () => {
     if (error) {
         return (
             <div className="submission-details-container animate-fade-in">
-                <div className="back-link" onClick={() => navigate(-1)}>
+                <button type="button" className="back-link" onClick={() => navigate(-1)}>
                     <ArrowLeft size={16} /> Back to Box
-                </div>
-                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+                </button>
+                <div className="glass-panel submission-details-error">
                     <p>{error}</p>
-                    <button className="btn btn-ghost" onClick={fetchSuggestionAndData} style={{ marginTop: '1rem' }}>
+                    <button className="btn btn-ghost" onClick={fetchSuggestionAndData}>
                         Retry
                     </button>
                 </div>
@@ -254,9 +254,9 @@ const SubmissionDetails = () => {
 
     return (
         <div className="submission-details-container animate-fade-in">
-            <div className="back-link" onClick={() => navigate(-1)}>
+            <button type="button" className="back-link" onClick={() => navigate(-1)}>
                 <ArrowLeft size={16} /> Back to Box
-            </div>
+            </button>
 
             <div className="submission-header glass-panel">
                 <div className="submission-header-top">
@@ -265,7 +265,7 @@ const SubmissionDetails = () => {
                         <span className="meta-id">{submissionId}</span>
                     </div>
                     <div className="submission-actions">
-                        <button className="btn btn-ghost icon-btn danger" title={`Delete ${typeLabel}`} onClick={handleDeleteSubmission}>
+                        <button className="btn btn-ghost icon-btn danger" title={`Delete ${typeLabel}`} aria-label={`Delete ${typeLabel}`} onClick={handleDeleteSubmission}>
                             <Trash2 size={18} />
                         </button>
                     </div>
@@ -293,20 +293,19 @@ const SubmissionDetails = () => {
                     {!isProblem && (
                         <div className="tag-group">
                             <label>Category:</label>
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <div className="category-tag-list">
                                 {categories.length > 0 ? (
                                     categories.map(c => (
                                         <span key={c.id} className="readonly-tag">{c.name || c.title}</span>
                                     ))
                                 ) : (
-                                    <span className="readonly-tag" style={{ background: 'transparent', border: '1px dashed var(--border-subtle)' }}>None</span>
+                                    <span className="readonly-tag readonly-tag-empty">None</span>
                                 )}
 
                                 {isAddingCategory ? (
-                                    <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                                    <div className="category-add-row">
                                         <select
-                                            className="portal-input"
-                                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', minWidth: '120px', height: 'auto' }}
+                                            className="form-control category-add-select"
                                             value={selectedCategoryId}
                                             onChange={(e) => setSelectedCategoryId(e.target.value)}
                                             autoFocus
@@ -319,15 +318,13 @@ const SubmissionDetails = () => {
                                                 ))}
                                         </select>
                                         <button
-                                            className="btn btn-primary"
-                                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
+                                            className="btn btn-primary category-add-btn"
                                             onClick={handleAddCategory}
                                         >
                                             Add
                                         </button>
                                         <button
-                                            className="btn btn-ghost"
-                                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
+                                            className="btn btn-ghost category-add-btn"
                                             onClick={() => { setIsAddingCategory(false); setSelectedCategoryId(''); }}
                                         >
                                             Cancel
@@ -335,10 +332,10 @@ const SubmissionDetails = () => {
                                     </div>
                                 ) : (
                                     <button
-                                        className="btn btn-ghost icon-btn"
-                                        style={{ padding: '0.25rem' }}
+                                        className="btn btn-ghost icon-btn small"
                                         onClick={() => setIsAddingCategory(true)}
                                         title="Add Category"
+                                        aria-label="Add Category"
                                     >
                                         <Plus size={16} />
                                     </button>
@@ -349,7 +346,7 @@ const SubmissionDetails = () => {
 
                     <div className="tag-group">
                         <label>{isProblem ? 'Problem Box ID:' : 'Suggestion Box ID:'}</label>
-                        <span className="readonly-tag" style={{ fontSize: '0.8rem' }}>{isProblem ? (suggestion?.problemBoxId || '—') : (suggestion?.suggestionBoxId || '—')}</span>
+                        <span className="readonly-tag readonly-tag-id">{isProblem ? (suggestion?.problemBoxId || '—') : (suggestion?.suggestionBoxId || '—')}</span>
                     </div>
                 </div>
             </div>
@@ -372,11 +369,11 @@ const SubmissionDetails = () => {
 
                             {/* Attachments Section */}
                             {attachments.length > 0 && (
-                                <div className="submission-attachments" style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
-                                    <h4 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div className="submission-attachments">
+                                    <h4 className="submission-attachments-title">
                                         <Paperclip size={14} /> Attached Evidence
                                     </h4>
-                                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                    <div className="submission-attachments-list">
                                         {attachments.map(att => (
                                             <a
                                                 key={att.id}
@@ -384,12 +381,10 @@ const SubmissionDetails = () => {
                                                 download={att.fileName}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: '0.875rem', textDecoration: 'none', color: 'inherit', transition: 'background 0.2s' }}
-                                                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                                                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.2)'}
+                                                className="attachment-chip"
                                             >
-                                                <Download size={14} style={{ color: 'var(--accent-primary)' }} />
-                                                <span style={{ color: 'var(--text-primary)' }}>{att.fileName}</span>
+                                                <Download size={14} className="attachment-chip-icon" />
+                                                <span className="attachment-chip-name">{att.fileName}</span>
                                             </a>
                                         ))}
                                     </div>
@@ -405,7 +400,7 @@ const SubmissionDetails = () => {
                     {/* Thread messages */}
                     <div className="thread-container">
                         {comments.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            <div className="thread-empty">
                                 No replies yet.
                             </div>
                         ) : (
@@ -413,7 +408,7 @@ const SubmissionDetails = () => {
                                 <div key={comment.id} className="message-bubble admin glass-panel">
                                     <div className="message-header">
                                         <div className="message-author">
-                                            <div className="author-avatar" style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7' }}>
+                                            <div className="author-avatar author-avatar-staff">
                                                 <User size={14} />
                                             </div>
                                             <span className="author-name">{comment.createdBy || (user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Staff')}</span>
@@ -445,7 +440,7 @@ const SubmissionDetails = () => {
                                 onChange={(e) => setReplyText(e.target.value)}
                             />
                             <div className="reply-actions">
-                                <button type="button" className="btn btn-ghost icon-btn" title="Attach file">
+                                <button type="button" className="btn btn-ghost icon-btn" title="Attach file" aria-label="Attach file">
                                     <Paperclip size={18} />
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={!replyText.trim() || sendingReply}>
@@ -462,24 +457,24 @@ const SubmissionDetails = () => {
                     {/* Suggestion Info Card */}
                     <div className="context-card glass-panel">
                         <h3>{typeLabel} Info</h3>
-                        <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div className="context-info-list">
                             <div>
-                                <span style={{ color: 'var(--text-muted)' }}>ID: </span>
-                                <code style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{suggestion?.id}</code>
+                                <span className="context-info-label">ID: </span>
+                                <code className="context-info-code">{suggestion?.id}</code>
                             </div>
                             <div>
-                                <span style={{ color: 'var(--text-muted)' }}>Created: </span>
+                                <span className="context-info-label">Created: </span>
                                 <span>{createdAt}</span>
                             </div>
                             {!isProblem && (
                                 <div>
-                                    <span style={{ color: 'var(--text-muted)' }}>Categories: </span>
+                                    <span className="context-info-label">Categories: </span>
                                     <span>{categoryNames}</span>
                                 </div>
                             )}
                             <div>
-                                <span style={{ color: 'var(--text-muted)' }}>{isProblem ? 'Problem Box: ' : 'Suggestion Box: '}</span>
-                                <code style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{isProblem ? (suggestion?.problemBoxId || '—') : (suggestion?.suggestionBoxId || '—')}</code>
+                                <span className="context-info-label">{isProblem ? 'Problem Box: ' : 'Suggestion Box: '}</span>
+                                <code className="context-info-code">{isProblem ? (suggestion?.problemBoxId || '—') : (suggestion?.suggestionBoxId || '—')}</code>
                             </div>
                         </div>
                     </div>

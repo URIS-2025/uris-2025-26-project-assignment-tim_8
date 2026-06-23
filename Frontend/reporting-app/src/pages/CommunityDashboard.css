@@ -1,0 +1,46 @@
+/* CommunityDashboard — page-scoped styles (prefix: cd-)
+   Reuses global tokens/utilities from index.css (.glass-panel, .form-control).
+   Only static layout lives here; runtime-computed values stay inline in the JSX. */
+
+/* Filters bar */
+.cd-filters {
+    padding: var(--space-5);
+    margin-bottom: var(--space-5);
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.cd-filter-field {
+    flex: 1;
+    min-width: 200px;
+}
+
+.cd-filter-label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Feed column wrapper */
+.cd-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Empty / loading states */
+.cd-state {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--text-muted);
+}
+
+.cd-state-icon {
+    margin-bottom: var(--space-4);
+    animation: spin 1s linear infinite;
+}

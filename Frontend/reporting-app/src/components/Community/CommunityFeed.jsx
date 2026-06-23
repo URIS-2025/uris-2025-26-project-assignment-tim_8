@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MessageSquare, Heart, Send, User } from 'lucide-react';
 import { SuggestionCommentService } from '../../services/suggestionCommentService';
 import { SystemNotificationService } from '../../services/systemNotificationService';
+import './CommunityFeed.css';
 
 const CommunityFeed = ({ suggestions = [], currentAnonUserId, currentUserEmail = 'Anonymous', organizationId, onRefresh }) => {
     const [sortBy, setSortBy] = useState('newest');
@@ -18,11 +19,10 @@ const CommunityFeed = ({ suggestions = [], currentAnonUserId, currentUserEmail =
 
     return (
         <div className="community-feed">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text)' }}>Recent Activity</h3>
+            <div className="cf-feed-header">
+                <h3 className="cf-feed-title">Recent Activity</h3>
                 <select
-                    className="portal-input"
-                    style={{ width: 'auto', marginBottom: 0, padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)' }}
+                    className="form-control cf-sort-select"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                 >
@@ -31,7 +31,7 @@ const CommunityFeed = ({ suggestions = [], currentAnonUserId, currentUserEmail =
                 </select>
             </div>
             {sortedSuggestions.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                <div className="cf-empty">
                     <p>No suggestions yet. Be the first to start the conversation!</p>
                 </div>
             ) : (
@@ -170,53 +170,50 @@ const Post = ({ suggestion, currentAnonUserId, currentUserEmail, organizationId,
     };
 
     return (
-        <div className="post-card glass-panel" style={{ marginBottom: '1.5rem', padding: '1.5rem', borderRadius: 'var(--radius-lg)' }}>
-            <div className="post-header" style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-                <div className="post-avatar" style={{
-                    width: '40px', height: '40px', borderRadius: '50%',
-                    background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', marginRight: '1rem'
-                }}>
+        <div className="post-card glass-panel cf-post">
+            <div className="post-header cf-post-header">
+                <div className="post-avatar cf-avatar">
                     <User size={20} />
                 </div>
                 <div className="post-meta">
-                    <h4 style={{ margin: 0, fontSize: '1.1rem' }}>{suggestion.title}</h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    <h4 className="cf-post-title">{suggestion.title}</h4>
+                    <span className="cf-post-time">
                         {new Date(suggestion.createdAt || Date.now()).toLocaleDateString()} at {new Date(suggestion.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &bull; Anonymous
                     </span>
                 </div>
             </div>
 
-            <div className="post-body" style={{ marginBottom: '1.5rem' }}>
-                <p style={{ lineHeight: '1.6' }}>{suggestion.description}</p>
+            <div className="post-body cf-post-body">
+                <p>{suggestion.description}</p>
             </div>
 
-            <div className="post-actions" style={{ display: 'flex', gap: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+            <div className="post-actions cf-post-actions">
                 <button
-                    className="btn btn-ghost"
+                    className="btn btn-ghost cf-action-btn"
                     onClick={togglePostLike}
-                    style={{
-                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                        color: isPostLiked ? '#a855f7' : 'var(--text-muted)'
-                    }}
+                    aria-label={isPostLiked ? 'Unlike this suggestion' : 'Like this suggestion'}
+                    aria-pressed={isPostLiked}
+                    style={{ color: isPostLiked ? 'var(--accent-secondary)' : 'var(--text-muted)' }}
                 >
-                    <Heart size={18} fill={isPostLiked ? '#a855f7' : 'none'} color={isPostLiked ? '#a855f7' : 'currentColor'} />
-                    {postLikeCount > 0 && <span style={{ fontWeight: 600 }}>{postLikeCount}</span>}
+                    <Heart size={18} fill={isPostLiked ? 'var(--accent-secondary)' : 'none'} color={isPostLiked ? 'var(--accent-secondary)' : 'currentColor'} />
+                    {postLikeCount > 0 && <span className="cf-action-count">{postLikeCount}</span>}
                     <span>{(postLikeCount === 1) ? 'Like' : 'Likes'}</span>
                 </button>
                 <button
-                    className="btn btn-ghost"
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: showComments ? 'var(--primary)' : 'var(--text-muted)' }}
+                    className="btn btn-ghost cf-action-btn"
+                    style={{ color: showComments ? 'var(--accent-primary)' : 'var(--text-muted)' }}
                     onClick={() => setShowComments(!showComments)}
+                    aria-expanded={showComments}
                 >
                     <MessageSquare size={18} /> {comments.length} Comments
                 </button>
             </div>
 
             {showComments && (
-                <div className="post-comments-section" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div className="comments-list" style={{ marginBottom: '1rem' }}>
+                <div className="post-comments-section cf-comments-section">
+                    <div className="comments-list cf-comments-list">
                         {topLevelComments.length === 0 ? (
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textAlign: 'center' }}>No comments yet.</p>
+                            <p className="cf-comments-empty">No comments yet.</p>
                         ) : (
                             topLevelComments.map(comment => (
                                 <div key={comment.id}>
@@ -227,7 +224,7 @@ const Post = ({ suggestion, currentAnonUserId, currentUserEmail, organizationId,
                                     />
                                     {/* Render Replies */}
                                     {getReplies(comment.id).length > 0 && (
-                                        <div className="replies" style={{ marginLeft: '2.5rem', paddingLeft: '1rem', borderLeft: '2px solid rgba(255,255,255,0.05)' }}>
+                                        <div className="replies cf-replies">
                                             {getReplies(comment.id).map(reply => (
                                                 <CommentItem
                                                     key={reply.id}
@@ -245,26 +242,26 @@ const Post = ({ suggestion, currentAnonUserId, currentUserEmail, organizationId,
                     </div>
 
                     {replyingTo && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-md) var(--radius-md) 0 0', fontSize: '0.85rem' }}>
+                        <div className="cf-reply-banner">
                             <span>Replying to <strong>{replyingTo.authorName}</strong></span>
-                            <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancel</button>
+                            <button onClick={() => setReplyingTo(null)} className="cf-reply-cancel">Cancel</button>
                         </div>
                     )}
-                    <form className="comment-form" onSubmit={handleAddComment} style={{ display: 'flex', gap: '0.5rem' }}>
+                    <form className="comment-form cf-comment-form" onSubmit={handleAddComment}>
                         <input
                             type="text"
-                            className="portal-input"
+                            className="form-control cf-comment-input"
                             placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            style={{ flex: 1, marginBottom: 0, padding: '0.75rem', borderRadius: replyingTo ? '0 0 var(--radius-lg) var(--radius-lg)' : 'var(--radius-full)' }}
+                            style={{ borderRadius: replyingTo ? '0 0 var(--radius-lg) var(--radius-lg)' : 'var(--radius-full)' }}
                         />
                         <button
                             type="submit"
-                            className="btn btn-primary"
+                            className="btn btn-primary cf-comment-send"
                             disabled={submittingComment || !newComment.trim()}
-                            style={{ borderRadius: '50%', width: '45px', height: '45px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                            aria-label="Send comment"
                         >
                             <Send size={18} />
                         </button>
@@ -309,37 +306,32 @@ const CommentItem = ({ comment, onReply, isReply = false, currentUserEmail }) =>
     };
 
     return (
-        <div className="comment-item" style={{ display: 'flex', marginBottom: isReply ? '0.75rem' : '1rem' }}>
-            <div className="comment-avatar" style={{
-                width: isReply ? '24px' : '32px', height: isReply ? '24px' : '32px', borderRadius: '50%',
-                background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', marginRight: '0.75rem', flexShrink: 0
-            }}>
+        <div className={`comment-item cf-comment${isReply ? ' cf-comment-reply' : ''}`}>
+            <div className="comment-avatar cf-comment-avatar">
                 <User size={isReply ? 14 : 16} />
             </div>
-            <div className="comment-content" style={{ flex: 1 }}>
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-lg)' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-                        {comment.createdBy || 'Anonymous'} <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: '0.5rem' }}>
+            <div className="comment-content cf-comment-content">
+                <div className="cf-comment-bubble">
+                    <div className="cf-comment-author">
+                        {comment.createdBy || 'Anonymous'} <span className="cf-comment-time">
                             {new Date(comment.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                     </div>
-                    <p style={{ fontSize: '0.9rem', margin: 0 }}>{comment.commentText || comment.text}</p>
+                    <p className="cf-comment-text">{comment.commentText || comment.text}</p>
                 </div>
-                <div className="comment-actions" style={{ display: 'flex', alignItems: 'center', marginTop: '0.25rem', paddingLeft: '0.5rem', gap: '1rem' }}>
+                <div className="comment-actions cf-comment-actions">
                     <button
-                        className="btn btn-ghost"
+                        className="btn btn-ghost cf-comment-like"
                         onClick={toggleLike}
-                        style={{
-                            padding: '0.25rem 0.5rem', fontSize: '0.8rem', height: 'auto',
-                            color: isLiked ? '#a855f7' : 'var(--text-muted)',
-                            display: 'flex', alignItems: 'center', gap: '0.25rem'
-                        }}
+                        aria-label={isLiked ? 'Unlike this comment' : 'Like this comment'}
+                        aria-pressed={isLiked}
+                        style={{ color: isLiked ? 'var(--accent-secondary)' : 'var(--text-muted)' }}
                     >
-                        <Heart size={14} fill={isLiked ? '#a855f7' : 'none'} color={isLiked ? '#a855f7' : 'currentColor'} />
-                        {likeCount > 0 && <span style={{ fontWeight: 600 }}>{likeCount}</span>}
-                        <span style={{ marginLeft: '2px' }}>{(likeCount === 1) ? 'Like' : 'Likes'}</span>
+                        <Heart size={14} fill={isLiked ? 'var(--accent-secondary)' : 'none'} color={isLiked ? 'var(--accent-secondary)' : 'currentColor'} />
+                        {likeCount > 0 && <span className="cf-action-count">{likeCount}</span>}
+                        <span className="cf-comment-like-label">{(likeCount === 1) ? 'Like' : 'Likes'}</span>
                     </button>
-                    <button onClick={onReply} className="btn btn-ghost" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', height: 'auto', color: 'var(--text-muted)' }}>
+                    <button onClick={onReply} className="btn btn-ghost cf-comment-reply-btn">
                         Reply
                     </button>
                 </div>

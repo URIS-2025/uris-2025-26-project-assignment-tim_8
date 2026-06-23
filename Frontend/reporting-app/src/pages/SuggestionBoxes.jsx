@@ -6,6 +6,7 @@ import Modal from '../components/Modal';
 import { Lightbulb, Plus, Loader2 } from 'lucide-react';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
 import { useAuth } from '../context/AuthContext';
+import './SuggestionBoxes.css';
 
 // Map numeric box status to readable label
 const boxStatusMap = {
@@ -97,7 +98,7 @@ const SuggestionBoxes = () => {
         {
             header: 'Box Name',
             accessor: 'name',
-            render: (row) => <strong style={{ color: 'var(--text-primary)' }}>{row.name}</strong>
+            render: (row) => <strong className="box-page-name">{row.name}</strong>
         },
         {
             header: 'Description',
@@ -128,8 +129,7 @@ const SuggestionBoxes = () => {
             width: '100px',
             render: (row) => (
                 <button
-                    className="btn btn-ghost"
-                    style={{ color: 'var(--danger)', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                    className="btn btn-ghost box-page-delete-btn"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteBox(row.id);
@@ -147,9 +147,9 @@ const SuggestionBoxes = () => {
 
     if (loading) {
         return (
-            <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
+            <div className="animate-fade-in box-page-loading">
+                <div className="box-page-loading-inner">
+                    <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
                     <p>Loading suggestion boxes...</p>
                 </div>
             </div>
@@ -157,24 +157,24 @@ const SuggestionBoxes = () => {
     }
 
     return (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div className="animate-fade-in box-page">
             <div className="page-header">
                 <div>
-                    <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Lightbulb size={28} style={{ color: 'var(--accent-primary)' }} />
+                    <h1 className="page-title box-page-title">
+                        <Lightbulb size={28} className="box-page-icon" />
                         Suggestion Boxes
                     </h1>
                     <p className="page-description">Review feature requests, cultural improvements, and community ideas.</p>
                 </div>
                 <button className="btn btn-primary" onClick={() => setBoxModalOpen(true)}>
-                    <Plus size={18} className="mr-2" style={{ marginRight: '0.5rem' }} /> Create New Box
+                    <Plus size={18} className="mr-2" /> Create New Box
                 </button>
             </div>
 
             {error ? (
-                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+                <div className="glass-panel box-page-error">
                     <p>{error}</p>
-                    <button className="btn btn-ghost" onClick={fetchSuggestionBoxes} style={{ marginTop: '1rem' }}>
+                    <button className="btn btn-ghost box-page-error-retry" onClick={fetchSuggestionBoxes}>
                         Retry
                     </button>
                 </div>
@@ -213,7 +213,7 @@ const SuggestionBoxes = () => {
                 }
             >
                 <div className="form-group">
-                    <label>Box Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label>Box Name <span className="text-danger">*</span></label>
                     <input
                         type="text"
                         className="form-control"
@@ -223,7 +223,7 @@ const SuggestionBoxes = () => {
                     />
                 </div>
                 <div className="form-group">
-                    <label>Organization ID <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label>Organization ID <span className="text-danger">*</span></label>
                     <input
                         type="text"
                         className="form-control"

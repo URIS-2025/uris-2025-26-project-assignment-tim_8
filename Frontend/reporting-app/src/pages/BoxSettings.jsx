@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Settings, Tags, Trash2 } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
+import './BoxSettings.css';
 
 // Mock Data matching the Box Category aggregations
 const mockCategories = [
@@ -31,7 +32,7 @@ const BoxSettings = () => {
             header: 'Actions',
             accessor: 'actions',
             render: (row) => (
-                <button className="btn btn-ghost icon-btn small text-danger" title="Delete Category">
+                <button className="btn btn-ghost icon-btn small text-danger" title="Delete Category" aria-label="Delete Category">
                     <Trash2 size={16} />
                 </button>
             )
@@ -39,11 +40,11 @@ const BoxSettings = () => {
     ];
 
     return (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div className="box-settings-container animate-fade-in">
 
-            <div className="back-link" onClick={() => navigate(`/admin/boxes/${boxId || 'BOX-201'}`)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+            <button type="button" className="back-link" onClick={() => navigate(`/admin/boxes/${boxId || 'BOX-201'}`)}>
                 <ArrowLeft size={16} /> Back to Box Details
-            </div>
+            </button>
 
             <div className="page-header">
                 <div>
@@ -52,17 +53,17 @@ const BoxSettings = () => {
                 </div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+            <div className="glass-panel box-settings-panel">
+                <div className="box-settings-section-head">
                     <Settings size={24} className="text-secondary" />
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>General Settings</h2>
+                    <h2 className="box-settings-section-title">General Settings</h2>
                 </div>
 
-                <div className="form-group" style={{ maxWidth: '400px' }}>
+                <div className="form-group box-settings-field">
                     <label>Box Name</label>
                     <input type="text" className="form-control" defaultValue="Facilities & Maintenance" />
                 </div>
-                <div className="form-group" style={{ maxWidth: '400px' }}>
+                <div className="form-group box-settings-field">
                     <label>Visibility Status</label>
                     <select className="form-control" defaultValue="Active">
                         <option value="Active">Active (Accepting Submissions)</option>
@@ -70,14 +71,14 @@ const BoxSettings = () => {
                         <option value="Closed">Closed (Archived)</option>
                     </select>
                 </div>
-                <button className="btn btn-primary" style={{ marginTop: '1rem' }}>Save Changes</button>
+                <button className="btn btn-primary box-settings-save">Save Changes</button>
             </div>
 
             <div className="table-wrapper">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div className="box-settings-table-head">
+                    <div className="box-settings-table-head-left">
                         <Tags size={24} className="text-secondary" />
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Categories</h2>
+                        <h2 className="box-settings-section-title">Categories</h2>
                     </div>
                     <button className="btn btn-primary" onClick={() => setCategoryModalOpen(true)}>
                         <Plus size={16} className="mr-2" /> Add Category

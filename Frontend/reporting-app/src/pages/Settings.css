@@ -53,6 +53,65 @@
     align-items: center;
 }
 
+/* Field width helpers (were inline maxWidth values) */
+.settings-field {
+    max-width: 500px;
+}
+
+.settings-field-narrow {
+    max-width: 400px;
+}
+
+.settings-field-xs {
+    max-width: 200px;
+}
+
+/* Section divider + lead text (were inline) */
+.settings-divider {
+    margin: 2rem 0;
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.settings-lead {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+/* Save-button spacing helper (referenced as .mt-4 but never defined globally) */
+.settings-container .mt-4 {
+    margin-top: 1rem;
+}
+
+/* Section fade-in (markup used .fade-in; the real global is .animate-fade-in) */
+.settings-container .fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Notification preference checkboxes (were inline + undefined here) */
+.notification-options {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.checkbox-container .checkmark {
+    position: relative;
+    top: 4px;
+}
+
+.checkbox-hint {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
 @media (max-width: 768px) {
     .settings-layout {
         flex-direction: column;

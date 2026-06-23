@@ -4,20 +4,11 @@
     gap: 1.5rem;
 }
 
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-muted);
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    width: fit-content;
-    transition: color 0.2s ease;
-}
-
-.back-link:hover {
-    color: var(--text-primary);
+/* Reset UA button chrome for the global .back-link when used as a <button> */
+button.back-link {
+    background: none;
+    border: none;
+    padding: 0;
 }
 
 .box-stats-row {
@@ -53,4 +44,110 @@
 
 .table-wrapper {
     margin-top: 1rem;
+}
+
+/* Centered loading state */
+.box-details-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
+
+.box-details-loading-inner {
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.box-details-loading-inner svg {
+    margin-bottom: 1rem;
+}
+
+/* Centered error panel */
+.box-details-error {
+    padding: 2rem;
+    text-align: center;
+    color: var(--danger);
+}
+
+.box-details-error .btn {
+    margin-top: 1rem;
+}
+
+/* Box info panel (id / org / status / access row) */
+.box-info-panel {
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.box-info-panel code {
+    color: var(--text-secondary);
+}
+
+.box-info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.box-info-label {
+    color: var(--text-muted);
+}
+
+.box-info-action {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8rem;
+}
+
+/* Password modal helper note */
+.box-password-hint {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 0.35rem;
+}
+
+/* DataTable row action (delete) button */
+.box-row-delete {
+    color: var(--danger);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Priority pill in problem table */
+.priority-pill {
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+}
+
+/* DataTable cell styling */
+.box-cell-title {
+    font-weight: 500;
+}
+
+.box-cell-description {
+    color: var(--text-secondary);
+}
+
+.box-cell-categories {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Mini-stat value accents */
+.mini-stat-new {
+    color: var(--accent-primary);
+}
+
+.mini-stat-progress {
+    color: var(--warning);
+}
+
+.mini-stat-resolved {
+    color: var(--success);
 }

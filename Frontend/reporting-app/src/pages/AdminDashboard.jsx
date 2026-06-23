@@ -33,6 +33,7 @@ const AdminDashboard = () => {
     const [problemBoxes, setProblemBoxes] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [creatingProblemBox, setCreatingProblemBox] = useState(false);
     const [creatingSuggestionBox, setCreatingSuggestionBox] = useState(false);
     const [subscriptionPlans, setSubscriptionPlans] = useState([]);
@@ -63,12 +64,18 @@ const AdminDashboard = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        refetchAll();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const refetchAll = () => {
+        setError(null);
         fetchOrganizations();
         fetchSuggestionBoxes();
         fetchProblemBoxes();
         fetchSuggestions();
         fetchSubscriptionPlans();
-    }, []);
+    };
 
     const fetchOrganizations = async () => {
         try {
@@ -82,8 +89,9 @@ const AdminDashboard = () => {
                 const data = await OrganizationService.getAll();
                 setOrganizations(data);
             }
-        } catch (error) {
-            console.error("Failed to fetch organizations", error);
+        } catch (err) {
+            console.error("Failed to fetch organizations", err);
+            setError(err.message || "Failed to load dashboard data.");
         } finally {
             setIsLoading(false);
         }
@@ -106,8 +114,9 @@ const AdminDashboard = () => {
                 ? await SuggestionBoxService.getByOrganizationId(orgId)
                 : await SuggestionBoxService.getAll();
             setSuggestionBoxes(data);
-        } catch (error) {
-            console.error("Failed to fetch suggestion boxes", error);
+        } catch (err) {
+            console.error("Failed to fetch suggestion boxes", err);
+            setError(err.message || "Failed to load dashboard data.");
         } finally {
             setIsLoading(false);
         }
@@ -121,8 +130,9 @@ const AdminDashboard = () => {
                 ? await ProblemBoxService.getByOrganizationId(orgId)
                 : await ProblemBoxService.getAll();
             setProblemBoxes(data);
-        } catch (error) {
-            console.error("Failed to fetch problem boxes", error);
+        } catch (err) {
+            console.error("Failed to fetch problem boxes", err);
+            setError(err.message || "Failed to load dashboard data.");
         } finally {
             setIsLoading(false);
         }
@@ -136,8 +146,9 @@ const AdminDashboard = () => {
                 ? await SuggestionBoxService.getByOrganizationId(orgId)
                 : await SuggestionBoxService.getAll();
             setSuggestions(data);
-        } catch (error) {
-            console.error("Failed to fetch suggestion boxes", error);
+        } catch (err) {
+            console.error("Failed to fetch submissions", err);
+            setError(err.message || "Failed to load dashboard data.");
         } finally {
             setIsLoading(false);
         }
@@ -251,7 +262,7 @@ const AdminDashboard = () => {
         { label: 'Total Organizations', value: isLoading ? '...' : organizations.length.toString(), icon: Building2, color: 'var(--accent-primary)' },
         { label: 'Active Suggestion Boxes', value: isLoading ? '...' : suggestionBoxes.length.toString(), icon: MessageSquareWarning, color: 'var(--success)' },
         { label: 'Active Problem Boxes', value: isLoading ? '...' : problemBoxes.length.toString(), icon: AlertOctagon, color: 'var(--warning)' },
-        { label: 'Total Submissions', value: isLoading ? '...' : suggestions.length.toString(), icon: TrendingUp, color: '#a855f7' },
+        { label: 'Total Submissions', value: isLoading ? '...' : suggestions.length.toString(), icon: TrendingUp, color: 'var(--accent-secondary)' },
     ];
 
     return (
@@ -270,8 +281,15 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
+            {error && (
+                <div className="dashboard-alert dashboard-error glass-panel">
+                    <span>{error}</span>
+                    <button className="btn btn-ghost" onClick={refetchAll}>Retry</button>
+                </div>
+            )}
+
             {isManager && !orgId && (
-                <div className="glass-panel" style={{ color: 'var(--danger)', padding: '1rem', marginBottom: '1.5rem' }}>
+                <div className="dashboard-alert glass-panel">
                     No organization is assigned to your account. The figures below may be incomplete — try signing out and back in.
                 </div>
             )}
@@ -304,7 +322,7 @@ const AdminDashboard = () => {
                             <p className="p-4 text-center">No organizations found.</p>
                         ) : (
                             organizations.slice(0, 5).map((org) => (
-                                <Link to={`/admin/organizations/${org.id}`} key={org.id} className="activity-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <Link to={`/admin/organizations/${org.id}`} key={org.id} className="activity-item activity-link">
                                     <div className="activity-icon suggestion">
                                         <Building2 size={18} />
                                     </div>
@@ -316,7 +334,7 @@ const AdminDashboard = () => {
                                             Organization ID: {org.id}
                                         </p>
                                     </div>
-                                    <ChevronRight size={16} style={{ opacity: 0.5 }} />
+                                    <ChevronRight size={16} className="activity-chevron" />
                                 </Link>
                             ))
                         )}
@@ -331,20 +349,20 @@ const AdminDashboard = () => {
                     <div className="quick-actions-grid">
                         {role === 'admin' && (
                             <button className="action-btn" onClick={() => setOrgModalOpen(true)}>
-                                <div className="action-icon" style={{ color: 'var(--accent-primary)', backgroundColor: 'rgba(99, 102, 241, 0.1)' }}>
+                                <div className="action-icon action-icon-org">
                                     <Building2 size={24} />
                                 </div>
                                 <span>Add Organization</span>
                             </button>
                         )}
                         <button className="action-btn" onClick={() => setSuggestionBoxModalOpen(true)}>
-                            <div className="action-icon" style={{ color: 'var(--success)', backgroundColor: 'rgba(34, 197, 94, 0.1)' }}>
+                            <div className="action-icon action-icon-suggestion">
                                 <MessageSquareWarning size={24} />
                             </div>
                             <span>New Suggestion Box</span>
                         </button>
                         <button className="action-btn" onClick={() => setProblemBoxModalOpen(true)}>
-                            <div className="action-icon" style={{ color: 'var(--warning)', backgroundColor: 'rgba(245, 158, 11, 0.1)' }}>
+                            <div className="action-icon action-icon-problem">
                                 <AlertOctagon size={24} />
                             </div>
                             <span>New Problem Box</span>
@@ -418,7 +436,7 @@ const AdminDashboard = () => {
                 }
             >
                 <div className="form-group">
-                    <label>Box Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label>Box Name <span className="req">*</span></label>
                     <input
                         type="text"
                         className="form-control"
@@ -429,7 +447,7 @@ const AdminDashboard = () => {
                     />
                 </div>
                 <div className="form-group">
-                    <label>Organization <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label>Organization <span className="req">*</span></label>
                     <select
                         className="form-control"
                         value={newProblemBox.organizationId}
@@ -494,7 +512,7 @@ const AdminDashboard = () => {
                 }
             >
                 <div className="form-group">
-                    <label>Box Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label>Box Name <span className="req">*</span></label>
                     <input
                         type="text"
                         className="form-control"
@@ -505,7 +523,7 @@ const AdminDashboard = () => {
                     />
                 </div>
                 <div className="form-group">
-                    <label>Organization <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label>Organization <span className="req">*</span></label>
                     <select
                         className="form-control"
                         value={suggestionBoxForm.organizationId}

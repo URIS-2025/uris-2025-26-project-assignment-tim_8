@@ -267,6 +267,16 @@
     color: var(--text-muted);
 }
 
+/* Centered action column (header + cells) */
+.billing-col-actions {
+    width: 80px;
+    text-align: center;
+}
+
+.billing-cell-center {
+    text-align: center;
+}
+
 /* ── Empty / Loading ── */
 .billing-empty-state {
     text-align: center;

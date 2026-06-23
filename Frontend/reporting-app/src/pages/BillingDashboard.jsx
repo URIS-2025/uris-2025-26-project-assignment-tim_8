@@ -148,7 +148,7 @@ const BillingDashboard = () => {
         { label: 'Total Subscriptions', value: isLoading ? '...' : subscriptions.length.toString(), icon: CheckCircle, color: 'var(--success)' },
         { label: 'Total Revenue', value: isLoading ? '...' : `€${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: TrendingUp, color: 'var(--accent-primary)' },
         { label: 'Subscription Plans', value: isLoading ? '...' : subscriptionPlans.length.toString(), icon: CreditCard, color: 'var(--warning)' },
-        { label: 'Total Organizations', value: isLoading ? '...' : organizations.length.toString(), icon: Building2, color: '#a855f7' },
+        { label: 'Total Organizations', value: isLoading ? '...' : organizations.length.toString(), icon: Building2, color: 'var(--accent-secondary)' },
     ];
 
     const getPlanBadgeClass = (planTitle) => {
@@ -248,7 +248,7 @@ const BillingDashboard = () => {
                                 <th>Plan</th>
                                 <th>Start Date</th>
                                 <th>End Date</th>
-                                <th style={{ width: '80px', textAlign: 'center' }}>Actions</th>
+                                <th className="billing-col-actions">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -272,7 +272,7 @@ const BillingDashboard = () => {
                                     <tr key={row.id} className="billing-table-row">
                                         <td>
                                             <div className="billing-org-cell">
-                                                <div className="billing-org-avatar" style={{ background: row.themeColor || '#6366f1' }}>
+                                                <div className="billing-org-avatar" style={{ background: row.themeColor || 'var(--accent-primary)' }}>
                                                     {row.name?.charAt(0).toUpperCase() || '?'}
                                                 </div>
                                                 <div>
@@ -288,7 +288,7 @@ const BillingDashboard = () => {
                                         </td>
                                         <td className="billing-date-cell">{row.startDate}</td>
                                         <td className="billing-date-cell">{row.endDate}</td>
-                                        <td style={{ textAlign: 'center' }}>
+                                        <td className="billing-cell-center">
                                             {row.subscriptionId ? (
                                                 <button
                                                     className="btn btn-ghost icon-btn small"

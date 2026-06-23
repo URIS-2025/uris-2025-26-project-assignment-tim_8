@@ -20,20 +20,26 @@ const Settings = () => {
             </div>
 
             <div className="settings-layout">
-                <div className="settings-sidebar glass-panel">
+                <div className="settings-sidebar glass-panel" role="tablist" aria-label="Settings sections">
                     <button
+                        role="tab"
+                        aria-selected={activeTab === 'profile'}
                         className={`settings-tab ${activeTab === 'profile' ? 'active' : ''}`}
                         onClick={() => setActiveTab('profile')}
                     >
                         <User size={18} /> My Profile
                     </button>
                     <button
+                        role="tab"
+                        aria-selected={activeTab === 'security'}
                         className={`settings-tab ${activeTab === 'security' ? 'active' : ''}`}
                         onClick={() => setActiveTab('security')}
                     >
                         <Lock size={18} /> Security
                     </button>
                     <button
+                        role="tab"
+                        aria-selected={activeTab === 'notifications'}
                         className={`settings-tab ${activeTab === 'notifications' ? 'active' : ''}`}
                         onClick={() => setActiveTab('notifications')}
                     >
@@ -41,6 +47,8 @@ const Settings = () => {
                     </button>
                     {user.role === 'admin' && (
                         <button
+                            role="tab"
+                            aria-selected={activeTab === 'system'}
                             className={`settings-tab ${activeTab === 'system' ? 'active' : ''}`}
                             onClick={() => setActiveTab('system')}
                         >
@@ -53,15 +61,15 @@ const Settings = () => {
                     {activeTab === 'profile' && (
                         <div className="settings-section fade-in">
                             <h2>Profile Information</h2>
-                            <div className="form-group" style={{ maxWidth: '500px' }}>
+                            <div className="form-group settings-field">
                                 <label>Full Name</label>
                                 <input type="text" className="form-control" defaultValue={user.name} />
                             </div>
-                            <div className="form-group" style={{ maxWidth: '500px' }}>
+                            <div className="form-group settings-field">
                                 <label>Email Address</label>
                                 <input type="email" className="form-control" defaultValue={user.email} />
                             </div>
-                            <div className="form-group" style={{ maxWidth: '500px' }}>
+                            <div className="form-group settings-field">
                                 <label>Role</label>
                                 <input type="text" className="form-control" value={user.role.toUpperCase()} disabled />
                             </div>
@@ -72,24 +80,24 @@ const Settings = () => {
                     {activeTab === 'security' && (
                         <div className="settings-section fade-in">
                             <h2>Change Password</h2>
-                            <div className="form-group" style={{ maxWidth: '400px' }}>
+                            <div className="form-group settings-field-narrow">
                                 <label>Current Password</label>
                                 <input type="password" className="form-control" />
                             </div>
-                            <div className="form-group" style={{ maxWidth: '400px' }}>
+                            <div className="form-group settings-field-narrow">
                                 <label>New Password</label>
                                 <input type="password" className="form-control" />
                             </div>
-                            <div className="form-group" style={{ maxWidth: '400px' }}>
+                            <div className="form-group settings-field-narrow">
                                 <label>Confirm New Password</label>
                                 <input type="password" className="form-control" />
                             </div>
                             <button className="btn btn-primary mt-4">Update Password</button>
 
-                            <hr style={{ margin: '2rem 0', borderColor: 'var(--border-subtle)' }} />
+                            <hr className="settings-divider" />
 
                             <h2>Two-Factor Authentication</h2>
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>Add an extra layer of security to your account.</p>
+                            <p className="settings-lead">Add an extra layer of security to your account.</p>
                             <button className="btn btn-ghost">Enable 2FA</button>
                         </div>
                     )}
@@ -98,20 +106,20 @@ const Settings = () => {
                         <div className="settings-section fade-in">
                             <h2>Notification Preferences</h2>
                             <div className="notification-options">
-                                <label className="checkbox-container" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                                <label className="checkbox-container">
                                     <input type="checkbox" defaultChecked />
-                                    <span className="checkmark" style={{ position: 'relative', top: '4px' }}></span>
+                                    <span className="checkmark"></span>
                                     <div>
                                         <strong>Email Alerts for New Submissions</strong>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Receive an email when a new submission is added to your boxes.</p>
+                                        <p className="checkbox-hint">Receive an email when a new submission is added to your boxes.</p>
                                     </div>
                                 </label>
-                                <label className="checkbox-container" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                                <label className="checkbox-container">
                                     <input type="checkbox" defaultChecked />
-                                    <span className="checkmark" style={{ position: 'relative', top: '4px' }}></span>
+                                    <span className="checkmark"></span>
                                     <div>
                                         <strong>Weekly Digest</strong>
-                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Receive a weekly summary of reporting activity.</p>
+                                        <p className="checkbox-hint">Receive a weekly summary of reporting activity.</p>
                                     </div>
                                 </label>
                             </div>
@@ -122,13 +130,13 @@ const Settings = () => {
                     {activeTab === 'system' && user.role === 'admin' && (
                         <div className="settings-section fade-in">
                             <h2>Global Platform Settings</h2>
-                            <div className="form-group" style={{ maxWidth: '500px' }}>
+                            <div className="form-group settings-field">
                                 <label>Platform Name</label>
                                 <input type="text" className="form-control" defaultValue="SecureReport" />
                             </div>
                             <div className="form-group">
                                 <label>Maintenance Mode</label>
-                                <select className="form-control" style={{ maxWidth: '200px' }}>
+                                <select className="form-control settings-field-xs">
                                     <option value="off">Off (Live)</option>
                                     <option value="on">On (Offline to Users)</option>
                                 </select>

@@ -203,6 +203,55 @@
     justify-content: center;
 }
 
+/* Padding helper for the loading/empty list text (referenced as .p-4) */
+.dashboard-container .p-4 {
+    padding: 1rem;
+}
+
+/* Dashboard alert / error surface */
+.dashboard-alert {
+    color: var(--danger);
+    padding: 1rem;
+}
+
+.dashboard-error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+/* Required-field asterisk in modals */
+.dashboard-container .req {
+    color: var(--danger);
+}
+
+/* Organizations list link reset (was inline) */
+.activity-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.activity-chevron {
+    opacity: 0.5;
+}
+
+/* Quick-action icon color variants (was inline) */
+.action-icon-org {
+    color: var(--accent-primary);
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+.action-icon-suggestion {
+    color: var(--success);
+    background-color: rgba(34, 197, 94, 0.1);
+}
+
+.action-icon-problem {
+    color: var(--warning);
+    background-color: rgba(245, 158, 11, 0.1);
+}
+
 @media (max-width: 1024px) {
     .dashboard-content-grid {
         grid-template-columns: 1fr;
