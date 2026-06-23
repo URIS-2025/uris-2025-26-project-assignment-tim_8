@@ -44,7 +44,6 @@ const AdminDashboard = () => {
     const [newProblemBox, setNewProblemBox] = useState({
         name: '',
         description: '',
-        isDarkTheme: false,
         password: '',
         createdBy: '',
         organizationId: ''
@@ -54,7 +53,6 @@ const AdminDashboard = () => {
     const [suggestionBoxForm, setSuggestionBoxForm] = useState({
         name: '',
         description: '',
-        isDarkTheme: false,
         password: '',
         createdBy: '',
         organizationId: ''
@@ -193,13 +191,12 @@ const AdminDashboard = () => {
             await ProblemBoxService.create({
                 name: newProblemBox.name,
                 description: newProblemBox.description,
-                isDarkTheme: newProblemBox.isDarkTheme,
                 password: newProblemBox.password,
                 createdBy: newProblemBox.createdBy || user?.username || '',
                 organizationId: newProblemBox.organizationId
             });
             setProblemBoxModalOpen(false);
-            setNewProblemBox({ name: '', description: '', isDarkTheme: false, password: '', createdBy: '', organizationId: '' });
+            setNewProblemBox({ name: '', description: '', password: '', createdBy: '', organizationId: '' });
             await fetchProblemBoxes(); // Re-fetch to update "Active Problem Boxes" counter
         } catch (error) {
             console.error("Failed to create problem box", error);
@@ -216,12 +213,11 @@ const AdminDashboard = () => {
             const created = await SuggestionBoxService.create({
                 name: suggestionBoxForm.name,
                 description: suggestionBoxForm.description,
-                isDarkTheme: suggestionBoxForm.isDarkTheme,
                 password: suggestionBoxForm.password,
                 createdBy: suggestionBoxForm.createdBy,
                 organizationId: suggestionBoxForm.organizationId
             });
-            setSuggestionBoxForm({ name: '', description: '', isDarkTheme: false, password: '', createdBy: '', organizationId: '' });
+            setSuggestionBoxForm({ name: '', description: '', password: '', createdBy: '', organizationId: '' });
             setSuggestionBoxModalOpen(false);
             await fetchSuggestionBoxes();
             navigate(`/admin/boxes/${created.id}`);
@@ -452,16 +448,6 @@ const AdminDashboard = () => {
                         onChange={(e) => setNewProblemBox({ ...newProblemBox, password: e.target.value })}
                     />
                 </div>
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <input
-                        type="checkbox"
-                        id="pbIsDarkTheme"
-                        checked={newProblemBox.isDarkTheme}
-                        onChange={(e) => setNewProblemBox({ ...newProblemBox, isDarkTheme: e.target.checked })}
-                        style={{ width: 'auto' }}
-                    />
-                    <label htmlFor="pbIsDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
-                </div>
             </Modal>
 
             {/* Create Suggestion Box Modal */}
@@ -536,16 +522,6 @@ const AdminDashboard = () => {
                         value={suggestionBoxForm.password}
                         onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, password: e.target.value })}
                     />
-                </div>
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <input
-                        type="checkbox"
-                        id="sbIsDarkTheme"
-                        checked={suggestionBoxForm.isDarkTheme}
-                        onChange={(e) => setSuggestionBoxForm({ ...suggestionBoxForm, isDarkTheme: e.target.checked })}
-                        style={{ width: 'auto' }}
-                    />
-                    <label htmlFor="sbIsDarkTheme" style={{ marginBottom: 0 }}>Enable Dark Theme</label>
                 </div>
             </Modal>
         </div>
