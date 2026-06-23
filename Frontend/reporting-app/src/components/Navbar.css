@@ -53,37 +53,4 @@
     gap: 1rem;
 }
 
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    border-radius: var(--radius-md);
-    font-weight: 500;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-    border: none;
-    text-decoration: none;
-}
-
-.btn-ghost {
-    background: transparent;
-    color: var(--text-primary);
-}
-
-.btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: white;
-}
-
-.btn-primary {
-    background: var(--accent-primary);
-    color: white;
-    box-shadow: 0 4px 14px 0 var(--accent-glow);
-}
-
-.btn-primary:hover {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
-}
+/* .btn / .btn-ghost / .btn-primary now live in index.css (shared utilities). */
