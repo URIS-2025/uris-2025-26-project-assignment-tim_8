@@ -78,8 +78,10 @@ namespace ProblemBoxService.Data
             entity.Name = problemBox.Name;
             entity.Description = problemBox.Description;
             entity.IsDarkTheme = problemBox.IsDarkTheme;
-            entity.Password = problemBox.Password;
             entity.Status = problemBox.Status;
+            // Password is intentionally NOT updated here. It is a BCrypt hash managed solely by
+            // SetPassword (PUT /{id}/password); assigning the raw DTO value would overwrite the
+            // hash with plaintext (or wipe it when blank) on a routine name/description edit.
 
             _context.ProblemBoxes.Update(entity);
             SaveChanges();

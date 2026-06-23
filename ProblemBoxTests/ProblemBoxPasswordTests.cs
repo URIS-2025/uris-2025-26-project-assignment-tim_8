@@ -106,6 +106,62 @@ namespace ProblemBoxService.Tests
             Assert.Null(stored.Password);
         }
 
+        // ---- General Update must NOT corrupt the stored password hash ----
+        [Fact]
+        public void UpdateProblemBox_DoesNotOverwritePasswordHash_WithPlaintext()
+        {
+            using var ctx = NewContext();
+            var originalHash = BCrypt.Net.BCrypt.HashPassword("orig");
+            var box = SeedBox(ctx, originalHash);
+            var repo = new ProblemBoxRepository(ctx, NewMapper());
+
+            var result = repo.UpdateProblemBox(new ProblemBoxUpdateDTO
+            {
+                Id = box.Id,
+                Name = "Renamed",
+                Description = "New description",
+                IsDarkTheme = true,
+                Password = "plaintext-should-be-ignored",
+                Status = ProblemSuggestionStatus.Inactive
+            });
+
+            var stored = ctx.ProblemBoxes.Single(b => b.Id == box.Id);
+            // Password is untouched by a general update: still the original BCrypt hash,
+            // never the plaintext carried on the update DTO.
+            Assert.Equal(originalHash, stored.Password);
+            Assert.StartsWith("$2", stored.Password);
+            Assert.NotEqual("plaintext-should-be-ignored", stored.Password);
+            Assert.True(BCrypt.Net.BCrypt.Verify("orig", stored.Password));
+            // The rest of the update still applies.
+            Assert.Equal("Renamed", stored.Name);
+            Assert.Equal("New description", stored.Description);
+            Assert.True(result.HasPassword);
+        }
+
+        [Fact]
+        public void UpdateProblemBox_WithBlankPassword_PreservesExistingHash()
+        {
+            using var ctx = NewContext();
+            var originalHash = BCrypt.Net.BCrypt.HashPassword("orig");
+            var box = SeedBox(ctx, originalHash);
+            var repo = new ProblemBoxRepository(ctx, NewMapper());
+
+            repo.UpdateProblemBox(new ProblemBoxUpdateDTO
+            {
+                Id = box.Id,
+                Name = "Renamed",
+                Description = "New description",
+                IsDarkTheme = false,
+                Password = "",
+                Status = ProblemSuggestionStatus.Active
+            });
+
+            var stored = ctx.ProblemBoxes.Single(b => b.Id == box.Id);
+            // A blank password on a routine update must NOT wipe the stored hash.
+            Assert.Equal(originalHash, stored.Password);
+            Assert.True(BCrypt.Net.BCrypt.Verify("orig", stored.Password));
+        }
+
         // ---- SetPassword ----
         [Fact]
         public void SetPassword_StoresHash_AndHasPasswordTrue()
