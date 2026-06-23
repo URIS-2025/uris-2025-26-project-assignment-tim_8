@@ -8,7 +8,9 @@ namespace ProblemBoxService.Profiles
     {
         public ProblemBoxProfile()
         {
-            CreateMap<ProblemBox, ProblemBoxDTO>().ReverseMap();
+            CreateMap<ProblemBox, ProblemBoxDTO>()
+                .ForMember(d => d.HasPassword, o => o.MapFrom(s => !string.IsNullOrWhiteSpace(s.Password)));
+            CreateMap<ProblemBoxDTO, ProblemBox>();
             CreateMap<ProblemBox, ProblemBoxCreatedDTO>().ReverseMap();
             CreateMap<ProblemBox, ProblemBoxCreationDTO>().ReverseMap();
             CreateMap<ProblemBox, ProblemBoxUpdateDTO>().ReverseMap();

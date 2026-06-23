@@ -8,5 +8,6 @@
         public Guid SuggestionBoxId { get; set; }
         public Guid AnonymousUserId { get; set; }
         public IEnumerable<Guid> CategoryIds { get; set; }
+        public string? BoxPassword { get; set; } // submitter-entered box password; never persisted
     }
 }

@@ -60,7 +60,6 @@ namespace SuggestionBoxServiceTests
         {
             var id1 = Guid.NewGuid();
             var orgId1 = Guid.NewGuid();
-            var accessLinkId1 = Guid.NewGuid();
             var createdAt = DateTime.UtcNow;
 
             var boxes = new List<SuggestionBoxDTO>
@@ -73,8 +72,7 @@ namespace SuggestionBoxServiceTests
                     IsDarkTheme = true,
                     CreatedAt = createdAt,
                     CreatedBy = "admin",
-                    OrganizationId = orgId1,
-                    BoxAccessLinkId = accessLinkId1
+                    OrganizationId = orgId1
                 }
             };
             _mockRepo.Setup(r => r.GetAll()).Returns(boxes);
@@ -90,7 +88,6 @@ namespace SuggestionBoxServiceTests
             Assert.Equal(createdAt, returned[0].CreatedAt);
             Assert.Equal("admin", returned[0].CreatedBy);
             Assert.Equal(orgId1, returned[0].OrganizationId);
-            Assert.Equal(accessLinkId1, returned[0].BoxAccessLinkId);
         }
 
         [Fact]
@@ -204,7 +201,6 @@ namespace SuggestionBoxServiceTests
         {
             var id = Guid.NewGuid();
             var orgId = Guid.NewGuid();
-            var accessLinkId = Guid.NewGuid();
             var createdAt = DateTime.UtcNow;
 
             var box = new SuggestionBoxDTO
@@ -215,8 +211,7 @@ namespace SuggestionBoxServiceTests
                 IsDarkTheme = true,
                 CreatedAt = createdAt,
                 CreatedBy = "user1",
-                OrganizationId = orgId,
-                BoxAccessLinkId = accessLinkId
+                OrganizationId = orgId
             };
             _mockRepo.Setup(r => r.GetById(id)).Returns(box);
 
@@ -231,7 +226,6 @@ namespace SuggestionBoxServiceTests
             Assert.Equal(createdAt, returned.CreatedAt);
             Assert.Equal("user1", returned.CreatedBy);
             Assert.Equal(orgId, returned.OrganizationId);
-            Assert.Equal(accessLinkId, returned.BoxAccessLinkId);
         }
 
         [Fact]

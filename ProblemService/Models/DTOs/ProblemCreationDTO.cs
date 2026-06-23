@@ -9,5 +9,6 @@ namespace ProblemService.Models.DTOs
         public Guid ProblemBoxId { get; set; }
         public ProblemSuggestionStatus Status { get; set; }
         public ProblemPriority Priority { get; set; }
+        public string? BoxPassword { get; set; } // submitter-entered box password; never persisted
     }
 }

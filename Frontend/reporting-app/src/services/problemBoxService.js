@@ -22,13 +22,6 @@ export const ProblemBoxService = {
         return await response.json();
     },
 
-    // GET /api/ProblemBox/boxaccesslink/{boxAccessLinkId}
-    getByAccessLinkId: async (boxAccessLinkId) => {
-        const response = await fetch(`${API_BASE_URL}/api/ProblemBox/boxaccesslink/${boxAccessLinkId}`);
-        if (!response.ok) throw new Error('Failed to fetch problem box by access link');
-        return await response.json();
-    },
-
     // POST /api/ProblemBox
     create: async (data) => {
         const response = await fetch(`${API_BASE_URL}/api/ProblemBox/`, {
@@ -65,6 +58,19 @@ export const ProblemBoxService = {
             body: JSON.stringify({ status }),
         });
         if (!response.ok) throw new Error('Failed to update problem box status');
+        return await response.json();
+    },
+
+    // PUT /api/ProblemBox/{id}/password
+    setPassword: async (id, password) => {
+        const response = await fetch(`${API_BASE_URL}/api/ProblemBox/${id}/password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ password }),
+        });
+        if (!response.ok) throw new Error('Failed to update problem box password');
         return await response.json();
     },
 

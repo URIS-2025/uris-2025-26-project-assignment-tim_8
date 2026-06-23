@@ -48,6 +48,9 @@ const PublicPortal = () => {
     // Optional attachment
     const [attachment, setAttachment] = useState(null);
 
+    // Box password (only required for password-protected boxes)
+    const [boxPassword, setBoxPassword] = useState('');
+
     // Fetch organizations on mount
     useEffect(() => {
         const fetchOrganizations = async () => {
@@ -160,6 +163,13 @@ const PublicPortal = () => {
         e.preventDefault();
         if (!formData.title || !formData.content || !formData.suggestionBoxId) return;
 
+        const selectedList = submissionType === 'suggestion' ? suggestionBoxes : problemBoxes;
+        const selectedBox = selectedList.find(b => b.id === formData.suggestionBoxId);
+        if (selectedBox?.hasPassword && !boxPassword.trim()) {
+            setSubmitError('This box is password-protected. Please enter the box password.');
+            return;
+        }
+
         try {
             setIsSubmitting(true);
             setSubmitError(null);
@@ -183,6 +193,7 @@ const PublicPortal = () => {
                     title: formData.title,
                     description: formData.content,
                     suggestionBoxId: formData.suggestionBoxId,
+                    boxPassword: boxPassword,
                     anonymousUserId: anonymousUserId,
                     categoryIds: []
                 };
@@ -192,6 +203,7 @@ const PublicPortal = () => {
                     title: formData.title,
                     description: formData.content,
                     problemBoxId: formData.suggestionBoxId,
+                    boxPassword: boxPassword,
                     anonymousUserId: anonymousUserId,
                     categoryIds: []
                 };
@@ -330,7 +342,7 @@ const PublicPortal = () => {
                                             <select
                                                 className="portal-input"
                                                 value={formData.organizationId}
-                                                onChange={(e) => setFormData({ ...formData, organizationId: e.target.value, suggestionBoxId: '' })}
+                                                onChange={(e) => { setFormData({ ...formData, organizationId: e.target.value, suggestionBoxId: '' }); setBoxPassword(''); }}
                                             >
                                                 <option value="">— Select an organization —</option>
                                                 {organizations.map(org => (
@@ -355,7 +367,7 @@ const PublicPortal = () => {
                                             <select
                                                 className="portal-input"
                                                 value={formData.suggestionBoxId} // We reuse this field for problemBoxId as well
-                                                onChange={(e) => setFormData({ ...formData, suggestionBoxId: e.target.value })}
+                                                onChange={(e) => { setFormData({ ...formData, suggestionBoxId: e.target.value }); setBoxPassword(''); }}
                                             >
                                                 {(submissionType === 'suggestion' ? suggestionBoxes : problemBoxes).map(box => (
                                                     <option key={box.id} value={box.id}>
@@ -367,6 +379,23 @@ const PublicPortal = () => {
                                             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No {submissionType} boxes found for this organization.</p>
                                         )}
                                     </div>
+
+                                    {(() => {
+                                        const list = submissionType === 'suggestion' ? suggestionBoxes : problemBoxes;
+                                        const selBox = list.find(b => b.id === formData.suggestionBoxId);
+                                        return selBox?.hasPassword ? (
+                                            <div className="form-group">
+                                                <label>Box Password <span className="required">*</span></label>
+                                                <input
+                                                    type="password"
+                                                    className="portal-input"
+                                                    placeholder="This box is password-protected"
+                                                    value={boxPassword}
+                                                    onChange={(e) => setBoxPassword(e.target.value)}
+                                                />
+                                            </div>
+                                        ) : null;
+                                    })()}
 
                                     <div className="form-group">
                                         <label>Title <span className="required">*</span></label>

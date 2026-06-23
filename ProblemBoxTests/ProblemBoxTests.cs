@@ -33,7 +33,9 @@ namespace ProblemBoxService.Tests
             var result = _controller.GetProblemBoxes();
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returnValue = Assert.IsType<List<ProblemBoxDTO>>(okResult.Value);
+            // The repository maps to IEnumerable<ProblemBoxDTO>, which materializes as an array;
+            // an un-stubbed Moq call likewise returns Enumerable.Empty<T>() (a ProblemBoxDTO[]).
+            var returnValue = Assert.IsType<ProblemBoxDTO[]>(okResult.Value);
             Assert.Empty(returnValue);
         }
 
@@ -107,31 +109,6 @@ namespace ProblemBoxService.Tests
                      .Throws(new ArgumentException("ProblemBox with that Id does not exist."));
 
             Assert.Throws<ArgumentException>(() => _controller.GetProblemBoxById(id));
-        }
-
-        // GET BY ACCESS LINK ID
-        [Fact]
-        public void GetProblemBoxByAccessLinkId_ReturnsOkResult_WithProblemBox()
-        {
-            var boxAccessLinkId = Guid.NewGuid();
-            var problemBox = new ProblemBoxDTO { Id = Guid.NewGuid(), Name = "Box 1" };
-            _mockRepo.Setup(repo => repo.GetProblemBoxByAccessLinkId(boxAccessLinkId)).Returns(problemBox);
-
-            var result = _controller.GetProblemBoxByAccessLinkId(boxAccessLinkId);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var returnValue = Assert.IsType<ProblemBoxDTO>(okResult.Value);
-            Assert.NotNull(returnValue);
-        }
-
-        [Fact]
-        public void GetProblemBoxByAccessLinkId_ThrowsException_WhenNotFound()
-        {
-            var boxAccessLinkId = Guid.NewGuid();
-            _mockRepo.Setup(repo => repo.GetProblemBoxByAccessLinkId(boxAccessLinkId))
-                     .Throws(new ArgumentException("ProblemBox with that AccessLinkId does not exist."));
-
-            Assert.Throws<ArgumentException>(() => _controller.GetProblemBoxByAccessLinkId(boxAccessLinkId));
         }
 
         // POST

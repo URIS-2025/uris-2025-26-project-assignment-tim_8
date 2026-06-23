@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using ProblemBoxService.Context;
+using SuggestionBoxService.Context;
 
 #nullable disable
 
-namespace ProblemBoxService.Migrations
+namespace SuggestionBoxService.Migrations
 {
-    [DbContext(typeof(ProblemBoxContext))]
-    partial class ProblemBoxContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(SuggestionBoxContext))]
+    [Migration("20260622145756_RemoveBoxAccessLinkIdFromSuggestionBox")]
+    partial class RemoveBoxAccessLinkIdFromSuggestionBox
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,7 +25,7 @@ namespace ProblemBoxService.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ProblemBoxService.Models.ProblemBox", b =>
+            modelBuilder.Entity("SuggestionBoxService.Models.SuggestionBox", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -30,6 +33,11 @@ namespace ProblemBoxService.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -56,7 +64,7 @@ namespace ProblemBoxService.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProblemBoxes");
+                    b.ToTable("SuggestionBoxes");
                 });
 #pragma warning restore 612, 618
         }

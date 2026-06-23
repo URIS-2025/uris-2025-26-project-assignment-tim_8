@@ -43,13 +43,6 @@ namespace ProblemBoxService.Controllers
             return Ok(result);
         }
 
-        [HttpGet("boxaccesslink/{boxAccessLinkId}")]
-        public ActionResult<ProblemBoxDTO> GetProblemBoxByAccessLinkId(Guid boxAccessLinkId)
-        {
-            var result = _problemBoxRepository.GetProblemBoxByAccessLinkId(boxAccessLinkId);
-            return Ok(result);
-        }
-
         [HttpPost]
         public async Task<ActionResult<ProblemBoxCreatedDTO>> CreateProblemBox([FromBody] ProblemBoxCreationDTO problemBox)
         {
@@ -156,6 +149,49 @@ namespace ProblemBoxService.Controllers
 
                 return BadRequest(new { error = ex.Message });
             }
+        }
+
+        [HttpPut("{id}/password")]
+        public async Task<ActionResult<ProblemBoxDTO>> UpdateProblemBoxPassword(Guid id, [FromBody] BoxPasswordDTO dto)
+        {
+            try
+            {
+                var result = _problemBoxRepository.SetPassword(id, dto.Password);
+
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_PROBLEM_BOX_PASSWORD",
+                    EntityName = "ProblemBox",
+                    NewValues = JsonSerializer.Serialize(result),
+                    IsSuccess = true,
+                    ServiceName = "ProblemBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _loggerClient.TryLogAsync(new LogCreationDTO
+                {
+                    UserId = User.Identity?.Name,
+                    Action = "UPDATE_PROBLEM_BOX_PASSWORD",
+                    EntityName = "ProblemBox",
+                    IsSuccess = false,
+                    ServiceName = "ProblemBoxService",
+                    HttpMethod = "PUT"
+                }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/verify-password")]
+        public ActionResult VerifyProblemBoxPassword(Guid id, [FromBody] BoxPasswordDTO dto)
+        {
+            var valid = _problemBoxRepository.VerifyPassword(id, dto.Password);
+            return Ok(new { valid });
         }
 
         [HttpDelete("{id}")]

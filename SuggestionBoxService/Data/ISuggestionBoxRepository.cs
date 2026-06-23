@@ -19,6 +19,10 @@ namespace SuggestionBoxService.Data
 
         SuggestionBoxDTO SetStatus(Guid id, BoxStatus status);
 
+        SuggestionBoxDTO SetPassword(Guid id, string password);
+
+        bool VerifyPassword(Guid id, string password);
+
         void Delete(Guid id);
 
         void DeleteByOrganizationId(Guid organizationId);

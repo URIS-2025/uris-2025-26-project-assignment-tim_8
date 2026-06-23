@@ -65,6 +65,19 @@ export const SuggestionBoxService = {
         return await response.json();
     },
 
+    // PUT /api/SuggestionBox/{id}/password
+    setPassword: async (id, password) => {
+        const response = await fetch(`${API_BASE_URL}/api/SuggestionBox/${id}/password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ password }),
+        });
+        if (!response.ok) throw new Error('Failed to update suggestion box password');
+        return await response.json();
+    },
+
     // DELETE /api/SuggestionBox/{id}
     delete: async (id) => {
         const response = await fetch(`${API_BASE_URL}/api/SuggestionBox/${id}`, {

@@ -29,6 +29,10 @@ namespace ProblemService.Tests
             _boxClient
                 .Setup(c => c.IsBoxActiveAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
+            // Default: treat boxes as public (no password) so existing happy-path tests skip verify.
+            _boxClient
+                .Setup(c => c.HasPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
             _controller = new ProblemController(_mockRepo.Object, _mockMapper.Object, _logger.Object, _boxClient.Object);
             _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         }
@@ -172,6 +176,97 @@ namespace ProblemService.Tests
 
             Assert.IsType<ConflictObjectResult>(result.Result);
             _mockRepo.Verify(repo => repo.CreateProblem(It.IsAny<ProblemCreationDTO>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateProblem_ReturnsUnauthorized_WhenBoxIsProtected_AndPasswordWrong()
+        {
+            var creationDTO = new ProblemCreationDTO
+            {
+                Title = "New Problem",
+                Description = "Desc",
+                ProblemBoxId = Guid.NewGuid(),
+                BoxPassword = "wrong"
+            };
+            _boxClient
+                .Setup(c => c.HasPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _boxClient
+                .Setup(c => c.VerifyPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _controller.CreateProblem(creationDTO);
+
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
+            _mockRepo.Verify(repo => repo.CreateProblem(It.IsAny<ProblemCreationDTO>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateProblem_ReturnsUnauthorized_WhenBoxIsProtected_AndPasswordMissing()
+        {
+            var creationDTO = new ProblemCreationDTO
+            {
+                Title = "New Problem",
+                Description = "Desc",
+                ProblemBoxId = Guid.NewGuid()
+                // BoxPassword omitted
+            };
+            _boxClient
+                .Setup(c => c.HasPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _boxClient
+                .Setup(c => c.VerifyPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _controller.CreateProblem(creationDTO);
+
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
+            _mockRepo.Verify(repo => repo.CreateProblem(It.IsAny<ProblemCreationDTO>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateProblem_ReturnsCreated_WhenBoxIsProtected_AndPasswordCorrect()
+        {
+            var creationDTO = new ProblemCreationDTO
+            {
+                Title = "New Problem",
+                Description = "Desc",
+                ProblemBoxId = Guid.NewGuid(),
+                BoxPassword = "correct"
+            };
+            var created = new ProblemCreatedDTO { Id = Guid.NewGuid(), Title = "New Problem" };
+            _mockRepo.Setup(repo => repo.CreateProblem(creationDTO)).Returns(created);
+            _boxClient
+                .Setup(c => c.HasPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _boxClient
+                .Setup(c => c.VerifyPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            var result = await _controller.CreateProblem(creationDTO);
+
+            Assert.IsType<CreatedResult>(result.Result);
+            _mockRepo.Verify(repo => repo.CreateProblem(It.IsAny<ProblemCreationDTO>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateProblem_ReturnsCreated_WhenBoxIsPublic_WithoutVerifyingPassword()
+        {
+            var creationDTO = new ProblemCreationDTO
+            {
+                Title = "New Problem",
+                Description = "Desc",
+                ProblemBoxId = Guid.NewGuid()
+            };
+            var created = new ProblemCreatedDTO { Id = Guid.NewGuid(), Title = "New Problem" };
+            _mockRepo.Setup(repo => repo.CreateProblem(creationDTO)).Returns(created);
+            // HasPasswordAsync defaults to false in the ctor (public box).
+
+            var result = await _controller.CreateProblem(creationDTO);
+
+            Assert.IsType<CreatedResult>(result.Result);
+            _mockRepo.Verify(repo => repo.CreateProblem(It.IsAny<ProblemCreationDTO>()), Times.Once);
+            _boxClient.Verify(c => c.VerifyPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

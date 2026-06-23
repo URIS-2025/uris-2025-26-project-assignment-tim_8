@@ -56,6 +56,9 @@ namespace SuggestionBoxService.Data
 
             entity.Id = Guid.NewGuid();
             entity.CreatedAt = DateTime.UtcNow;
+            entity.Password = string.IsNullOrWhiteSpace(dto.Password)
+                ? null
+                : BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
             _context.SuggestionBoxes.Add(entity);
             SaveChanges();
@@ -91,6 +94,44 @@ namespace SuggestionBoxService.Data
             SaveChanges();
 
             return _mapper.Map<SuggestionBoxDTO>(entity);
+        }
+
+        public SuggestionBoxDTO SetPassword(Guid id, string password)
+        {
+            var entity = _context.SuggestionBoxes
+                .FirstOrDefault(x => x.Id == id);
+
+            if (entity == null)
+                return null;
+
+            entity.Password = string.IsNullOrWhiteSpace(password)
+                ? null
+                : BCrypt.Net.BCrypt.HashPassword(password);
+
+            SaveChanges();
+
+            return _mapper.Map<SuggestionBoxDTO>(entity);
+        }
+
+        public bool VerifyPassword(Guid id, string password)
+        {
+            var entity = _context.SuggestionBoxes
+                .FirstOrDefault(x => x.Id == id);
+
+            if (entity == null)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(entity.Password))
+                return true;
+
+            try
+            {
+                return BCrypt.Net.BCrypt.Verify(password ?? "", entity.Password);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public void Delete(Guid id)

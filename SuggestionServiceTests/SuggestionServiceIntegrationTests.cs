@@ -1,5 +1,4 @@
 using AnonymousDomain.Enums;
-using AnonymousDomain.Models.AnonymousUser;
 using AnonymousDomain.Models.Suggestion;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -13,11 +12,14 @@ using Xunit;
 
 namespace SuggestionService.Tests.Integration
 {
-    // Test stub: always reports the box as active so create flows succeed.
+    // Test stub: always reports the box as active and public so create flows succeed.
     public class ActiveSuggestionBoxServiceClient : SuggestionBoxServiceClient
     {
         public override Task<bool> IsBoxActiveAsync(Guid boxId, string? bearerHeader, CancellationToken requestCt)
             => Task.FromResult(true);
+
+        public override Task<bool> HasPasswordAsync(Guid boxId, string? bearerHeader, CancellationToken requestCt)
+            => Task.FromResult(false);
     }
 
     public class SuggestionServiceWebAppFactory : WebApplicationFactory<Program>
@@ -167,25 +169,10 @@ namespace SuggestionService.Tests.Integration
 
         private Guid SeedAnonymousUser()
         {
-            using var scope = _factory.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<SuggestionContext>();
-            var link = new BoxAccessLink
-            {
-                Id          = Guid.NewGuid(),
-                AccessToken = "test-token",
-                IsActive    = true,
-                CreatedAt   = DateTime.UtcNow,
-                ExpiresAt   = DateTime.UtcNow.AddDays(7)
-            };
-            context.Set<BoxAccessLink>().Add(link);
-            var user = new AnonymousUser
-            {
-                Id              = Guid.NewGuid(),
-                CreatedAt       = DateTime.UtcNow,
-                BoxAccessLinkId = link.Id
-            };
-            context.SaveChanges();
-            return user.Id;
+            // SuggestionContext models neither AnonymousUser nor BoxAccessLink, and
+            // Suggestion.AnonymousUserId is not an enforced foreign key — the seed only needs a
+            // non-empty id to satisfy the required column.
+            return Guid.NewGuid();
         }
 
         private Guid SeedSuggestion()
@@ -311,13 +298,11 @@ namespace SuggestionService.Tests.Integration
         {
             using var scope = _factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<SuggestionContext>();
-            var link = new BoxAccessLink { Id = Guid.NewGuid(), AccessToken = "token", IsActive = true, CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7) };
-            context.Set<BoxAccessLink>().Add(link);
-            var user = new AnonymousUser { Id = Guid.NewGuid(), CreatedAt = DateTime.UtcNow, BoxAccessLinkId = link.Id };
-            var suggestion = new Suggestion { Id = Guid.NewGuid(), Title = "Test", Description = "Opis", CreatedAt = DateTime.UtcNow, SuggestionBoxId = Guid.NewGuid(), AnonymousUserId = user.Id, Status = ProblemSuggestionStatus.Active };
+            var userId = Guid.NewGuid();
+            var suggestion = new Suggestion { Id = Guid.NewGuid(), Title = "Test", Description = "Opis", CreatedAt = DateTime.UtcNow, SuggestionBoxId = Guid.NewGuid(), AnonymousUserId = userId, Status = ProblemSuggestionStatus.Active };
             context.Suggestions.Add(suggestion);
             context.SaveChanges();
-            return (user.Id, suggestion.Id);
+            return (userId, suggestion.Id);
         }
 
         [Fact]
@@ -379,13 +364,11 @@ namespace SuggestionService.Tests.Integration
         {
             using var scope = _factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<SuggestionContext>();
-            var link = new BoxAccessLink { Id = Guid.NewGuid(), AccessToken = "token", IsActive = true, CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7) };
-            context.Set<BoxAccessLink>().Add(link);
-            var user = new AnonymousUser { Id = Guid.NewGuid(), CreatedAt = DateTime.UtcNow, BoxAccessLinkId = link.Id };
-            var suggestion = new Suggestion { Id = Guid.NewGuid(), Title = "Test", Description = "Opis", CreatedAt = DateTime.UtcNow, SuggestionBoxId = Guid.NewGuid(), AnonymousUserId = user.Id, Status = ProblemSuggestionStatus.Active };
+            var userId = Guid.NewGuid();
+            var suggestion = new Suggestion { Id = Guid.NewGuid(), Title = "Test", Description = "Opis", CreatedAt = DateTime.UtcNow, SuggestionBoxId = Guid.NewGuid(), AnonymousUserId = userId, Status = ProblemSuggestionStatus.Active };
             context.Suggestions.Add(suggestion);
             context.SaveChanges();
-            return (user.Id, suggestion.Id);
+            return (userId, suggestion.Id);
         }
 
         [Fact]

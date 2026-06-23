@@ -37,5 +37,58 @@ namespace SuggestionService.Clients
             }
             catch { return false; } // fail-closed (timeout/unreachable)
         }
+
+        // Returns true if the box requires a password. Fail-closed: any failure -> true
+        // (when in doubt, REQUIRE the password so a protected box is never treated as public).
+        public virtual async Task<bool> HasPasswordAsync(Guid boxId, string? bearerHeader, CancellationToken requestCt)
+        {
+            try
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, $"/api/SuggestionBox/{boxId}");
+                if (!string.IsNullOrWhiteSpace(bearerHeader))
+                    req.Headers.Authorization = AuthenticationHeaderValue.Parse(bearerHeader);
+
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(800));
+                using var linked = CancellationTokenSource.CreateLinkedTokenSource(requestCt, timeoutCts.Token);
+
+                using var res = await _http.SendAsync(req, linked.Token);
+                if (!res.IsSuccessStatusCode) return true; // fail-closed (e.g. 404) -> require password
+
+                var box = await res.Content.ReadFromJsonAsync<SuggestionBoxStatusVO>(
+                    new JsonSerializerOptions(JsonSerializerDefaults.Web), linked.Token);
+                return box?.HasPassword == true;
+            }
+            catch { return true; } // fail-closed (timeout/unreachable) -> require password
+        }
+
+        // Verifies the submitter's password against the box. Fail-closed: any failure -> false.
+        public virtual async Task<bool> VerifyPasswordAsync(Guid boxId, string? password, string? bearerHeader, CancellationToken requestCt)
+        {
+            try
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Post, $"/api/SuggestionBox/{boxId}/verify-password");
+                if (!string.IsNullOrWhiteSpace(bearerHeader))
+                    req.Headers.Authorization = AuthenticationHeaderValue.Parse(bearerHeader);
+
+                req.Content = JsonContent.Create(new { password },
+                    options: new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(800));
+                using var linked = CancellationTokenSource.CreateLinkedTokenSource(requestCt, timeoutCts.Token);
+
+                using var res = await _http.SendAsync(req, linked.Token);
+                if (!res.IsSuccessStatusCode) return false; // fail-closed (non-2xx)
+
+                var result = await res.Content.ReadFromJsonAsync<VerifyPasswordResult>(
+                    new JsonSerializerOptions(JsonSerializerDefaults.Web), linked.Token);
+                return result?.Valid == true;
+            }
+            catch { return false; } // fail-closed (timeout/unreachable)
+        }
+
+        private class VerifyPasswordResult
+        {
+            public bool Valid { get; set; }
+        }
     }
 }

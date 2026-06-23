@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
+import Modal from '../components/Modal';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
 import { SuggestionService } from '../services/suggestionService';
@@ -51,6 +52,9 @@ const BoxDetails = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchValue, setSearchValue] = useState('');
     const [togglingStatus, setTogglingStatus] = useState(false);
+    const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+    const [newBoxPassword, setNewBoxPassword] = useState('');
+    const [savingPassword, setSavingPassword] = useState(false);
 
     useEffect(() => {
         fetchBoxData();
@@ -134,6 +138,25 @@ const BoxDetails = () => {
             alert('Failed to update box status.');
         } finally {
             setTogglingStatus(false);
+        }
+    };
+
+    const handleSavePassword = async () => {
+        if (!box) return;
+        try {
+            setSavingPassword(true);
+            if (boxType === 'problem') {
+                await ProblemBoxService.setPassword(box.id, newBoxPassword);
+            } else {
+                await SuggestionBoxService.setPassword(box.id, newBoxPassword);
+            }
+            setPasswordModalOpen(false);
+            await fetchBoxData();
+        } catch (err) {
+            console.error('Error updating box password:', err);
+            alert('Failed to update box password.');
+        } finally {
+            setSavingPassword(false);
         }
     };
 
@@ -349,12 +372,6 @@ const BoxDetails = () => {
                         <span style={{ color: 'var(--text-muted)' }}>Organization ID: </span>
                         <code style={{ color: 'var(--text-secondary)' }}>{box.organizationId}</code>
                     </div>
-                    {box.boxAccessLinkId && box.boxAccessLinkId !== '00000000-0000-0000-0000-000000000000' && (
-                        <div>
-                            <span style={{ color: 'var(--text-muted)' }}>Access Link ID: </span>
-                            <code style={{ color: 'var(--accent-primary)' }}>{box.boxAccessLinkId}</code>
-                        </div>
-                    )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Status: </span>
                         <StatusBadge type="status" status={typeof box.status === 'number' ? boxStatusMap[box.status] || 'Unknown' : box.status} />
@@ -365,6 +382,19 @@ const BoxDetails = () => {
                             disabled={togglingStatus}
                         >
                             {togglingStatus ? 'Saving…' : (box.status === 0 ? 'Deactivate' : 'Activate')}
+                        </button>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Access: </span>
+                        <span style={{ color: box.hasPassword ? 'var(--warning)' : 'var(--text-secondary)' }}>
+                            {box.hasPassword ? '🔒 Password-protected' : '🌐 Public'}
+                        </span>
+                        <button
+                            className="btn btn-ghost"
+                            style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}
+                            onClick={() => { setNewBoxPassword(''); setPasswordModalOpen(true); }}
+                        >
+                            {box.hasPassword ? 'Change password' : 'Set password'}
                         </button>
                     </div>
                 </div>
@@ -407,6 +437,34 @@ const BoxDetails = () => {
                     pageSize={5}
                 />
             </div>
+
+            <Modal
+                isOpen={passwordModalOpen}
+                onClose={() => setPasswordModalOpen(false)}
+                title={box?.hasPassword ? 'Change box password' : 'Set box password'}
+                footer={
+                    <>
+                        <button className="btn btn-ghost" onClick={() => setPasswordModalOpen(false)}>Cancel</button>
+                        <button className="btn btn-primary" onClick={handleSavePassword} disabled={savingPassword}>
+                            {savingPassword ? 'Saving…' : 'Save'}
+                        </button>
+                    </>
+                }
+            >
+                <div className="form-group">
+                    <label>New password</label>
+                    <input
+                        type="password"
+                        className="form-control"
+                        placeholder="Leave empty to remove protection (make public)"
+                        value={newBoxPassword}
+                        onChange={(e) => setNewBoxPassword(e.target.value)}
+                    />
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.35rem' }}>
+                        Submitters must enter this password to submit to this box. Leave empty to make the box public.
+                    </p>
+                </div>
+            </Modal>
         </div>
     );
 };

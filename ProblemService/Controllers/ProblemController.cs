@@ -65,6 +65,24 @@ namespace ProblemService.Controllers
                     return Conflict(new { error = "This problem box is not accepting submissions." });
                 }
 
+                if (await _problemBoxClient.HasPasswordAsync(problem.ProblemBoxId, Request.Headers["Authorization"], HttpContext.RequestAborted))
+                {
+                    var passwordOk = await _problemBoxClient.VerifyPasswordAsync(problem.ProblemBoxId, problem.BoxPassword, Request.Headers["Authorization"], HttpContext.RequestAborted);
+                    if (!passwordOk)
+                    {
+                        await _loggerClient.TryLogAsync(new LogCreationDTO
+                        {
+                            UserId = User.Identity?.Name,
+                            Action = "CREATE_PROBLEM",
+                            EntityName = "Problem",
+                            IsSuccess = false,
+                            ServiceName = "ProblemService",
+                            HttpMethod = "POST"
+                        }, Request.Headers["Authorization"], HttpContext.RequestAborted);
+                        return Unauthorized(new { error = "Invalid box password." });
+                    }
+                }
+
                 var result = _problemRepository.CreateProblem(problem);
 
                 await _loggerClient.TryLogAsync(new LogCreationDTO
