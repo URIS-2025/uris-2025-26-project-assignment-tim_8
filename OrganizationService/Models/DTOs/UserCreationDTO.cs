@@ -25,5 +25,7 @@ namespace OrganizationService.Models.DTOs
         public Guid RoleId { get; set; }
 
         public Guid? OrganizationId { get; set; }
+
+        public string? CaptchaToken { get; set; }
     }
 }

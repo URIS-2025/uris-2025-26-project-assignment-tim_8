@@ -34,6 +34,14 @@ namespace AnonymousUserService.Tests.Integration
             => Task.FromResult(password == BreachedPassword);
     }
 
+    // Captcha always verifies so the username/password gates are the ones under test
+    // (the real client is fail-closed and would reject every request without a token).
+    public class FakeCaptchaVerifierClient : ICaptchaVerifierClient
+    {
+        public Task<bool> VerifyAsync(string? token, CancellationToken ct)
+            => Task.FromResult(true);
+    }
+
     public class AnonymousUserValidationWebAppFactory : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -64,6 +72,8 @@ namespace AnonymousUserService.Tests.Integration
                 {
                     s.RemoveAll<IPwnedPasswordsClient>();
                     s.AddScoped<IPwnedPasswordsClient>(_ => new FakePwnedPasswordsClient());
+                    s.RemoveAll<ICaptchaVerifierClient>();
+                    s.AddScoped<ICaptchaVerifierClient>(_ => new FakeCaptchaVerifierClient());
                 }));
 
             _client = customized.CreateClient();

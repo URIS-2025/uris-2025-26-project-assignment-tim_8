@@ -132,7 +132,10 @@ namespace AnonymousUserService.Tests.Validation
             var pwned = new Mock<IPwnedPasswordsClient>();
             pwned.Setup(c => c.IsBreachedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(breached);
-            return new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), pwned.Object);
+            var captcha = new Mock<ICaptchaVerifierClient>();
+            captcha.Setup(c => c.VerifyAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                   .ReturnsAsync(true);
+            return new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), pwned.Object, captcha.Object);
         }
 
         private static AnonymousUserContext CreateInMemoryContext()

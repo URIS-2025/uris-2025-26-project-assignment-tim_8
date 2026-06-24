@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, ArrowRight, Shield, AlertCircle } from 'lucide-react';
 import { AnonymousUserService } from '../services/anonymousUserService';
 import { useAuth } from '../context/AuthContext';
+import TurnstileWidget from '../components/TurnstileWidget';
 import './Login.css';
 
 const AnonymousLogin = () => {
@@ -10,6 +11,8 @@ const AnonymousLogin = () => {
     const { login } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [captchaToken, setCaptchaToken] = useState('');
+    const captchaRef = useRef(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,13 +26,19 @@ const AnonymousLogin = () => {
             return;
         }
 
+        if (!captchaToken) {
+            setError('Please complete the captcha.');
+            return;
+        }
+
         try {
             setIsSubmitting(true);
 
             // Call the real login endpoint
             const token = await AnonymousUserService.login({
                 username,
-                password
+                password,
+                captchaToken
             });
 
             if (!token) {
@@ -44,6 +53,9 @@ const AnonymousLogin = () => {
         } catch (err) {
             console.error(err);
             setError(err.message || 'Login failed. Please try again.');
+            // Turnstile tokens are single-use — get a fresh one for the retry.
+            setCaptchaToken('');
+            captchaRef.current?.reset();
         } finally {
             setIsSubmitting(false);
         }
@@ -101,10 +113,16 @@ const AnonymousLogin = () => {
                         />
                     </div>
 
+                    <TurnstileWidget
+                        ref={captchaRef}
+                        onVerify={setCaptchaToken}
+                        onError={() => setError('Security check failed to load. Disable any ad/script blockers and refresh the page.')}
+                    />
+
                     <button
                         type="submit"
                         className="btn btn-primary btn-full bounce-hover"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !captchaToken}
                     >
                         {isSubmitting ? 'Signing in...' : 'Sign In'} <ArrowRight size={18} />
                     </button>

@@ -67,6 +67,15 @@ namespace AnonymousUserService.Tests.Repositories
             return mock.Object;
         }
 
+        // Captcha client that always verifies (no network calls in unit tests).
+        private static ICaptchaVerifierClient VerifiedCaptchaClient()
+        {
+            var mock = new Mock<ICaptchaVerifierClient>();
+            mock.Setup(c => c.VerifyAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            return mock.Object;
+        }
+
         private AnonymousUser SeedUser(AnonymousUserContext context)
         {
             var user = new AnonymousUser
@@ -85,7 +94,7 @@ namespace AnonymousUserService.Tests.Repositories
         public void GetAllAnonymousUsers_ReturnsEmpty_WhenNoneExist()
         {
             using var context = CreateInMemoryContext();
-            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), VerifiedCaptchaClient());
 
             var result = repo.GetAllAnonymousUsers();
 
@@ -97,7 +106,7 @@ namespace AnonymousUserService.Tests.Repositories
         public void GetAnonymousUserById_ReturnsNull_WhenNotFound()
         {
             using var context = CreateInMemoryContext();
-            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), VerifiedCaptchaClient());
 
             var result = repo.GetAnonymousUserById(Guid.NewGuid());
 
@@ -111,7 +120,7 @@ namespace AnonymousUserService.Tests.Repositories
         {
             // Za razliku od OrganizationService, ovaj repo ne baca exception — samo ignorise
             using var context = CreateInMemoryContext();
-            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient());
+            var repo = new AnonymousUserRepository(context, CreateMapper(), CreateConfiguration(), NotBreachedClient(), VerifiedCaptchaClient());
 
             var exception = Record.Exception(() => repo.DeleteAnonymousUser(Guid.NewGuid()));
 

@@ -19,16 +19,18 @@ namespace AnonymousUserService.Data
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly IPwnedPasswordsClient _pwned;
+        private readonly ICaptchaVerifierClient _captcha;
 
         private static readonly Regex UsernameRegex = new(
             @"^[a-zA-Z0-9_]+$", RegexOptions.Compiled);
 
-        public AnonymousUserRepository(AnonymousUserContext context, IMapper mapper, IConfiguration configuration, IPwnedPasswordsClient pwned)
+        public AnonymousUserRepository(AnonymousUserContext context, IMapper mapper, IConfiguration configuration, IPwnedPasswordsClient pwned, ICaptchaVerifierClient captcha)
         {
             _mapper = mapper;
             _context = context;
             _configuration = configuration;
             _pwned = pwned;
+            _captcha = captcha;
         }
 
         public bool SaveChanges() => _context.SaveChanges() > 0;
@@ -58,6 +60,9 @@ namespace AnonymousUserService.Data
 
         public AnonymousUserDTO CreateUser(AnonymousUserCreationDTO user)
         {
+            if (!_captcha.VerifyAsync(user.CaptchaToken, CancellationToken.None).GetAwaiter().GetResult())
+                throw new ArgumentException("Captcha verification failed. Please try again.");
+
             if (string.IsNullOrWhiteSpace(user.Username))
                 throw new ArgumentException("Username may only contain letters, digits, and underscores (3–30 chars).");
 
@@ -87,6 +92,9 @@ namespace AnonymousUserService.Data
 
         public AnonymousLoginResponseDTO Login(AnonymousUserLoginDTO login)
         {
+            if (!_captcha.VerifyAsync(login.CaptchaToken, CancellationToken.None).GetAwaiter().GetResult())
+                throw new ArgumentException("Captcha verification failed. Please try again.");
+
             var normalizedUsername = login.Username.Trim().ToLower();
             var user = _context.AnonymousUsers.FirstOrDefault(u => u.Username == normalizedUsername);
             if (user == null || !BCrypt.Net.BCrypt.Verify(login.Password, user.Password))

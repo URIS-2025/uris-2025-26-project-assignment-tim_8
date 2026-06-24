@@ -26,6 +26,9 @@ builder.Services.AddScoped<AnonymousUserService.Clients.LoggerServiceClient>();
 builder.Services.AddHttpClient("PwnedPasswords", c => c.BaseAddress = new Uri("https://api.pwnedpasswords.com/"));
 builder.Services.AddScoped<AnonymousUserService.Clients.IPwnedPasswordsClient, AnonymousUserService.Clients.PwnedPasswordsClient>();
 
+builder.Services.AddHttpClient("Turnstile", c => c.BaseAddress = new Uri("https://challenges.cloudflare.com/"));
+builder.Services.AddScoped<AnonymousUserService.Clients.ICaptchaVerifierClient, AnonymousUserService.Clients.CaptchaVerifierClient>();
+
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(o => o.SuppressModelStateInvalidFilter = true);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

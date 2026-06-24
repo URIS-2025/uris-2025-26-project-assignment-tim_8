@@ -34,6 +34,13 @@ namespace OrganizationService.Tests.Integration
             => Task.FromResult(password == BreachedPassword);
     }
 
+    // Fail-closed captcha is bypassed in tests: always reports the token as verified
+    // so the validation flow (email/password/breach) is exercised, not the captcha gate.
+    public class FakeCaptchaVerifierClient : ICaptchaVerifierClient
+    {
+        public Task<bool> VerifyAsync(string? token, CancellationToken ct) => Task.FromResult(true);
+    }
+
     public class UserValidationWebAppFactory : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -64,6 +71,8 @@ namespace OrganizationService.Tests.Integration
                 {
                     s.RemoveAll<IPwnedPasswordsClient>();
                     s.AddScoped<IPwnedPasswordsClient>(_ => new FakePwnedPasswordsClient());
+                    s.RemoveAll<ICaptchaVerifierClient>();
+                    s.AddScoped<ICaptchaVerifierClient>(_ => new FakeCaptchaVerifierClient());
                 }));
 
             _client = customized.CreateClient();

@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
+using OrganizationService.Clients;
 using OrganizationService.Context;
 using OrganizationService.Models.DTOs;
 using Xunit;
@@ -15,6 +17,13 @@ using OrganizationService;
 
 namespace OrganizationService.Tests.Integration
 {
+    // Fail-closed captcha is bypassed in these integration tests: always reports the
+    // token as verified so CreateUser/Login flows run without a real Turnstile token.
+    public class AlwaysPassCaptchaVerifierClient : ICaptchaVerifierClient
+    {
+        public Task<bool> VerifyAsync(string? token, CancellationToken ct) => Task.FromResult(true);
+    }
+
     public class OrganizationServiceWebAppFactory : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -30,6 +39,11 @@ namespace OrganizationService.Tests.Integration
                 // Dodaj InMemory bazu
                 services.AddDbContext<OrganizationContext>(options =>
                     options.UseInMemoryDatabase("OrganizationIntegrationTestDb"));
+
+                // Fail-closed captcha would reject CreateUser without a real token;
+                // swap in a stub that always verifies so the user flow is exercised.
+                services.RemoveAll<ICaptchaVerifierClient>();
+                services.AddScoped<ICaptchaVerifierClient, AlwaysPassCaptchaVerifierClient>();
             });
 
             builder.UseEnvironment("Testing");
