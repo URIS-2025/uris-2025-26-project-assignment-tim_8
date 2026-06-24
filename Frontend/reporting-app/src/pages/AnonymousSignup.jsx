@@ -9,12 +9,12 @@ import './Login.css';
 
 const passwordStrength = (password) => {
     if (!password) return { label: '', color: '' };
-    if (password.length < 8) return { label: 'Too short', color: '#ef4444' };
+    if (password.length < 8) return { label: 'Too short', color: 'var(--danger)' };
     const strong = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$/.test(password);
-    if (strong) return { label: 'Strong', color: '#22c55e' };
+    if (strong) return { label: 'Strong', color: 'var(--success)' };
     const medium = password.length >= 8 && (/[A-Z]/.test(password) || /[0-9]/.test(password));
-    if (medium) return { label: 'Medium', color: '#f59e0b' };
-    return { label: 'Weak', color: '#ef4444' };
+    if (medium) return { label: 'Medium', color: 'var(--warning)' };
+    return { label: 'Weak', color: 'var(--danger)' };
 };
 
 const AnonymousSignup = () => {
@@ -85,27 +85,16 @@ const AnonymousSignup = () => {
         <div className="auth-container">
             <div className="auth-card glass-panel animate-fade-in">
                 <div className="auth-header">
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                        <div style={{
-                            width: 56, height: 56, borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            <UserPlus size={28} color="white" />
-                        </div>
+                    <div className="auth-avatar">
+                        <UserPlus size={28} color="white" />
                     </div>
                     <h2>Anonymous Sign Up</h2>
                     <p>Create an anonymous account to submit feedback securely</p>
                 </div>
 
                 {error && (
-                    <div style={{
-                        display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
-                        padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
-                        background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                        fontSize: '0.875rem', color: '#fca5a5', marginBottom: '0.5rem'
-                    }}>
-                        <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+                    <div className="form-alert">
+                        <AlertCircle size={16} />
                         <span>{error}</span>
                     </div>
                 )}
@@ -142,7 +131,7 @@ const AnonymousSignup = () => {
                     </div>
 
                     {password && (
-                        <p style={{ fontSize: '0.8rem', margin: '-0.25rem 0 0.25rem 0.25rem', color: strength.color }}>
+                        <p className="auth-hint" style={{ color: strength.color }}>
                             Password strength: {strength.label}
                         </p>
                     )}
@@ -158,13 +147,8 @@ const AnonymousSignup = () => {
                         />
                     </div>
 
-                    <div style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem',
-                        padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)',
-                        background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.15)',
-                        fontSize: '0.85rem', color: 'var(--text-secondary)'
-                    }}>
-                        <ShieldCheck size={18} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
+                    <div className="auth-notice">
+                        <ShieldCheck size={18} />
                         <span>No email required. Your identity stays completely anonymous.</span>
                     </div>
 
@@ -186,7 +170,7 @@ const AnonymousSignup = () => {
                 <div className="auth-footer">
                     <p>
                         Already have an anonymous account?{' '}
-                        <Link to="/anonymous/login" className="switch-mode-btn" style={{ textDecoration: 'none' }}>
+                        <Link to="/anonymous/login" className="switch-mode-btn">
                             Sign in
                         </Link>
                     </p>

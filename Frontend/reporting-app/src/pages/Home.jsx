@@ -31,35 +31,35 @@ const Home = () => {
                         A secure platform for employees and students to anonymously report issues, suggest improvements, and ensure their voices are heard without fear of retaliation.
                     </p>
                     <div className="hero-actions-container">
-                        <div className="auth-portal-section glass-panel animate-slide-up" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)', textAlign: 'left', flex: 1 }}>
-                            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div className="auth-portal-section glass-panel">
+                            <h3 className="auth-portal-title">
                                 <Shield size={20} className="text-gradient-icon" /> Organization Portal
                             </h3>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+                            <p className="auth-portal-desc">
                                 For admins and managers to review and manage submitted reports.
                             </p>
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <Link to="/login" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
+                            <div className="auth-portal-actions">
+                                <Link to="/login" className="btn btn-primary">
                                     Sign In
                                 </Link>
-                                <Link to="/signup" className="btn btn-ghost glass-panel" style={{ flex: 1, justifyContent: 'center' }}>
+                                <Link to="/signup" className="btn btn-ghost glass-panel">
                                     Sign Up
                                 </Link>
                             </div>
                         </div>
 
-                        <div className="auth-portal-section glass-panel animate-slide-up" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)', textAlign: 'left', flex: 1, border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <EyeOff size={20} style={{ color: '#a855f7' }} /> Anonymous Reporter
+                        <div className="auth-portal-section auth-portal-section--anon glass-panel">
+                            <h3 className="auth-portal-title">
+                                <EyeOff size={20} className="auth-portal-icon-anon" /> Anonymous Reporter
                             </h3>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+                            <p className="auth-portal-desc">
                                 Submit suggestions or problems without revealing your identity.
                             </p>
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <Link to="/anonymous/login" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', background: 'linear-gradient(135deg, #a855f7, #6366f1)' }}>
+                            <div className="auth-portal-actions">
+                                <Link to="/anonymous/login" className="btn btn-primary">
                                     Sign In
                                 </Link>
-                                <Link to="/anonymous/signup" className="btn btn-ghost glass-panel" style={{ flex: 1, justifyContent: 'center' }}>
+                                <Link to="/anonymous/signup" className="btn btn-ghost glass-panel">
                                     Sign Up
                                 </Link>
                             </div>

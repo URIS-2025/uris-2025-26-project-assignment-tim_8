@@ -35,11 +35,11 @@ const SelectField = ({ icon: Icon, name, value, onChange, options, placeholder, 
             onChange={onChange}
             className="input-field glass-panel"
             required={required}
-            style={{ appearance: 'none', backgroundColor: 'transparent', color: value ? 'white' : '#9ca3af' }}
+            style={{ color: value ? '#fff' : 'var(--text-muted)' }}
         >
-            <option value="" disabled className="text-gray-900">{placeholder}</option>
+            <option value="" disabled>{placeholder}</option>
             {options.map((opt) => (
-                <option key={opt.id} value={opt.id} className="text-gray-900">
+                <option key={opt.id} value={opt.id}>
                     {opt.name || opt.title || opt.id}
                 </option>
             ))}
@@ -212,13 +212,8 @@ const Login = () => {
                 </div>
 
                 {error && (
-                    <div style={{
-                        display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
-                        padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
-                        background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                        fontSize: '0.875rem', color: '#fca5a5', marginBottom: '0.5rem'
-                    }}>
-                        <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+                    <div className="form-alert">
+                        <AlertCircle size={16} />
                         <span>{error}</span>
                     </div>
                 )}
@@ -258,7 +253,7 @@ const Login = () => {
                     />
 
                     {mode === 'signup' && (
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '-0.25rem 0 0.25rem 0.25rem' }}>
+                        <p className="auth-hint">
                             Min. 8 characters with uppercase, lowercase, a number, and a special character.
                         </p>
                     )}
