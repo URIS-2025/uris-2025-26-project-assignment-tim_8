@@ -46,7 +46,7 @@
 }
 
 .text-gradient {
-    background: linear-gradient(135deg, var(--accent-primary), #a855f7);
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -68,6 +68,10 @@
 }
 
 .auth-portal-section {
+    flex: 1;
+    padding: 1.5rem;
+    text-align: left;
+    border-radius: var(--radius-lg);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -78,8 +82,46 @@
     border-color: rgba(99, 102, 241, 0.3);
 }
 
+/* Anonymous-reporter card: secondary-accent tinted border + gradient CTA */
+.auth-portal-section--anon {
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.auth-portal-section--anon .btn-primary {
+    background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+}
+
+.auth-portal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.auth-portal-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.25rem;
+}
+
+.auth-portal-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.auth-portal-actions .btn {
+    flex: 1;
+    justify-content: center;
+}
+
 .text-gradient-icon {
     color: var(--accent-primary);
+}
+
+.auth-portal-icon-anon {
+    color: var(--accent-secondary);
 }
 
 @media (max-width: 768px) {

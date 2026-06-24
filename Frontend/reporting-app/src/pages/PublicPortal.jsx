@@ -269,14 +269,20 @@ const PublicPortal = () => {
                     <h1>Speak up, safely.</h1>
                     <p>Your voice matters. Submit suggestions or report issues completely anonymously.</p>
 
-                    <div className="portal-tabs">
+                    <div className="portal-tabs" role="tablist" aria-label="Portal sections">
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === 'submit'}
                             className={`portal-tab ${activeTab === 'submit' ? 'active' : ''}`}
                             onClick={() => setActiveTab('submit')}
                         >
                             Submit Feedback
                         </button>
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === 'browse'}
                             className={`portal-tab ${activeTab === 'browse' ? 'active' : ''}`}
                             onClick={() => setActiveTab('browse')}
                         >
@@ -299,7 +305,7 @@ const PublicPortal = () => {
                                 {createdSuggestion && (
                                     <div className="tracking-info">
                                         <p>Your {submissionType === 'problem' ? 'problem' : 'suggestion'} details:</p>
-                                        <div style={{ textAlign: 'left', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}>
+                                        <div className="tracking-details">
                                             <p><strong>ID:</strong> <code>{createdSuggestion.id}</code></p>
                                             <p><strong>Title:</strong> {createdSuggestion.title}</p>
                                             <p><strong>Description:</strong> {createdSuggestion.description}</p>
@@ -317,9 +323,10 @@ const PublicPortal = () => {
                             </div>
                         ) : (
                             <div className="submission-form-container glass-panel">
-                                <div className="form-type-selector">
+                                <div className="form-type-selector" role="group" aria-label="Submission type">
                                     <button
                                         type="button"
+                                        aria-pressed={submissionType === 'suggestion'}
                                         className={`type-btn ${submissionType === 'suggestion' ? 'active' : ''}`}
                                         onClick={() => setSubmissionType('suggestion')}
                                     >
@@ -327,6 +334,7 @@ const PublicPortal = () => {
                                     </button>
                                     <button
                                         type="button"
+                                        aria-pressed={submissionType === 'problem'}
                                         className={`type-btn ${submissionType === 'problem' ? 'active' : ''}`}
                                         onClick={() => setSubmissionType('problem')}
                                     >
@@ -352,7 +360,7 @@ const PublicPortal = () => {
                                                 ))}
                                             </select>
                                         ) : (
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading organizations...</p>
+                                            <p className="portal-field-hint">Loading organizations...</p>
                                         )}
                                     </div>
 
@@ -360,9 +368,9 @@ const PublicPortal = () => {
                                     <div className="form-group">
                                         <label>{submissionType === 'suggestion' ? 'Suggestion Box' : 'Problem Box'} <span className="required">*</span></label>
                                         {!formData.organizationId ? (
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Please select an organization first.</p>
+                                            <p className="portal-field-hint">Please select an organization first.</p>
                                         ) : loadingBoxes ? (
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading boxes...</p>
+                                            <p className="portal-field-hint">Loading boxes...</p>
                                         ) : (submissionType === 'suggestion' ? suggestionBoxes : problemBoxes).length > 0 ? (
                                             <select
                                                 className="portal-input"
@@ -376,7 +384,7 @@ const PublicPortal = () => {
                                                 ))}
                                             </select>
                                         ) : (
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No {submissionType} boxes found for this organization.</p>
+                                            <p className="portal-field-hint">No {submissionType} boxes found for this organization.</p>
                                         )}
                                     </div>
 
@@ -423,17 +431,16 @@ const PublicPortal = () => {
 
                                     {/* Optional Attachment */}
                                     <div className="form-group">
-                                        <label><Paperclip size={14} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} /> Attachment (Optional)</label>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <label><Paperclip size={14} /> Attachment (Optional)</label>
+                                        <div className="portal-attachment-row">
                                             <input
                                                 type="file"
-                                                className="portal-input"
-                                                style={{ padding: '0.5rem' }}
+                                                className="portal-input portal-file"
                                                 onChange={(e) => setAttachment(e.target.files[0] || null)}
                                             />
                                         </div>
                                         {attachment && (
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.35rem' }}>
+                                            <p className="portal-attachment-name">
                                                 Selected: {attachment.name} ({(attachment.size / 1024).toFixed(1)} KB)
                                             </p>
                                         )}
@@ -458,7 +465,7 @@ const PublicPortal = () => {
                                     )}
 
                                     {submitError && (
-                                        <div style={{ color: 'var(--danger)', padding: '0.75rem', background: 'rgba(255,0,0,0.1)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}>
+                                        <div className="form-alert">
                                             {submitError}
                                         </div>
                                     )}
@@ -481,16 +488,15 @@ const PublicPortal = () => {
                 ) : (
                     <div className="browse-section fade-in">
                         {/* Browser Filters */}
-                        <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                            <div style={{ flex: 1, minWidth: '200px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                        <div className="glass-panel portal-browse-filters">
+                            <div className="portal-filter-field">
+                                <label className="portal-filter-label">
                                     Organization
                                 </label>
                                 <select
-                                    className="portal-input"
+                                    className="portal-input portal-browse-select"
                                     value={browseOrgId}
                                     onChange={(e) => setBrowseOrgId(e.target.value)}
-                                    style={{ width: '100%', padding: '0.65rem' }}
                                 >
                                     <option value="">— Select an organization —</option>
                                     {organizations.map(org => (
@@ -499,24 +505,23 @@ const PublicPortal = () => {
                                 </select>
                             </div>
 
-                            <div style={{ flex: 1, minWidth: '200px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                            <div className="portal-filter-field">
+                                <label className="portal-filter-label">
                                     Suggestion Box
                                 </label>
                                 {!browseOrgId ? (
-                                    <select className="portal-input" disabled style={{ width: '100%', padding: '0.65rem', opacity: 0.6 }}>
+                                    <select className="portal-input portal-browse-select" disabled>
                                         <option>Select an organization first</option>
                                     </select>
                                 ) : loadingBrowseBoxes ? (
-                                    <select className="portal-input" disabled style={{ width: '100%', padding: '0.65rem' }}>
+                                    <select className="portal-input portal-browse-select" disabled>
                                         <option>Loading boxes...</option>
                                     </select>
                                 ) : browseSuggestionBoxes.length > 0 ? (
                                     <select
-                                        className="portal-input"
+                                        className="portal-input portal-browse-select"
                                         value={browseBoxId}
                                         onChange={(e) => setBrowseBoxId(e.target.value)}
-                                        style={{ width: '100%', padding: '0.65rem' }}
                                     >
                                         {browseSuggestionBoxes.map(box => (
                                             <option key={box.id} value={box.id}>
@@ -525,7 +530,7 @@ const PublicPortal = () => {
                                         ))}
                                     </select>
                                 ) : (
-                                    <select className="portal-input" disabled style={{ width: '100%', padding: '0.65rem' }}>
+                                    <select className="portal-input portal-browse-select" disabled>
                                         <option>No suggestion boxes found</option>
                                     </select>
                                 )}
@@ -533,16 +538,16 @@ const PublicPortal = () => {
                         </div>
 
                         {!browseOrgId ? (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-lg)' }}>
+                            <div className="portal-placeholder">
                                 <p>Please select an organization to view community feedback.</p>
                             </div>
                         ) : !browseBoxId ? (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-lg)' }}>
+                            <div className="portal-placeholder">
                                 <p>This organization has no suggestion boxes yet.</p>
                             </div>
                         ) : browsing ? (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
+                            <div className="portal-loading">
+                                <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
                                 <p>Loading suggestions...</p>
                             </div>
                         ) : (
@@ -575,7 +580,7 @@ const PublicPortal = () => {
                                     // Pass organizationId for comment creation
                                     organizationId={browseOrgId}
                                 />
-                                <button className="btn btn-ghost load-more-btn" onClick={() => fetchSuggestions(browseBoxId)} style={{ width: '100%', marginTop: '1rem' }}>Refresh Feed</button>
+                                <button type="button" className="btn btn-ghost load-more-btn" onClick={() => fetchSuggestions(browseBoxId)}>Refresh Feed</button>
                             </>
                         )}
                     </div>
