@@ -10,10 +10,8 @@ import OrganizationDetails from './pages/OrganizationDetails';
 import BoxDetails from './pages/BoxDetails';
 import SubmissionDetails from './pages/SubmissionDetails';
 import BillingDashboard from './pages/BillingDashboard';
-import TrackReport from './pages/TrackReport';
 import AnonymousSignup from './pages/AnonymousSignup';
 import AnonymousLogin from './pages/AnonymousLogin';
-import AnonymousSubmit from './pages/AnonymousSubmit';
 import UserManagement from './pages/UserManagement';
 import BoxSettings from './pages/BoxSettings';
 import SubscriptionDetails from './pages/SubscriptionDetails';
@@ -64,10 +62,10 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Login />} />
               <Route path="/portal" element={<PublicPortal />} />
-              <Route path="/track" element={<TrackReport />} />
+              {/* /track (TrackReport) is mocked/non-functional — redirect to the portal until built */}
+              <Route path="/track" element={<Navigate to="/portal" replace />} />
               <Route path="/anonymous/signup" element={<AnonymousSignup />} />
               <Route path="/anonymous/login" element={<AnonymousLogin />} />
-              <Route path="/anonymous/submit" element={<AnonymousSubmit />} />
               <Route path="/organizations" element={<Navigate to="/portal" replace />} />
             </Route>
 

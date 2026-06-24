@@ -277,9 +277,9 @@ const OrganizationDetails = () => {
 
     return (
         <div className="org-details-container animate-fade-in">
-            <div className="back-link" onClick={() => navigate('/admin/dashboard')}>
+            <button type="button" className="back-link" onClick={() => navigate('/admin/dashboard')}>
                 <ArrowLeft size={16} /> Back to Dashboard
-            </div>
+            </button>
 
             {/* Organization Header */}
             {isLoading ? (
@@ -290,7 +290,7 @@ const OrganizationDetails = () => {
                 <div className="org-header-card glass-panel" style={{ borderLeft: `4px solid ${organization.themeColor || 'var(--accent-primary)'}` }}>
                     <div className="org-icon">
                         {organization.customLogoUrl ? (
-                            <img src={organization.customLogoUrl} alt="Logo" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                            <img src={organization.customLogoUrl} alt="Logo" className="org-logo-img" />
                         ) : (
                             <Building2 size={32} />
                         )}
@@ -307,6 +307,7 @@ const OrganizationDetails = () => {
                             <button
                                 className="btn btn-ghost icon-btn notification-bell-btn"
                                 title="Notifications"
+                                aria-label="Notifications"
                                 onClick={() => setShowNotifications(!showNotifications)}
                             >
                                 <Bell size={20} />
@@ -319,7 +320,7 @@ const OrganizationDetails = () => {
                                 <div className="notification-dropdown glass-panel">
                                     <div className="notification-dropdown-header">
                                         <h4>Notifications</h4>
-                                        <button className="btn btn-ghost icon-btn" onClick={() => setShowNotifications(false)}>
+                                        <button className="btn btn-ghost icon-btn" aria-label="Close notifications" onClick={() => setShowNotifications(false)}>
                                             <X size={16} />
                                         </button>
                                     </div>
@@ -333,14 +334,14 @@ const OrganizationDetails = () => {
                                                 <div key={notif.id} className={`notification-item ${notif.type}`}>
                                                     <div className="notification-icon-small">
                                                         {notif.type === 'billing' ? (
-                                                            <Bell size={14} style={{ color: 'var(--accent-primary)' }} />
+                                                            <Bell size={14} className="notif-icon-billing" />
                                                         ) : (
-                                                            <MessageSquareWarning size={14} style={{ color: 'var(--warning)' }} />
+                                                            <MessageSquareWarning size={14} className="notif-icon-system" />
                                                         )}
                                                     </div>
                                                     <div className="notification-item-content">
                                                         <p className="notification-text">
-                                                            <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', display: 'block', opacity: 0.6, marginBottom: '2px' }}>
+                                                            <span className="notification-type-label">
                                                                 {notif.type}
                                                             </span>
                                                             {notif.text}
@@ -353,6 +354,7 @@ const OrganizationDetails = () => {
                                                         className="btn btn-ghost icon-btn notification-delete-btn"
                                                         onClick={() => handleDeleteNotification(notif)}
                                                         title="Delete notification"
+                                                        aria-label="Delete notification"
                                                     >
                                                         <Trash2 size={14} />
                                                     </button>
@@ -363,7 +365,7 @@ const OrganizationDetails = () => {
                                 </div>
                             )}
                         </div>
-                        <button className="btn btn-ghost icon-btn" title="Settings" onClick={() => setSettingsModalOpen(true)}>
+                        <button className="btn btn-ghost icon-btn" title="Settings" aria-label="Organization settings" onClick={() => setSettingsModalOpen(true)}>
                             <Settings size={20} />
                         </button>
                     </div>
@@ -375,14 +377,18 @@ const OrganizationDetails = () => {
             )}
 
             {/* Tabs */}
-            <div className="org-tabs">
+            <div className="org-tabs" role="tablist" aria-label="Organization sections">
                 <button
+                    role="tab"
+                    aria-selected={activeTab === 'boxes'}
                     className={`tab-btn ${activeTab === 'boxes' ? 'active' : ''}`}
                     onClick={() => setActiveTab('boxes')}
                 >
                     <MessageSquareWarning size={18} /> Suggestion & Problem Boxes
                 </button>
                 <button
+                    role="tab"
+                    aria-selected={activeTab === 'managers'}
                     className={`tab-btn ${activeTab === 'managers' ? 'active' : ''}`}
                     onClick={() => setActiveTab('managers')}
                 >
@@ -539,7 +545,7 @@ const OrganizationDetails = () => {
                 title="Organization Settings"
                 footer={
                     <div className="flex justify-between w-full">
-                        <button className="btn btn-danger" onClick={handleDeleteOrganization}>Delete Organization</button>
+                        <button className="btn org-btn-danger" onClick={handleDeleteOrganization}>Delete Organization</button>
                         <div className="flex gap-2">
                             <button className="btn btn-ghost" onClick={() => setSettingsModalOpen(false)}>Cancel</button>
                             <button className="btn btn-primary" onClick={handleUpdateOrganization}>Save Changes</button>

@@ -1,0 +1,51 @@
+.box-settings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Reset UA button chrome for the global .back-link when used as a <button> */
+button.back-link {
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.box-settings-panel {
+    padding: 2rem;
+}
+
+.box-settings-section-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.box-settings-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.box-settings-field {
+    max-width: 400px;
+}
+
+.box-settings-save {
+    margin-top: 1rem;
+}
+
+.box-settings-table-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.box-settings-table-head-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}

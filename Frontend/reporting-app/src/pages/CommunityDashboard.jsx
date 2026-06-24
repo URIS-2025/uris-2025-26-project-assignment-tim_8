@@ -5,6 +5,7 @@ import { OrganizationService } from '../services/organizationService';
 import { SuggestionBoxService } from '../services/suggestionBoxService';
 import CommunityFeed from '../components/Community/CommunityFeed';
 import { useAuth } from '../context/AuthContext';
+import './CommunityDashboard.css';
 
 const CommunityDashboard = () => {
     const [suggestions, setSuggestions] = useState([]);
@@ -104,17 +105,16 @@ const CommunityDashboard = () => {
             </div>
 
             {/* Filters */}
-            <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div className="glass-panel cd-filters">
                 {!isManager && (
-                    <div style={{ flex: 1, minWidth: '200px' }}>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <div className="cd-filter-field">
+                        <label className="cd-filter-label">
                             Organization
                         </label>
                         <select
                             className="form-control"
                             value={selectedOrgId}
                             onChange={(e) => setSelectedOrgId(e.target.value)}
-                            style={{ width: '100%' }}
                         >
                             <option value="">— Select an organization —</option>
                             {organizations.map(org => (
@@ -124,16 +124,16 @@ const CommunityDashboard = () => {
                     </div>
                 )}
 
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <div className="cd-filter-field">
+                    <label className="cd-filter-label">
                         Suggestion Box
                     </label>
                     {!selectedOrgId ? (
-                        <select className="form-control" disabled style={{ width: '100%' }}>
+                        <select className="form-control" disabled>
                             <option>Select an organization first</option>
                         </select>
                     ) : loadingBoxes ? (
-                        <select className="form-control" disabled style={{ width: '100%' }}>
+                        <select className="form-control" disabled>
                             <option>Loading boxes...</option>
                         </select>
                     ) : suggestionBoxes.length > 0 ? (
@@ -141,7 +141,6 @@ const CommunityDashboard = () => {
                             className="form-control"
                             value={selectedBoxId}
                             onChange={(e) => setSelectedBoxId(e.target.value)}
-                            style={{ width: '100%' }}
                         >
                             {suggestionBoxes.map(box => (
                                 <option key={box.id} value={box.id}>
@@ -150,25 +149,25 @@ const CommunityDashboard = () => {
                             ))}
                         </select>
                     ) : (
-                        <select className="form-control" disabled style={{ width: '100%' }}>
+                        <select className="form-control" disabled>
                             <option>No suggestion boxes found</option>
                         </select>
                     )}
                 </div>
             </div>
 
-            <div className="page-content" style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div className="page-content cd-content">
                 {!selectedOrgId ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                    <div className="cd-state">
                         <p>{isManager ? 'No organization is assigned to your account.' : 'Please select an organization to view suggestions.'}</p>
                     </div>
                 ) : !selectedBoxId ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                    <div className="cd-state">
                         <p>Please select a suggestion box to view suggestions.</p>
                     </div>
                 ) : loading ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '1rem' }} />
+                    <div className="cd-state">
+                        <Loader2 size={32} className="cd-state-icon" />
                         <p>Loading community feed...</p>
                     </div>
                 ) : (

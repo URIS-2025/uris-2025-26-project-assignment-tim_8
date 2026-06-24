@@ -60,31 +60,7 @@
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
 }
 
-.icon-btn {
-    padding: 0.5rem;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-subtle);
-}
-
-.icon-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-}
-
-.icon-btn.small {
-    padding: 0.25rem;
-    border-radius: var(--radius-sm);
-}
-
-.icon-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
+/* .icon-btn (+ .small / states) now live in index.css (shared utilities). */
 
 /* Table Styles */
 .table-responsive {
@@ -130,12 +106,7 @@
     background-color: rgba(255, 255, 255, 0.02);
 }
 
-.empty-state {
-    text-align: center;
-    padding: 3rem 1.5rem !important;
-    color: var(--text-muted) !important;
-    font-style: italic;
-}
+/* .empty-state now lives in index.css (shared utilities). */
 
 /* Pagination */
 .table-pagination {

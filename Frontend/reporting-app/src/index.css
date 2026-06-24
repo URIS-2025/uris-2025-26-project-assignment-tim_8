@@ -32,6 +32,38 @@
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Secondary accent — was an ad-hoc #a855f7 sprinkled across pages */
+  --accent-secondary: #a855f7;
+  --accent-secondary-hover: #9333ea;
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  /* Type scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Compatibility aliases — some views reference these legacy token names
+     (e.g. CommunityFeed used var(--text)/var(--bg-card)/var(--primary), which
+     silently resolved to nothing). Map them to the canonical tokens. */
+  --text: var(--text-primary);
+  --bg-card: var(--bg-secondary);
+  --primary: var(--accent-primary);
 }
 
 * {
@@ -138,4 +170,192 @@ code {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Shared UI utilities — single source of truth.
+   Consolidated here from Navbar.css (.btn*), Modal.css (.form-control),
+   DataTable.css (.icon-btn/.empty-state). Per-view CSS should reuse these
+   instead of redefining them.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: 0 4px 14px 0 var(--accent-glow);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+}
+
+.btn-full {
+  width: 100%;
+  justify-content: center;
+  padding: 0.875rem;
+  font-size: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.bounce-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+}
+
+/* Icon-only buttons */
+.icon-btn {
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.icon-btn.small {
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+}
+
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Form controls */
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.form-control:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.form-control:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+select.form-control {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+select.form-control option {
+  background: #1e293b;
+  color: var(--text-primary);
+  padding: 0.5rem;
+}
+
+/* Shared state / layout helpers */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem !important;
+  color: var(--text-muted) !important;
+  font-style: italic;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  width: fit-content;
+  transition: color 0.2s ease;
+}
+
+.back-link:hover {
+  color: var(--text-primary);
+}
+
+/* Inline error/alert block — was referenced as .form-alert but never defined,
+   and otherwise repeated as an inline style on every auth form. */
+.form-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-size: 0.875rem;
+  color: #fca5a5;
+}
+
+/* Small utilities — were referenced in markup but never defined (silent no-ops) */
+.text-danger { color: var(--danger); }
+.text-secondary { color: var(--text-secondary); }
+.text-center { text-align: center; }
+.mr-2 { margin-right: 0.5rem; }
+.ml-2 { margin-left: 0.5rem; }
+.p-8 { padding: 2rem; }
+
+/* Accessibility: a visible keyboard focus ring everywhere */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Spinner keyframes — loading states across pages use `animation: spin ...`
+   but the keyframes were never defined, so spinners sat still. */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

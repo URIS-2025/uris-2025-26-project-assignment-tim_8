@@ -1,0 +1,59 @@
+/* Page-scoped styles for SuggestionBoxes.jsx.
+   Reuses global tokens + utilities from index.css (.btn*, .form-control,
+   .glass-panel, .empty-state, .text-danger, etc.). Only static layout that
+   was previously inline lives here. */
+
+.box-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.box-page-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.box-page-icon {
+    color: var(--accent-primary);
+}
+
+/* Loading state */
+.box-page-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
+
+.box-page-loading-inner {
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.box-page-loading-inner svg {
+    margin-bottom: var(--space-4);
+}
+
+/* Error / retry panel */
+.box-page-error {
+    padding: var(--space-6);
+    text-align: center;
+    color: var(--danger);
+}
+
+.box-page-error-retry {
+    margin-top: var(--space-4);
+}
+
+/* Cell helpers */
+.box-page-name {
+    color: var(--text-primary);
+}
+
+.box-page-delete-btn {
+    color: var(--danger);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-sm);
+}

@@ -1,0 +1,50 @@
+/* UserManagement page styles.
+   Self-contained: previously this page shipped NO sibling CSS and relied on
+   utility classes defined in OrganizationDetails.css, so it rendered unstyled
+   unless the Org details page had been visited first (CSS load-order bug).
+   The helpers below are page-scoped duplicates of those utilities + a few that
+   were referenced in markup but never defined anywhere (silent no-ops). */
+
+.user-management-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.user-management-container .table-wrapper {
+    width: 100%;
+}
+
+/* Inline-flex helper used by the Role cell */
+.user-management-container .flex {
+    display: flex;
+}
+
+.user-management-container .items-center {
+    align-items: center;
+}
+
+.user-management-container .gap-2 {
+    gap: 0.5rem;
+}
+
+/* Role-cell icon colors (referenced but previously undefined) */
+.user-management-container .text-muted {
+    color: var(--text-muted);
+}
+
+/* Spacing helpers referenced in the role modal */
+.user-management-container .mb-4 {
+    margin-bottom: 1rem;
+}
+
+.user-management-container .p-4 {
+    padding: 1rem;
+}
+
+/* Helper text under the organization select (was inline) */
+.user-management-container .form-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}

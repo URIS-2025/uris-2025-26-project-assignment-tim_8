@@ -6,6 +6,7 @@ import Modal from '../components/Modal';
 import { OrganizationService } from '../services/organizationService';
 import { UserService } from '../services/userService';
 import { UserRoleService } from '../services/userRoleService';
+import './UserManagement.css';
 
 const UserManagement = () => {
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
@@ -125,7 +126,7 @@ const UserManagement = () => {
             header: 'Actions',
             accessor: 'actions',
             render: (row) => (
-                <button className="btn btn-ghost icon-btn small" title="Security Settings" onClick={() => openRoleModal(row)}>
+                <button className="btn btn-ghost icon-btn small" title="Security Settings" aria-label="Manage user role" onClick={() => openRoleModal(row)}>
                     <Lock size={16} />
                 </button>
             )
@@ -133,7 +134,7 @@ const UserManagement = () => {
     ];
 
     return (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div className="user-management-container animate-fade-in">
             <div className="page-header">
                 <div>
                     <h1 className="page-title">System Users</h1>
@@ -210,7 +211,7 @@ const UserManagement = () => {
                             <option key={org.id} value={org.id}>{org.name}</option>
                         ))}
                     </select>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Platform Admins do not need an assigned organization.</p>
+                    <p className="form-hint">Platform Admins do not need an assigned organization.</p>
                 </div>
             </Modal>
 
