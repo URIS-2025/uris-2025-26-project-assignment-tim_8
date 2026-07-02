@@ -143,6 +143,14 @@ Cross-cutting contracts (error shapes, `LogCreationDTO`, inter-service calls) â†
 | `SuggestionComment` | Comment on a suggestion |
 | `Vote` | Up/down vote on a suggestion |
 
+**Schema gotchas (raw-SQL / reporting readers beware):**
+- `Suggestion.Status` is persisted as a **STRING** via EF `HasConversion<string>()`
+  (`SuggestionService/Context/SuggestionContext.cs:76`) â€” stored as `'Active'`/`'Inactive'`
+  (enum `Active=0, Inactive=1`), NOT an int. Every other status column
+  (`ProblemBox`/`SuggestionBox`/`Problem`) is a plain int. A raw-SQL reader must normalize the
+  string back to the numeric code (e.g. `McpGateway/Sql/01_read_views.sql` `vw_Suggestion`).
+- `ProblemComment` has **no `CreatedAt`** column (unlike `SuggestionComment`, which has one).
+
 ### Duplicated cross-service models (in `SuggestionService/Models/`)
 
 | Class | Namespace | Authoritative source |

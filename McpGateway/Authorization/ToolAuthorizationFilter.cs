@@ -21,7 +21,8 @@ public class ToolAuthorizationFilter
 
     public async ValueTask<CallToolResult> EvaluateAsync(
         string? agentToken, ClaimsPrincipal? user, string toolName, string? argsSummary,
-        Func<CancellationToken, ValueTask<CallToolResult>> next, CancellationToken cancellationToken)
+        Func<CancellationToken, ValueTask<CallToolResult>> next, CancellationToken cancellationToken,
+        IInvocationContextAccessor? invocationContext = null, string? bearerToken = null)
     {
         var decision = await _gatekeeper.AuthorizeAndAuditAsync(
             agentToken, user, toolName, argsSummary, cancellationToken: cancellationToken);
@@ -33,6 +34,16 @@ public class ToolAuthorizationFilter
                 IsError = true,
                 Content = [new TextContentBlock { Text = $"Zabranjeno: {decision.Reason}" }],
             };
+        }
+
+        // On allow, publish the authorized execution context for the tool body (org-scope for reads;
+        // OBO bearer for writes). Only ever set on allow — a denied call never reaches a tool.
+        if (invocationContext is not null)
+        {
+            var u = RequestGatekeeper.ExtractUser(user);
+            invocationContext.Current = new InvocationContext(
+                decision.EffectiveOrganizationId, u?.Role ?? string.Empty, u?.UserId ?? string.Empty,
+                bearerToken);
         }
 
         return await next(cancellationToken);
