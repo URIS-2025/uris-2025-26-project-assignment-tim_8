@@ -22,6 +22,28 @@ builder.Services.AddSingleton<IAuditSink, InMemoryAuditSink>();
 builder.Services.AddSingleton<RequestGatekeeper>();
 builder.Services.AddSingleton<ToolAuthorizationFilter>();
 builder.Services.AddHttpContextAccessor();
+// Per-request holder that carries the authorized execution context (org-scope + OBO bearer) from
+// the authorization filter to the tool body. Scoped: filter and tool share the same request scope.
+builder.Services.AddScoped<IInvocationContextAccessor, InvocationContextAccessor>();
+
+// ── Read data layer: SELECT-only login over scrubbed, org-scoped views (Dapper) ──────────────────
+var readDbOptions = new McpGateway.Data.ReadDbOptions
+{
+    ProblemDb       = builder.Configuration["ReadDb:ProblemDB"] ?? "",
+    SuggestionDb    = builder.Configuration["ReadDb:SuggestionDB"] ?? "",
+    ProblemBoxDb    = builder.Configuration["ReadDb:ProblemBoxDB"] ?? "",
+    SuggestionBoxDb = builder.Configuration["ReadDb:SuggestionBoxDB"] ?? "",
+};
+// Fail fast (like the Gateway policy config): a missing ReadDb connection string would otherwise
+// surface much later as an opaque SqlConnection(null) on the first tool call.
+if (string.IsNullOrWhiteSpace(readDbOptions.ProblemDb) || string.IsNullOrWhiteSpace(readDbOptions.SuggestionDb)
+    || string.IsNullOrWhiteSpace(readDbOptions.ProblemBoxDb) || string.IsNullOrWhiteSpace(readDbOptions.SuggestionBoxDb))
+{
+    throw new InvalidOperationException(
+        "Nedostaje ReadDb konfiguracija — postavi ReadDb:{ProblemDB,SuggestionDB,ProblemBoxDB,SuggestionBoxDB}.");
+}
+builder.Services.AddSingleton(readDbOptions);
+builder.Services.AddScoped<McpGateway.Data.IReadRepository, McpGateway.Data.SqlReadRepository>();
 
 // ── User (on-behalf-of) JWT: validate OrganizationService-issued tokens ──────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -61,13 +83,17 @@ builder.Services.AddMcpServer()
             }
 
             var filter = services.GetRequiredService<ToolAuthorizationFilter>();
+            var invocationContext = services.GetRequiredService<IInvocationContextAccessor>();
             var http = services.GetService<IHttpContextAccessor>()?.HttpContext;
             var agentToken = http?.Request.Headers["X-Agent-Token"].ToString();
+            var bearer = http?.Request.Headers["Authorization"].ToString();
             var toolName = context.Params?.Name ?? string.Empty;
 
             return await filter.EvaluateAsync(
-                agentToken, context.User, toolName, argsSummary: null,
-                next: ct => next(context, ct), cancellationToken);
+                agentToken, context.User, toolName,
+                argsSummary: ArgsSummary.Build(context.Params?.Arguments),
+                next: ct => next(context, ct), cancellationToken,
+                invocationContext: invocationContext, bearerToken: bearer);
         });
     });
 
