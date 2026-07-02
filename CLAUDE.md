@@ -32,6 +32,7 @@ Read these before writing backend code. Rules = "how to write code here" (WRONG/
 | `service-catalog.md` | Per-service controllers→routes, key entities, repositories; duplicated-model flags |
 | `cross-service-contracts.md` | Who-calls-whom call graph, LoggerService log contract, VO contracts, duplicated `AnonymousDomain` models risk |
 | `notifications.md` | How org system/billing notifications are produced, resolved, and authorized |
+| `mcp-gateway.md` | McpGateway security boundary (T7): dual-principal authz pipeline, Dapper+scrubbed-views+SELECT-only read layer, gateway-composed org-scope, InvocationContext propagation, audit scrubbing |
 
 The original scan that produced these lives in `.coordination/SCAN_REPORT.md`.
 
