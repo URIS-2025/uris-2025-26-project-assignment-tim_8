@@ -27,3 +27,12 @@ public record SubmissionDetailsDto(
     IReadOnlyList<CommentDto> Comments);
 
 public record GlobalStatsDto(int Organizations, int Problems, int Suggestions, int Boxes);
+
+// ── Read-modify-write source rows (internal to write tools; NOT returned to the agent) ────────────
+// The REST update endpoints require a FULL DTO and overwrite unset fields, so a write tool must read
+// the current values first. These carry no PII (Title/Description are already exposed by read tools;
+// Status/Priority are numeric codes). A null result = not found OR outside the caller's box scope —
+// so the same call doubles as the org-ownership check (opaque, no existence leak).
+public record ProblemUpdateFieldsDto(string Title, string Description, Guid ProblemBoxId, int Priority, int Status);
+
+public record SuggestionUpdateFieldsDto(string Title, string Description, int Status);

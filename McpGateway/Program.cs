@@ -45,6 +45,23 @@ if (string.IsNullOrWhiteSpace(readDbOptions.ProblemDb) || string.IsNullOrWhiteSp
 builder.Services.AddSingleton(readDbOptions);
 builder.Services.AddScoped<McpGateway.Data.IReadRepository, McpGateway.Data.SqlReadRepository>();
 
+// ── Write data layer: named HttpClients + typed clients that call the existing REST endpoints ────
+// The write tools forward the caller's OBO bearer to these. Base URLs (Docker container names on
+// :8080) come from the "Services" config section; a missing one is a fail-fast at startup.
+string ServiceBaseUrl(string key) =>
+    builder.Configuration[$"Services:{key}"]
+    ?? throw new InvalidOperationException($"Nedostaje Services:{key} bazni URL u konfiguraciji.");
+
+builder.Services.AddHttpClient("ProblemBoxService",    c => c.BaseAddress = new Uri(ServiceBaseUrl("ProblemBoxService")));
+builder.Services.AddHttpClient("SuggestionBoxService", c => c.BaseAddress = new Uri(ServiceBaseUrl("SuggestionBoxService")));
+builder.Services.AddHttpClient("ProblemService",       c => c.BaseAddress = new Uri(ServiceBaseUrl("ProblemService")));
+builder.Services.AddHttpClient("SuggestionService",    c => c.BaseAddress = new Uri(ServiceBaseUrl("SuggestionService")));
+
+builder.Services.AddScoped<McpGateway.Clients.ProblemBoxServiceClient>();
+builder.Services.AddScoped<McpGateway.Clients.SuggestionBoxServiceClient>();
+builder.Services.AddScoped<McpGateway.Clients.ProblemServiceClient>();
+builder.Services.AddScoped<McpGateway.Clients.SuggestionServiceClient>();
+
 // ── User (on-behalf-of) JWT: validate OrganizationService-issued tokens ──────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
