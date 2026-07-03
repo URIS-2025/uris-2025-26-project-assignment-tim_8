@@ -41,4 +41,22 @@ public class ArgsSummaryTests
         Assert.DoesNotContain("secret", summary);
         Assert.Contains("description=<len:", summary);
     }
+
+    [Fact] // R11 — write-tool args: a box password (and name/text) must never be logged literally.
+    public void Write_password_name_and_text_are_never_literal_but_status_and_org_are()
+    {
+        var org = Guid.NewGuid();
+        var summary = ArgsSummary.Build(Args($$"""
+            { "type": "problem", "id": "1", "status": 1, "organizationId": "{{org}}",
+              "name": "Box A", "password": "hunter2", "text": "reply body" }
+            """));
+
+        Assert.DoesNotContain("hunter2", summary);       // the password is NEVER echoed
+        Assert.Contains("password=<len:7>", summary);    // only its length
+        Assert.DoesNotContain("Box A", summary);
+        Assert.DoesNotContain("reply body", summary);
+        Assert.Contains("type=problem", summary);        // identifier/flag literals are fine
+        Assert.Contains("status=1", summary);
+        Assert.Contains($"organizationId={org}", summary);
+    }
 }

@@ -41,6 +41,14 @@ public interface IReadRepository
     Task<SubmissionDetailsDto?> GetSuggestionDetailsAsync(
         Guid id, IReadOnlyList<Guid>? allowedSuggestionBoxIds, CancellationToken ct);
 
+    // ── read-modify-write sources (write tools; null = not found OR out of scope → deny) ─────────
+    // Same boxIds contract as the details methods: null = admin/global (no filter); empty = scoped
+    // caller with zero boxes → null. Returning null doubles as the org-ownership check for writes.
+    Task<ProblemUpdateFieldsDto?> GetProblemUpdateFieldsAsync(
+        Guid id, IReadOnlyList<Guid>? allowedProblemBoxIds, CancellationToken ct);
+    Task<SuggestionUpdateFieldsDto?> GetSuggestionUpdateFieldsAsync(
+        Guid id, IReadOnlyList<Guid>? allowedSuggestionBoxIds, CancellationToken ct);
+
     // ── global (admin only) ──────────────────────────────────────────────────────────────────────
     Task<GlobalStatsDto> GetGlobalStatsAsync(CancellationToken ct);
 }

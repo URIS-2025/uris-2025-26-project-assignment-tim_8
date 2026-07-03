@@ -320,6 +320,41 @@ public sealed class SqlReadRepository : IReadRepository
             head.Id, "suggestion", head.Title, head.Description, head.Status, head.CreatedAt, comments);
     }
 
+    // ── read-modify-write sources (scope enforced; null = not found OR out of scope) ─────────────────
+
+    public async Task<ProblemUpdateFieldsDto?> GetProblemUpdateFieldsAsync(
+        Guid id, IReadOnlyList<Guid>? allowedProblemBoxIds, CancellationToken ct)
+    {
+        if (allowedProblemBoxIds is { Count: 0 }) return null; // scoped caller with no boxes → deny
+
+        var scope = allowedProblemBoxIds is null ? "" : " AND ProblemBoxId IN @boxIds";
+        string sql = $@"
+            SELECT Title, Description, ProblemBoxId, Priority, Status
+            FROM dbo.vw_Problem
+            WHERE Id = @id{scope};";
+
+        await using var conn = await OpenAsync(_cs.ProblemDb, ct);
+        return await conn.QuerySingleOrDefaultAsync<ProblemUpdateFieldsDto>(
+            new CommandDefinition(sql, new { id, boxIds = allowedProblemBoxIds }, cancellationToken: ct));
+    }
+
+    public async Task<SuggestionUpdateFieldsDto?> GetSuggestionUpdateFieldsAsync(
+        Guid id, IReadOnlyList<Guid>? allowedSuggestionBoxIds, CancellationToken ct)
+    {
+        if (allowedSuggestionBoxIds is { Count: 0 }) return null;
+
+        var scope = allowedSuggestionBoxIds is null ? "" : " AND SuggestionBoxId IN @boxIds";
+        // vw_Suggestion normalizes the string-stored Status back to its numeric code (see 01_read_views.sql).
+        string sql = $@"
+            SELECT Title, Description, Status
+            FROM dbo.vw_Suggestion
+            WHERE Id = @id{scope};";
+
+        await using var conn = await OpenAsync(_cs.SuggestionDb, ct);
+        return await conn.QuerySingleOrDefaultAsync<SuggestionUpdateFieldsDto>(
+            new CommandDefinition(sql, new { id, boxIds = allowedSuggestionBoxIds }, cancellationToken: ct));
+    }
+
     // ── global (admin only) ────────────────────────────────────────────────────────────────────────
 
     public async Task<GlobalStatsDto> GetGlobalStatsAsync(CancellationToken ct)
