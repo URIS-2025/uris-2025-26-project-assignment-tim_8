@@ -421,3 +421,28 @@ builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 | W8 | `AddSingleton` or `AddTransient` for repo | `AddScoped<IXxxRepository, XxxRepository>()` | `ProblemService/Program.cs:12-14` |
 | W9 | Create `XxxProfile : Profile` and register manually | Inherit `Profile`, `AddMaps(typeof(Program).Assembly)` auto-discovers | `ProblemService/Program.cs:16` + `ProblemService/Profiles/ProblemProfile.cs` |
 | W10 | Name cross-service shapes `AttachmentDTO` | Name them `AttachmentVO` (VO = value object, sourced externally) | `ProblemService/Models/DTOs/AttachmentVO.cs` |
+
+---
+
+## 10. GOTCHA — `Update` clobbers unspecified fields; `CategoryIds` is silently ignored
+
+The update repositories overwrite the row from the incoming DTO, so a caller sending a PARTIAL DTO
+(e.g. changing only `Status`) will **null out** every field it left unset.
+
+| Repo | Update mechanism | Consequence |
+|---|---|---|
+| `SuggestionService/Data/SuggestionRepository.cs:52-58` | `_mapper.Map(suggestionDto, suggestion)` (AutoMapper onto the existing entity; `CreateMap<SuggestionUpdateDTO, Suggestion>().ReverseMap()` at `SuggestionProfile.cs:14`) | Unset DTO fields (Title/Description) overwrite the entity with `null`. `SuggestionUpdateDTO.CategoryIds` has **no matching entity property** → silently dropped; the `SuggestionCategories` join is never touched by Update. |
+| `ProblemService/Data/ProblemRepository.cs` (`UpdateProblem`) | manual scalar assignment (Title/Description/Status/Priority/ProblemBoxId) | Same full-overwrite for scalars; related/join rows untouched. |
+
+```csharp
+// WRONG — a status-only update sends a sparse DTO → wipes Title/Description
+Update(new SuggestionUpdateDTO { Id = id, Status = ProblemSuggestionStatus.Inactive });
+
+// CORRECT — read-modify-write: fetch current values, change only Status, send the FULL DTO
+var cur = Get(id);
+Update(new SuggestionUpdateDTO { Id = id, Title = cur.Title, Description = cur.Description,
+                                Status = ProblemSuggestionStatus.Inactive });
+```
+
+`CategoryIds` cannot be updated through `SuggestionRepository.Update` — it is dropped. A real category
+update would need explicit join-row handling (absent today).

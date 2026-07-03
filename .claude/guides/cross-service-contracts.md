@@ -270,3 +270,23 @@ to 8080 in every service). Note the inconsistencies highlighted below.
 | `LoggerService/Models/DTOs/LogCreationDTO.cs` | Canonical DTO definition |
 | `LoggerService/Models/Log.cs` | Persisted entity |
 | `LoggerService/Data/LoggerRepository.cs` | Repository — maps DTO to entity, saves to DB |
+
+---
+
+## Enum wire format — status/priority cross the wire as INTEGERS
+
+No service registers a `JsonStringEnumConverter` (no `AddJsonOptions` in any `Program.cs`, no
+`[JsonConverter]` on the enum types), so ASP.NET's default System.Text.Json serializes enums as their
+**numeric** value. Any service (or the MCP gateway) that POST/PUTs to these endpoints must send
+integers, not strings.
+
+| Enum | Members (int) | Used by (DTO field) |
+|---|---|---|
+| `ProblemSuggestionStatus` | `Active=0, Inactive=1` | Problem.Status, ProblemBox.Status, Suggestion.Status |
+| `BoxStatus` | `Active=0, Inactive=1` | SuggestionBox.Status |
+| `ProblemPriority` | `Low=0, Medium=1, High=2` | Problem.Priority |
+
+Evidence: no `JsonStringEnumConverter` in `{Problem,Suggestion,ProblemBox,SuggestionBox}Service/Program.cs`;
+frontend sends numeric status. NOTE: `Suggestion.Status` is *additionally* persisted as a STRING in the
+DB via `HasConversion<string>()` (see `service-catalog.md`) — that is the DB column, NOT the wire format,
+which is still an int.
