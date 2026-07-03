@@ -64,10 +64,12 @@ public class RequestGatekeeper
         }
 
         // Every decision — allow or deny — is durably audited. A failed audit write fails the call
-        // CLOSED: no action is ever executed without a corresponding audit record.
+        // CLOSED: no action is ever executed without a corresponding audit record. The returned id
+        // lets the caller enrich this same record with the execution outcome (see EnrichOutcomeAsync).
         try
         {
-            await RecordAsync(agentId, userCtx, toolName, argsSummary, correlationId, result, cancellationToken);
+            var auditId = await RecordAsync(agentId, userCtx, toolName, argsSummary, correlationId, result, cancellationToken);
+            result = result with { AuditId = auditId };
         }
         catch (Exception ex)
         {
@@ -78,11 +80,31 @@ public class RequestGatekeeper
         return result;
     }
 
-    private async Task RecordAsync(string agentId, UserContext? user, string toolName,
+    /// <summary>
+    /// Best-effort enrichment of an already-audited call with its execution outcome. Runs AFTER the
+    /// tool executed, so a failure here MUST NOT fail the request (the action already happened) — it
+    /// is logged and swallowed. A null <paramref name="auditId"/> is a no-op.
+    /// </summary>
+    public async Task EnrichOutcomeAsync(
+        Guid? auditId, AuditOutcome outcome, int durationMs, string? error, CancellationToken ct)
+    {
+        if (auditId is not Guid id) return; // never audited (e.g. audit-write failed) → nothing to enrich
+        try
+        {
+            await _audit.UpdateOutcomeAsync(id, outcome, durationMs, error, ct);
+        }
+        catch (Exception ex)
+        {
+            // Best-effort: the tool already ran; a failed enrichment must not fail the request.
+            _logger.LogWarning(ex, "Obogaćivanje ishoda audita nije uspelo za {AuditId}", id);
+        }
+    }
+
+    private async Task<Guid> RecordAsync(string agentId, UserContext? user, string toolName,
         string? argsSummary, Guid? correlationId, AuthResult result, CancellationToken ct)
     {
         var isWrite = _policies.ToolPolicies.TryGetValue(toolName, out var policy) && policy.IsWrite;
-        await _audit.RecordAsync(new AuditEntry
+        var entry = new AuditEntry
         {
             CorrelationId = correlationId,
             AgentId = agentId,
@@ -96,7 +118,9 @@ public class RequestGatekeeper
             DecisionReason = result.Reason,
             Confirmation = result.IsAllowed && isWrite ? ConfirmationState.Proposed : null,
             Outcome = AuditOutcome.NotExecuted, // decision-level audit; execution outcome enriched later
-        }, ct);
+        };
+        await _audit.RecordAsync(entry, ct);
+        return entry.Id;
     }
 
     /// <summary>Maps the OBO JWT claims (OrganizationService token) to a <see cref="UserContext"/>.</summary>
