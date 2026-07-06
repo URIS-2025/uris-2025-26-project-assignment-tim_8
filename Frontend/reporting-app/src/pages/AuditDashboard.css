@@ -1,0 +1,81 @@
+/* Page-scoped styles for the Audit dashboard. Reuses global tokens + .glass-panel / .custom-table
+   / .table-responsive / .table-pagination / .btn from index.css & DataTable.css. */
+
+.audit-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 2rem);
+}
+
+.audit-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    padding: var(--space-4, 1rem);
+}
+
+.audit-filters .form-control {
+    width: auto;
+    min-width: 160px;
+    flex: 0 1 auto;
+}
+
+/* Small semantic pill for decision / outcome. Border + text colored by the enum tone (inline). */
+.audit-pill {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-full, 999px);
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.audit-table code {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.audit-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 3rem 0;
+    color: var(--text-secondary);
+}
+
+.audit-error {
+    padding: var(--space-4, 1rem);
+    color: var(--danger);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+/* Detail modal */
+.audit-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.audit-detail-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 1rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.audit-detail-label {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.audit-detail-value {
+    color: var(--text-primary);
+    word-break: break-word;
+}

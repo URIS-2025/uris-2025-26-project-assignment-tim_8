@@ -8,7 +8,9 @@ import {
     CreditCard,
     Settings,
     LogOut,
-    ShieldAlert
+    ShieldAlert,
+    ShieldCheck,
+    Bot
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './Sidebar.css';
@@ -27,6 +29,8 @@ const Sidebar = () => {
         { name: 'Suggestion Boxes', path: '/admin/suggestions', icon: MessageSquareWarning, roles: ['admin', 'manager'] },
         { name: 'Problem Boxes', path: '/admin/problems', icon: AlertOctagon, roles: ['admin', 'manager'] },
         { name: 'Users', path: '/admin/users', icon: Users, roles: ['admin'] },
+        { name: 'Audit Log', path: '/admin/audit', icon: ShieldCheck, roles: ['admin', 'manager'] },
+        { name: 'AI Assistant', path: '/admin/ai-chat', icon: Bot, roles: ['admin', 'manager'] },
         { name: 'Billing', path: '/admin/billing', icon: CreditCard, roles: ['billingmanager'] },
     ];
 
