@@ -21,10 +21,17 @@ public class AgentTokenService : IAgentTokenService
         if (string.IsNullOrWhiteSpace(_options.PrivateKeyPem))
             throw new InvalidOperationException("Agent privatni kljuc (Agent:PrivateKeyPem) nije konfigurisan.");
 
+        // Normalize escaped newlines. A PEM supplied via a Docker/.env environment variable arrives
+        // as a single physical line with literal "\n" (backslash-n) escapes, which ImportFromPem
+        // cannot parse. A PEM from JSON appsettings or user-secrets already has real newlines, so this
+        // is a no-op there (a base64 body never contains a literal backslash). This lets the same
+        // secret be injected either way.
+        var pem = _options.PrivateKeyPem.Replace("\\r\\n", "\n").Replace("\\n", "\n");
+
         // Own the RSA for the lifetime of the mint; WriteToken signs synchronously, so disposing at
         // method exit (after the token string is produced) is safe.
         using var rsa = RSA.Create();
-        rsa.ImportFromPem(_options.PrivateKeyPem);
+        rsa.ImportFromPem(pem);
 
         var credentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256);
 

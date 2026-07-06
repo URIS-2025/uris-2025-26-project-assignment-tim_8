@@ -58,6 +58,22 @@ if (string.IsNullOrWhiteSpace(readDbOptions.ProblemDb) || string.IsNullOrWhiteSp
     throw new InvalidOperationException(
         "Nedostaje ReadDb konfiguracija — postavi ReadDb:{ProblemDB,SuggestionDB,ProblemBoxDB,SuggestionBoxDB}.");
 }
+// Fail fast on an EMPTY read-login password too. An unset ${MCP_READ_PASSWORD} in Docker leaves a
+// syntactically valid "…User Id=mcp_read;Password=;…" that would otherwise boot "healthy" and only
+// fail on the FIRST read tool call with an opaque "Login failed for user 'mcp_read'". Surfacing it
+// at boot aligns MCP_READ_PASSWORD with the other injected secrets (which already crash-loop when unset).
+foreach (var (name, cs) in new[]
+{
+    ("ReadDb:ProblemDB", readDbOptions.ProblemDb),
+    ("ReadDb:SuggestionDB", readDbOptions.SuggestionDb),
+    ("ReadDb:ProblemBoxDB", readDbOptions.ProblemBoxDb),
+    ("ReadDb:SuggestionBoxDB", readDbOptions.SuggestionBoxDb),
+})
+{
+    if (string.IsNullOrEmpty(new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(cs).Password))
+        throw new InvalidOperationException(
+            $"{name}: prazna lozinka za SELECT-only nalog — postavi MCP_READ_PASSWORD (env/.env) pre pokretanja.");
+}
 builder.Services.AddSingleton(readDbOptions);
 builder.Services.AddScoped<McpGateway.Data.IReadRepository, McpGateway.Data.SqlReadRepository>();
 
