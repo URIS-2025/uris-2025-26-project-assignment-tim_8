@@ -100,4 +100,22 @@ public class GatewayIntegrationTests : IClassFixture<WebApplicationFactory<Progr
             .GetRequiredService<IDbContextFactory<AuditDbContext>>().CreateDbContext();
         Assert.Contains(db.AuditEntries, e => e.Decision == AuthDecision.Deny);
     }
+
+    [Fact] // Faza D — a client-supplied X-Correlation-Id is threaded into the audit record
+    public async Task Correlation_id_header_is_recorded_on_the_audit_entry()
+    {
+        var correlationId = Guid.NewGuid();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", MintUserToken("Manager", Guid.NewGuid()));
+        client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+        client.DefaultRequestHeaders.Accept.ParseAdd("text/event-stream");
+        client.DefaultRequestHeaders.Add("X-Correlation-Id", correlationId.ToString());
+
+        await client.PostAsync("/mcp", McpCall());
+
+        using var db = _factory.Services
+            .GetRequiredService<IDbContextFactory<AuditDbContext>>().CreateDbContext();
+        Assert.Contains(db.AuditEntries, e => e.CorrelationId == correlationId);
+    }
 }

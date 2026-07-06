@@ -24,10 +24,12 @@ public class ToolAuthorizationFilter
     public async ValueTask<CallToolResult> EvaluateAsync(
         string? agentToken, ClaimsPrincipal? user, string toolName, string? argsSummary,
         Func<CancellationToken, ValueTask<CallToolResult>> next, CancellationToken cancellationToken,
-        IInvocationContextAccessor? invocationContext = null, string? bearerToken = null)
+        IInvocationContextAccessor? invocationContext = null, string? bearerToken = null,
+        Guid? correlationId = null)
     {
         var decision = await _gatekeeper.AuthorizeAndAuditAsync(
-            agentToken, user, toolName, argsSummary, cancellationToken: cancellationToken);
+            agentToken, user, toolName, argsSummary, correlationId: correlationId,
+            cancellationToken: cancellationToken);
 
         if (!decision.IsAllowed)
         {
