@@ -39,8 +39,10 @@ public record AuditEntry
     // Write-tool confirmation lifecycle (null for reads).
     public ConfirmationState? Confirmation { get; init; }
 
-    // Execution outcome (meaningful only when allowed + executed).
-    public AuditOutcome Outcome { get; init; }
-    public string? Error { get; init; }
-    public int? DurationMs { get; init; }
+    // Execution outcome — the ONLY mutable fields: enriched in place after the tool runs (Faza C).
+    // Settable (not init) so EF change-tracking can UPDATE the recorded row without a raw ExecuteUpdate
+    // (which the InMemory test provider doesn't support). Identity + decision fields stay immutable.
+    public AuditOutcome Outcome { get; set; }
+    public string? Error { get; set; }
+    public int? DurationMs { get; set; }
 }

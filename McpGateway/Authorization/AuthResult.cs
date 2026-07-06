@@ -11,6 +11,12 @@ public record AuthResult(AuthDecision Decision, string Reason, Guid? EffectiveOr
 {
     public bool IsAllowed => Decision == AuthDecision.Allow;
 
+    /// <summary>
+    /// The id of the audit record written for this decision (set by the gatekeeper after it audits),
+    /// so the caller can enrich that same row with the execution outcome. Null if not yet audited.
+    /// </summary>
+    public Guid? AuditId { get; init; }
+
     public static AuthResult Allow(Guid? effectiveOrganizationId) =>
         new(AuthDecision.Allow, "OK", effectiveOrganizationId);
 

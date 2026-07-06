@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Security.Claims;
+using McpGateway.Audit;
 using ModelContextProtocol.Protocol;
 
 namespace McpGateway.Authorization;
@@ -46,6 +48,40 @@ public class ToolAuthorizationFilter
                 bearerToken);
         }
 
-        return await next(cancellationToken);
+        // Execute the tool, timing it, then enrich the audit record with the outcome (best-effort:
+        // the gatekeeper swallows any enrichment failure — the action already happened).
+        var start = Stopwatch.GetTimestamp();
+        CallToolResult result;
+        try
+        {
+            result = await next(cancellationToken);
+        }
+        catch
+        {
+            var failedMs = (int)Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+            await _gatekeeper.EnrichOutcomeAsync(
+                decision.AuditId, AuditOutcome.Error, failedMs, "interna greška pri izvršenju alata", cancellationToken);
+            throw;
+        }
+
+        var durationMs = (int)Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+        var isError = result.IsError == true;
+        await _gatekeeper.EnrichOutcomeAsync(
+            decision.AuditId,
+            isError ? AuditOutcome.Error : AuditOutcome.Success,
+            durationMs,
+            isError ? SanitizedText(result) : null,
+            cancellationToken);
+
+        return result;
+    }
+
+    /// <summary>The tool's own (already-sanitized) message text, concatenated and length-bounded —
+    /// never a raw server body (write tools sanitize before returning). Safe to store in the audit.</summary>
+    private static string? SanitizedText(CallToolResult result)
+    {
+        var text = string.Concat(result.Content.OfType<TextContentBlock>().Select(c => c.Text));
+        if (string.IsNullOrEmpty(text)) return null;
+        return text.Length > 500 ? text[..500] : text;
     }
 }

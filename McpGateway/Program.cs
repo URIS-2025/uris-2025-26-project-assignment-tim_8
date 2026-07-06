@@ -2,7 +2,9 @@ using System.Text;
 using McpGateway.Audit;
 using McpGateway.Authorization;
 using McpGateway.Configuration;
+using McpGateway.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ModelContextProtocol.Protocol;
 
@@ -18,7 +20,21 @@ var policyStore = new PolicyStore(
 builder.Services.AddSingleton(policyStore);
 builder.Services.AddSingleton(new AgentTokenValidator(policyStore.Agents));
 builder.Services.AddSingleton(new ToolAuthorizer(policyStore.ToolPolicies));
-builder.Services.AddSingleton<IAuditSink, InMemoryAuditSink>();
+
+// ── Durable audit store (Faza C): EF-backed sink + queryable context ─────────────
+// A context FACTORY (not a scoped DbContext) so the SINGLETON sink/gatekeeper never hold one captive.
+// SqlServer in production; InMemory under Testing so WebApplicationFactory boots without a real DB.
+var isTestingEnv = builder.Environment.IsEnvironment("Testing");
+builder.Services.AddDbContextFactory<AuditDbContext>(options =>
+{
+    if (isTestingEnv)
+        options.UseInMemoryDatabase("McpAuditDB-Testing");
+    else
+        options.UseSqlServer(builder.Configuration.GetConnectionString("McpAuditDB")
+            ?? throw new InvalidOperationException("Nedostaje ConnectionStrings:McpAuditDB u konfiguraciji."));
+});
+builder.Services.AddSingleton<IAuditSink, SqlAuditSink>();
+
 builder.Services.AddSingleton<RequestGatekeeper>();
 builder.Services.AddSingleton<ToolAuthorizationFilter>();
 builder.Services.AddHttpContextAccessor();
@@ -76,9 +92,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+            // Pin the authz-critical claim types (OrganizationService emits ClaimTypes.Role /
+            // NameIdentifier) so role/user reads don't silently depend on framework defaults.
+            RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+            NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier,
         };
     });
 builder.Services.AddAuthorization();
+
+// ── REST controllers (audit review endpoint: GET /api/Audit) ─────────────────────
+builder.Services.AddControllers();
 
 // ── MCP server + the per-tool authorization filter (runs on EVERY tool call) ─────
 builder.Services.AddMcpServer()
@@ -118,11 +141,23 @@ builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(8080));
 
 var app = builder.Build();
 
+// ── Apply AuditDB migrations on startup (skipped under Testing / InMemory) ────────
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    using var scope = app.Services.CreateScope();
+    using var db = scope.ServiceProvider
+        .GetRequiredService<IDbContextFactory<AuditDbContext>>().CreateDbContext();
+    db.Database.Migrate();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 // The MCP endpoint requires an authenticated (OBO) user — unauthenticated → 401.
 app.MapMcp("/mcp").RequireAuthorization();
+
+// REST controllers (AuditController carries its own [Authorize(Roles=...)]).
+app.MapControllers();
 
 app.Run();
 

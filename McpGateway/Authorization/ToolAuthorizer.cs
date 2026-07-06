@@ -8,7 +8,10 @@ namespace McpGateway.Authorization;
 /// </summary>
 public class ToolAuthorizer
 {
-    private const string AdminRole = "Admin";
+    /// <summary>The admin role title. Matched case-insensitively everywhere (role titles are
+    /// free-form <c>UserRole.Title</c> values in OrganizationService) — the single source of truth so
+    /// the "who is an admin" decision can never diverge between the tool path and the audit endpoint.</summary>
+    public const string AdminRole = "Admin";
 
     private readonly IReadOnlyDictionary<string, ToolPolicy> _policies;
 

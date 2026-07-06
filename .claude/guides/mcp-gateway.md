@@ -3,7 +3,8 @@
 `McpGateway` (.NET 8) is a security boundary that lets AI agents call a fixed set of tools against
 the platform, authorizing and auditing every call. It is NOT the nginx gateway (`gateway/nginx.conf`).
 Added in T7: Faza A = authz core; Faza B = real tool bodies (B-read = scrubbed views; B-write =
-REST + OBO). Read this before touching gateway code.
+REST + OBO); Faza C = durable AuditDB + GET /api/Audit + outcome enrichment. Read this before
+touching gateway code.
 
 ## Trust boundary & per-call pipeline
 Agent (outside the boundary, holds only its own private key) → `POST /mcp` with
@@ -84,3 +85,32 @@ state, so its outcome must be reported.
 Note: write tools return `CallToolResult` (with `IsError` on failure), unlike read tools which
 return a JSON string — a write must signal failure at the protocol level. Audit of the write
 OUTCOME is deferred to Faza C (Faza A already audits the `Proposed` decision).
+
+## Audit is durable + enriched with the execution outcome (Faza C)
+Every decision is persisted to a dedicated EF Core store (`McpAuditDB`) via `SqlAuditSink`, then the
+SAME row is enriched with the tool's execution outcome. The audit-review dashboard reads it through
+`GET /api/Audit`.
+
+| Rule | Why | Evidence |
+|---|---|---|
+| Durable sink is a SINGLETON over `IDbContextFactory<AuditDbContext>` | `RequestGatekeeper` (which consumes `IAuditSink`) is a singleton — a scoped `DbContext` would be a captive dependency. The factory makes a fresh context per op. | `Audit/SqlAuditSink.cs`, `Program.cs` (`AddDbContextFactory` + `AddSingleton<IAuditSink, SqlAuditSink>`) |
+| Decision write FAIL-CLOSED; outcome enrichment BEST-EFFORT | The decision is recorded BEFORE the tool runs — a failed `RecordAsync` → Deny (no action without a record). The outcome is written AFTER via `UpdateOutcomeAsync` — the action already ran, so a failed enrichment is logged + swallowed, never fails the call. | `RequestGatekeeper.{AuthorizeAndAuditAsync,EnrichOutcomeAsync}`, `ToolAuthorizationFilter` |
+| Only 3 audit fields are mutable | `Outcome`/`Error`/`DurationMs` are `set` (enriched in place); identity/decision fields stay `init`. Settable — not raw `ExecuteUpdate` — because the InMemory test provider can't run it. | `Audit/AuditEntry.cs` |
+| Tool exception → enrich as Error + RETHROW | A crashing tool is recorded (`Outcome=Error`) and the exception propagates — never hidden. | `ToolAuthorizationFilter` |
+| `Error` stores the tool's SANITIZED text only | Same message the tool returned to the agent (bounded); never a raw 5xx body/PII — the audit trail must not itself leak. | `ToolAuthorizationFilter.SanitizedText` |
+
+### GET /api/Audit — force-org + one source of truth for "admin"
+`AuditController` (`[Authorize(Roles="Admin,Manager")]`) returns a scrubbed `AuditDTO` (never the
+entity) with filters + bounded-offset paging (pageSize ≤ 100, overflow-safe skip). Force-org: a
+manager is pinned to their token's `OrganizationId` (a client-supplied org is ignored; null-org
+records are admin-only). "Admin" is matched CASE-INSENSITIVELY against `ToolAuthorizer.AdminRole` —
+the SAME constant the tool path uses — so the two never disagree on who is an admin (role titles are
+free-form `UserRole.Title`; a case-sensitive check would fail-open under a role-title change).
+Evidence: `Controllers/AuditController.cs`, `Authorization/ToolAuthorizer.cs`.
+
+### Testing without a real DB
+Under the `Testing` environment the AuditDB uses the InMemory provider and startup migration is
+skipped; the integration `WebApplicationFactory` boots via
+`WithWebHostBuilder(b => b.UseEnvironment("Testing"))`. Migrations are scaffolded through a
+design-time `IDesignTimeDbContextFactory` so `dotnet ef` never runs the host.
+Evidence: `Program.cs`, `Context/AuditDbContextFactory.cs`, `GatewayIntegrationTests`.

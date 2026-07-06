@@ -5,8 +5,12 @@ using System.Security.Claims;
 using System.Text;
 using McpGateway.Audit;
 using McpGateway.Authorization;
+using McpGateway.Context;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
@@ -21,7 +25,10 @@ public class GatewayIntegrationTests : IClassFixture<WebApplicationFactory<Progr
 {
     private readonly WebApplicationFactory<Program> _factory;
 
-    public GatewayIntegrationTests(WebApplicationFactory<Program> factory) => _factory = factory;
+    // Boot under the "Testing" environment so the AuditDB uses the InMemory provider and startup
+    // migration is skipped (no real SQL Server needed).
+    public GatewayIntegrationTests(WebApplicationFactory<Program> factory) =>
+        _factory = factory.WithWebHostBuilder(b => b.UseEnvironment("Testing"));
 
     // A minimal MCP "tools/call" JSON-RPC body.
     private static StringContent McpCall() => new(
@@ -34,6 +41,16 @@ public class GatewayIntegrationTests : IClassFixture<WebApplicationFactory<Progr
         var client = _factory.CreateClient();
 
         var response = await client.PostAsync("/mcp", McpCall());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact] // The audit review endpoint is closed to unauthenticated callers ([Authorize(Roles=...)]).
+    public async Task Audit_endpoint_returns_401_without_a_token()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/api/Audit");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -77,8 +94,10 @@ public class GatewayIntegrationTests : IClassFixture<WebApplicationFactory<Progr
 
         await client.PostAsync("/mcp", McpCall());
 
-        // The decision is recorded by the singleton audit sink the running app uses.
-        var sink = (InMemoryAuditSink)_factory.Services.GetRequiredService<IAuditSink>();
-        Assert.Contains(sink.Entries, e => e.Decision == AuthDecision.Deny);
+        // End-to-end: the deny is durably persisted through SqlAuditSink into the (Testing = InMemory)
+        // AuditDB, and is readable via the same context factory the AuditController uses.
+        using var db = _factory.Services
+            .GetRequiredService<IDbContextFactory<AuditDbContext>>().CreateDbContext();
+        Assert.Contains(db.AuditEntries, e => e.Decision == AuthDecision.Deny);
     }
 }
