@@ -31,6 +31,8 @@ services:
       - system-notification-service
       - attachment-service
       - logger-service
+      - mcp-gateway
+      - ai-assistant-service
     restart: always
 
   anonymous-user-service:
@@ -184,6 +186,65 @@ services:
       - Services__LoggerServiceBaseUrl=http://logger-service:8080
     depends_on:
       - sql-server
+    restart: always
+
+  # ── T7 Secure MCP Gateway ───────────────────────────────────────────────
+  # Internal MCP tool channel (/mcp) + JWT-protected Audit API (/api/Audit).
+  # Reads via the SELECT-only `mcp_read` login (ReadDb__*, password from .env);
+  # writes call the existing REST services with the caller's forwarded OBO bearer.
+  mcp-gateway:
+    build: ./McpGateway
+    container_name: mcp-gateway
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Durable audit store (uses sa, same dev convention as every other DB).
+      - ConnectionStrings__McpAuditDB=Server=sql-server;Database=McpAuditDB;User Id=sa;Password=tim8urisPassword!;TrustServerCertificate=True
+      # SELECT-only read login over scrubbed views. Password is a SECRET → .env (${MCP_READ_PASSWORD}).
+      - ReadDb__ProblemDB=Server=sql-server;Database=ProblemDB;User Id=mcp_read;Password=${MCP_READ_PASSWORD};TrustServerCertificate=True
+      - ReadDb__SuggestionDB=Server=sql-server;Database=SuggestionDB;User Id=mcp_read;Password=${MCP_READ_PASSWORD};TrustServerCertificate=True
+      - ReadDb__ProblemBoxDB=Server=sql-server;Database=ProblemBoxDB;User Id=mcp_read;Password=${MCP_READ_PASSWORD};TrustServerCertificate=True
+      - ReadDb__SuggestionBoxDB=Server=sql-server;Database=SuggestionBoxDB;User Id=mcp_read;Password=${MCP_READ_PASSWORD};TrustServerCertificate=True
+      # OBO validation key MUST equal the OrganizationService signing key (it issues the user token).
+      - Jwt__Key=OrgSvc-Docker-Secret-Key-tim8-uris-2026-secure!!
+      - Jwt__Issuer=OrganizationService
+      - Jwt__Audience=OrganizationService
+      # Write tools call these existing REST services (Docker container names on :8080).
+      - Services__ProblemBoxService=http://problem-box-service:8080/
+      - Services__SuggestionBoxService=http://suggestion-box-service:8080/
+      - Services__ProblemService=http://problem-service:8080/
+      - Services__SuggestionService=http://suggestion-service:8080/
+    depends_on:
+      - sql-server
+      - problem-service
+      - suggestion-service
+      - problem-box-service
+      - suggestion-box-service
+    restart: always
+
+  # ── T7 Demo AI agent (MCP client of mcp-gateway + Anthropic Claude) ──────
+  # POST /api/AiChat runs the agentic loop; every tool call goes THROUGH mcp-gateway
+  # with the agent credential + the caller's OBO JWT. Anthropic key + agent private
+  # RSA key are SECRETS → .env. Never exposes /mcp itself.
+  ai-assistant-service:
+    build: ./AiAssistantService
+    container_name: ai-assistant-service
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # OBO validation key MUST equal the OrganizationService signing key (same as mcp-gateway).
+      - Jwt__Key=OrgSvc-Docker-Secret-Key-tim8-uris-2026-secure!!
+      - Jwt__Issuer=OrganizationService
+      - Jwt__Audience=OrganizationService
+      # Internal MCP endpoint of the gateway (not exposed through nginx).
+      - Services__McpGatewayUrl=http://mcp-gateway:8080/mcp
+      # SECRETS → .env: real Anthropic key + agent private RSA key (public half is in McpGateway appsettings).
+      - Anthropic__ApiKey=${ANTHROPIC_API_KEY}
+      - Agent__PrivateKeyPem=${AGENT_PRIVATE_KEY_PEM}
+    depends_on:
+      - mcp-gateway
     restart: always
 
 volumes:

@@ -154,6 +154,8 @@ location /api/Problem/ {
 | `/api/SystemNotification/` | `system_notification_service` | SystemNotificationService | `:320-332` |
 | `/api/Attachment/` | `attachment_service` | AttachmentService | `:335-347` |
 | `/api/Logger/` | `logger_service` | LoggerService | `:349-361` |
+| `/api/Audit/` | `mcp_gateway_service` | McpGateway (T7) | `:372-388` |
+| `/api/AiChat/` | `ai_assistant_service` | AiAssistantService (T7) | `:389-405` |
 | `/health` | (inline `return 200`) | gateway self-check | `:364-377` |
 
 Note: One service may serve multiple route prefixes (e.g. `problem_service` handles
@@ -325,6 +327,26 @@ scope or an included file will change inheritance behavior.
 **Implication for new blocks:** when adding a `location` block, copy the full preamble from an
 existing block. Do not abbreviate it. Any deviation from the standard 3-header set risks
 breaking specific frontends or future features.
+
+---
+
+## GOTCHA: internal-only channels get NO location block (expose only JWT-protected surfaces)
+
+A service may have an endpoint that must NOT be reachable from outside the Docker network. The
+McpGateway's MCP tool channel (`MapMcp("/mcp")`) is the trust-boundary entry for AI agents — it is
+deliberately given **no** nginx `location` block, so only the internal `ai-assistant-service` (same
+Docker network, calls `http://mcp-gateway:8080/mcp`) can reach it. Only the JWT-protected REST
+surfaces are exposed: `location /api/Audit/` → `mcp_gateway_service`, and the agent's own
+`location /api/AiChat/` → `ai_assistant_service`.
+
+| Rule | Detail |
+|---|---|
+| Expose the REST surface, not the raw channel | `/api/Audit/` + `/api/AiChat/` get blocks; `/mcp` does not |
+| `expose: "8080"` (not `ports:`) keeps it internal | the gateway container is never published on the host — reachable only via other containers |
+| Upstream `_service` suffix even when container name lacks it | `upstream mcp_gateway_service { server mcp-gateway:8080; }` — snake_case label → kebab container DNS |
+
+Evidence: `gateway/nginx.conf:61-67` (upstreams), `:372-405` (Audit/AiChat blocks, no `/mcp`);
+`McpGateway/Program.cs` (`MapMcp("/mcp").RequireAuthorization()`); `docker-compose.yml:195,230`.
 
 ---
 

@@ -29,7 +29,11 @@ if (!isTestingEnv)
 }
 
 // ── Anthropic SDK client (secret key from env / user-secrets) ─────────────────────
-builder.Services.AddSingleton(new AnthropicClient
+// Factory registration (lazy): the client is constructed only the first time it is actually
+// resolved — i.e. on the first real AiChat request that reaches ClaudeClient — never eagerly at
+// startup. Under Testing the agent is mocked and this factory is never invoked, so an empty
+// ApiKey can never reach a live Anthropic client.
+builder.Services.AddSingleton(_ => new AnthropicClient
 {
     ApiKey = builder.Configuration["Anthropic:ApiKey"] ?? string.Empty,
 });

@@ -158,3 +158,31 @@ echoes it back on confirm. Evidence: `McpGateway/Program.cs`, `McpGateway/Author
 10/min per user, iteration cap 8, `max_tokens` 4096, `disable_parallel_tool_use`. Secrets (agent RSA
 private key, Anthropic API key) come from env/user-secrets with startup fail-fast guarded by the
 Testing env. Evidence: `AiAssistantService/{Controllers/AiChatController.cs, Program.cs, Agent/AiChatAgent.cs}`.
+
+## Docker + nginx deployment (Faza E)
+
+Both new services join the stack as standard containers (`build: ./Dir`, `container_name` kebab,
+`expose: "8080"`, env via `__`). `mcp-gateway` depends on `sql-server` + the 4 REST services its
+write tools call; `ai-assistant-service` depends on `mcp-gateway`; the nginx `gateway` depends on
+both. The internal `/mcp` channel is NOT exposed through nginx (see `.claude/rules/gateway-routing.md`
+— only `/api/Audit/` + `/api/AiChat/` get location blocks). Evidence: `docker-compose.yml:195,230`,
+`gateway/nginx.conf:61-67,372-405`.
+
+### Secrets: `.env` for genuinely-sensitive, inline for the existing dev convention
+The repo already commits dev-grade secrets inline (SA password, per-service dev JWT keys). Faza E
+keeps that, but the THREE genuinely-sensitive values are injected via `${VAR}` from a gitignored
+`.env` (template: tracked `.env.example`): `ANTHROPIC_API_KEY`, `AGENT_PRIVATE_KEY_PEM`,
+`MCP_READ_PASSWORD` (the `mcp_read` password, reused in every `ReadDb__*` connection string).
+Never commit `.env`; only `.env.example` (placeholders) is tracked.
+
+| Deploy gotcha | Detail | Evidence |
+|---|---|---|
+| `Jwt__Key` compose override is LOAD-BEARING | Both services' `appsettings.json` hold a dev PLACEHOLDER key that differs from the real OrganizationService signing key. Docker MUST inject `Jwt__Key = OrgSvc-Docker-Secret-Key-…` (issuer/audience `OrganizationService`) or every OBO token 401s. | `docker-compose.yml` (mcp-gateway + ai-assistant `Jwt__Key`), `OrganizationService` compose block |
+| SELECT-only `mcp_read` is a POST-UP bootstrap | `01_read_views.sql` references EF-created base tables → run the two scripts AFTER `up` (after services migrate). Gateway boots WITHOUT the login; reads fail closed (Deny) until it exists. Manual step, single-sourced password. | `McpGateway/Sql/README.md`, `Sql/0{1,2}_*.sql` |
+| Empty read-password fails fast at BOOT (not first read) | An unset `${MCP_READ_PASSWORD}` yields a syntactically-valid `Password=;` string. `Program.cs` parses each `ReadDb__*` with `SqlConnectionStringBuilder` and throws on an empty `.Password` → crash-loop, aligning it with the other two secrets (which already crash-loop when unset). | `McpGateway/Program.cs:73-75` |
+| Agent private-key PEM survives env injection | Compose double-quoted `.env` expands `\n` to real newlines, but a raw `-e`/single-quoted value leaves literal `\n`. `AgentTokenService` normalizes `\r\n`/`\n` escapes → real newlines before `ImportFromPem` (no-op for real-newline PEMs; a base64 body never contains a backslash). | `AiAssistantService/Auth/AgentTokenService.cs:29` |
+| `AnthropicClient` is a LAZY factory | `AddSingleton(_ => new AnthropicClient{...})` (not an eager instance) → constructed only on first real resolve; under Testing the agent is mocked so an empty key never reaches a live client. | `AiAssistantService/Program.cs` |
+
+Verification for this infra phase is `dotnet test` (100 green) + `docker compose config` + `nginx -t`
++ `docker compose build` + a DOCUMENTED end-to-end smoke (`McpGateway/Sql/README.md`) — there are no
+unit tests for compose/nginx.
