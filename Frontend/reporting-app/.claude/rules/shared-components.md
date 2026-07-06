@@ -28,6 +28,16 @@ const columns = [
 ```
 Full real example: `UserManagement.jsx:99-215`.
 
+### DataTable paginates CLIENT-side — not for server-paged endpoints
+`DataTable` slices the **full** `data` array it is handed (`data.slice((page-1)*pageSize, …)`,
+`DataTable.jsx:20-30`) and derives `totalPages` from `data.length`. It only works when the page
+already holds the entire dataset. For an endpoint that paginates **server-side** (returns one page +
+a total — e.g. `GET /api/Audit` → `{ total, items }`), do NOT pass `onPageChange`: DataTable would
+slice an already-partial page and show a wrong total. Instead hand-roll a `<table>` reusing the
+existing classes (`data-table-container glass-panel`, `table-responsive`, `custom-table`,
+`clickable-row`, `empty-state`, `table-pagination`) and drive Prev/Next from the server `total`.
+Evidence: `pages/AuditDashboard.jsx`.
+
 ## Modal (`components/Modal.jsx`) — used by 7 pages
 
 Props (`Modal.jsx:5`): `{ isOpen, onClose, title, children, footer }`. Returns `null` when `!isOpen` (`:21`); closes on Escape and on overlay click; locks body scroll (`:7-19`). Renders `glass-panel` + `animate-fade-in`.

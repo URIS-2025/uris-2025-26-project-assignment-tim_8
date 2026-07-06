@@ -19,6 +19,8 @@ import ProblemBoxes from './pages/ProblemBoxes';
 import SuggestionBoxes from './pages/SuggestionBoxes';
 import Settings from './pages/Settings';
 import CommunityDashboard from './pages/CommunityDashboard';
+import AuditDashboard from './pages/AuditDashboard';
+import AiChatDemo from './pages/AiChatDemo';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
@@ -89,6 +91,9 @@ function App() {
               <Route path="suggestions" element={<SuggestionBoxes />} />
               <Route path="problems" element={<ProblemBoxes />} />
               <Route path="users" element={<ProtectedRoute allowedRoles={['admin']}><UserManagement /></ProtectedRoute>} />
+              {/* T7 Secure MCP Gateway — audit review + demo agent (admin + manager) */}
+              <Route path="audit" element={<ProtectedRoute allowedRoles={['admin', 'manager']}><AuditDashboard /></ProtectedRoute>} />
+              <Route path="ai-chat" element={<ProtectedRoute allowedRoles={['admin', 'manager']}><AiChatDemo /></ProtectedRoute>} />
               <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>

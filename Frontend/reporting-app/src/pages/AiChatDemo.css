@@ -1,0 +1,144 @@
+/* Page-scoped styles for the AiChat demo. Reuses global tokens + .glass-panel / .btn / .form-control. */
+
+.aichat-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 2rem);
+    height: 100%;
+}
+
+.aichat-window {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    min-height: 480px;
+    max-height: calc(100vh - 220px);
+}
+
+.aichat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4, 1rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.aichat-empty {
+    margin: auto;
+    text-align: center;
+}
+
+.aichat-msg {
+    display: flex;
+    gap: 0.6rem;
+    max-width: 80%;
+}
+
+.aichat-msg.mine {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.aichat-avatar {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(148, 163, 184, 0.15);
+    color: var(--text-secondary);
+}
+
+.aichat-bubble {
+    background: var(--bg-secondary, #1e293b);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: var(--radius-md, 0.5rem);
+    padding: 0.55rem 0.8rem;
+    color: var(--text-primary);
+}
+
+.aichat-msg.mine .aichat-bubble {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
+.aichat-text {
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+
+.aichat-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.aichat-thinking {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.aichat-error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-md, 0.5rem);
+    padding: 0.5rem 0.75rem;
+}
+
+/* HITL proposal card */
+.aichat-proposal {
+    border-top: 1px solid rgba(245, 158, 11, 0.4);
+    background: rgba(245, 158, 11, 0.08);
+    padding: var(--space-4, 1rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.aichat-proposal-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--warning);
+    font-weight: 600;
+}
+
+.aichat-proposal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: var(--text-primary);
+}
+
+.aichat-proposal-label {
+    color: var(--text-secondary);
+    margin-right: 0.35rem;
+}
+
+.aichat-proposal-actions {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.aichat-input {
+    display: flex;
+    gap: 0.6rem;
+    padding: var(--space-4, 1rem);
+    border-top: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.aichat-input .form-control {
+    flex: 1;
+}
