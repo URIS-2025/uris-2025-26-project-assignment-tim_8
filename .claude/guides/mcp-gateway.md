@@ -114,3 +114,47 @@ skipped; the integration `WebApplicationFactory` boots via
 `WithWebHostBuilder(b => b.UseEnvironment("Testing"))`. Migrations are scaffolded through a
 design-time `IDesignTimeDbContextFactory` so `dotnet ef` never runs the host.
 Evidence: `Program.cs`, `Context/AuditDbContextFactory.cs`, `GatewayIntegrationTests`.
+
+## Demo agent (AiAssistantService) — Faza D
+`AiAssistantService` (.NET 8) is the demonstration MCP **client** of the gateway + an Anthropic
+Claude client. `POST /api/AiChat` (`[Authorize]`, caller's OBO JWT) runs an agentic loop. SDK/MCP
+types are confined to `Clients/ClaudeClient.cs` and `Clients/McpGatewayClient.cs` so the loop
+(`Agent/AiChatAgent.cs`) is unit-testable with mocks (`IClaudeAgentClient` / `IMcpGatewayClient`).
+Conversation state is client-side (echoed `History`) → the server is stateless; audit stays in the
+gateway (this service has NO DbContext / no `TryLogAsync`).
+
+### Dual-principal from the CLIENT side (AdditionalHeaders)
+Per tool call the agent opens a FRESH MCP client (gateway is `Stateless=true`, OBO is per-request):
+`McpClient.CreateAsync(new HttpClientTransport(new HttpClientTransportOptions { Endpoint=<url>/mcp,
+TransportMode=HttpTransportMode.StreamableHttp, AdditionalHeaders={ ["Authorization"]=<OBO>,
+["X-Agent-Token"]=<agent-JWT>, ["X-Correlation-Id"]=<corr> } }))`. `AdditionalHeaders` is the ONLY
+place the two principals + correlation id ride. The agent-JWT is minted RS256 by
+`Auth/AgentTokenService.cs` (private key secret; the gateway holds only the public key).
+
+| Concern | Fact (verified against the packages) |
+|---|---|
+| Anthropic SDK | official NuGet package `Anthropic` (NOT a community pkg) — `AnthropicClient`, `client.Messages.Create`, types in `Anthropic.Models.Messages`. Pass model as a STRING (`"claude-sonnet-5"`); `ToolChoiceAuto { DisableParallelToolUse = true }`; `Tool.InputSchema` via target-typed `new() { Properties, Required }`; `MessageCreateParams.System` is init-only; response blocks via `block.TryPickText/TryPickToolUse`. |
+| MCP client SDK | NuGet package `ModelContextProtocol`; the client types (`McpClient`, `HttpClientTransport`, `HttpClientTransportOptions`, `HttpTransportMode`) live in `ModelContextProtocol.Core`. `ListToolsAsync()` → `McpClientTool.JsonSchema` (input schema); `CallToolAsync(name, IReadOnlyDictionary<string,object?>)` → `CallToolResult.Content.OfType<TextContentBlock>()` + `.IsError`. |
+
+### Propose-confirm HITL is FAIL-SAFE (read allow-list, not a write deny-list)
+`AiChatAgent` auto-executes a tool ONLY if it is on the `Agent:ReadTools` allow-list; every other
+tool — writes AND any tool not listed (e.g. one added to the gateway later) — is returned as a
+proposal for human confirmation, never auto-run (`if (!_readTools.Contains(name)) PendingConfirmation(...)`).
+A write DENY-list would silently drift from the gateway's `IsWrite` policy and let a new write
+auto-execute; the read ALLOW-list fails safe (unknown → confirm). The proposal's `ArgsSummary` masks
+every non-whitelisted key so a box password is never surfaced. Evidence: `Agent/AiChatAgent.cs`,
+`appsettings.json` `Agent:ReadTools`.
+
+### CorrelationId is populated here (was null through Faza C)
+The gateway's MCP filter reads `X-Correlation-Id`, parses to `Guid?` (fail-safe → null), and threads
+it to `RequestGatekeeper.AuthorizeAndAuditAsync(correlationId:)` (the parameter existed since Faza C,
+just unfilled). The agent sends ONE id per logical conversation across the whole tool-call chain and
+echoes it back on confirm. Evidence: `McpGateway/Program.cs`, `McpGateway/Authorization/ToolAuthorizationFilter.cs`.
+
+### Fail-closed WITHOUT leaking
+`AiChatController`'s catch returns a FIXED message + `ILogger.LogError(ex)` — NOT `ex.Message`
+(Claude/MCP/transport/crypto exceptions can carry internal topology like the gateway URL).
+`OperationCanceledException` (client abort) is rethrown, not shaped as a 400. Caps: rate-limit
+10/min per user, iteration cap 8, `max_tokens` 4096, `disable_parallel_tool_use`. Secrets (agent RSA
+private key, Anthropic API key) come from env/user-secrets with startup fail-fast guarded by the
+Testing env. Evidence: `AiAssistantService/{Controllers/AiChatController.cs, Program.cs, Agent/AiChatAgent.cs}`.

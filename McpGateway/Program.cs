@@ -129,11 +129,18 @@ builder.Services.AddMcpServer()
             var bearer = http?.Request.Headers["Authorization"].ToString();
             var toolName = context.Params?.Name ?? string.Empty;
 
+            // One logical AiChat interaction shares a correlation id across its whole chain of tool
+            // calls; the demo agent forwards it here. Unparseable/absent → null (fail-safe).
+            var correlationId = Guid.TryParse(http?.Request.Headers["X-Correlation-Id"].ToString(), out var cid)
+                ? cid
+                : (Guid?)null;
+
             return await filter.EvaluateAsync(
                 agentToken, context.User, toolName,
                 argsSummary: ArgsSummary.Build(context.Params?.Arguments),
                 next: ct => next(context, ct), cancellationToken,
-                invocationContext: invocationContext, bearerToken: bearer);
+                invocationContext: invocationContext, bearerToken: bearer,
+                correlationId: correlationId);
         });
     });
 

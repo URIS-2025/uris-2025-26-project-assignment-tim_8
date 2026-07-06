@@ -232,6 +232,26 @@ public async Task<ActionResult<UserCreatedDTO>> CreateUser(...)
 
 Evidence: `OrganizationService/Controllers/UserController.cs:161`, `AnonymousUserService/Controllers/AnonymousUserController.cs:44-45`
 
+### Per-USER partition → `UseRateLimiter` AFTER `UseAuthentication`
+
+The two auth services partition by `X-Forwarded-For` (a pre-auth value), so they call
+`UseRateLimiter` **before** `UseAuthentication`. A policy partitioned by the **authenticated user**
+instead — e.g. `AiAssistantService`'s `"aichat"` policy keyed on
+`httpContext.User.FindFirst(ClaimTypes.NameIdentifier)` — MUST place `UseRateLimiter` **after**
+`UseAuthentication`/`UseAuthorization`. Otherwise `HttpContext.User` is empty when the partition key
+is evaluated and every caller falls into the same `"anonymous"` bucket (one shared global limit, not
+per-user).
+
+```csharp
+// CORRECT for a per-user partition (opposite order from the IP-partitioned auth services)
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();   // User is populated → NameIdentifier partition works
+app.MapControllers();
+```
+
+Evidence: `AiAssistantService/Program.cs` (`"aichat"` policy + pipeline order).
+
 ---
 
 ## WRONG / CORRECT patterns
