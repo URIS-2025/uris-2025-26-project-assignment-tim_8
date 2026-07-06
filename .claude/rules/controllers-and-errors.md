@@ -267,6 +267,29 @@ app.UseExceptionHandler(errorApp =>
 });
 ```
 
+### EXCEPTION — don't leak `ex.Message` when exceptions carry internal detail
+
+`new { error = ex.Message }` is safe when the exception is a **domain validation** message thrown by
+a repository (`ArgumentException`, `KeyNotFoundException`, …) — that text is meant for the user. It is
+**not** safe when a controller's exceptions can be **SDK / transport / crypto** faults, whose
+`ex.Message` carries internal topology (a downstream URL, connection detail, key errors). Such a
+controller must return a FIXED, non-revealing message and `ILogger.LogError(ex, ...)` the detail
+server-side instead. Also rethrow `OperationCanceledException` (client abort) before the generic
+`catch` so it isn't shaped as a 400.
+
+```csharp
+// CORRECT for a controller that calls an external SDK / another service (e.g. AiChatController)
+catch (OperationCanceledException) { throw; }          // client abort — not an app error
+catch (Exception ex)
+{
+    _logger.LogError(ex, "…failed; failing closed");    // detail stays server-side
+    return BadRequest(new { error = "Fiksna, ne-otkrivajuća poruka." });  // never ex.Message
+}
+```
+
+Evidence: `AiAssistantService/Controllers/AiChatController.cs` (calls the Anthropic SDK + the MCP
+gateway; a transport error's `ex.Message` would otherwise leak the gateway URL).
+
 ---
 
 ## 8. Summary Checklist
