@@ -28,12 +28,20 @@ public class AgentTokenService : IAgentTokenService
         // secret be injected either way.
         var pem = _options.PrivateKeyPem.Replace("\\r\\n", "\n").Replace("\\n", "\n");
 
-        // Own the RSA for the lifetime of the mint; WriteToken signs synchronously, so disposing at
-        // method exit (after the token string is produced) is safe.
+        // Own the RSA for the lifetime of the mint; WriteToken signs synchronously, then the RSA is
+        // disposed at method exit. CacheSignatureProviders MUST be disabled here: a RsaSecurityKey
+        // built from a raw RSA instance has an empty InternalId, so the process-wide
+        // CryptoProviderFactory cache would keep this call's signature provider (holding the RSA we
+        // are about to dispose) and hand it back on the NEXT mint — throwing ObjectDisposedException
+        // on every subsequent call. Disabling the cache keeps the provider's lifetime inside this
+        // method, matching the RSA's.
         using var rsa = RSA.Create();
         rsa.ImportFromPem(pem);
 
-        var credentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256);
+        var credentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256)
+        {
+            CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
+        };
 
         var now = DateTime.UtcNow;
         var token = new JwtSecurityToken(
