@@ -28,12 +28,31 @@ public class AgentTokenService : IAgentTokenService
         // secret be injected either way.
         var pem = _options.PrivateKeyPem.Replace("\\r\\n", "\n").Replace("\\n", "\n");
 
-        // Own the RSA for the lifetime of the mint; WriteToken signs synchronously, so disposing at
-        // method exit (after the token string is produced) is safe.
+        // Own the RSA for the lifetime of the mint. Disposing at method exit is only safe because
+        // signature-provider caching is turned OFF below — see the comment on CryptoProviderFactory.
         using var rsa = RSA.Create();
         rsa.ImportFromPem(pem);
 
-        var credentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256);
+        // CacheSignatureProviders = false is LOAD-BEARING, not a micro-optimisation.
+        //
+        // Microsoft.IdentityModel.Tokens caches SignatureProvider instances globally, keyed on key
+        // material. With caching on (the default), mint #1 cached a provider holding THIS call's
+        // RSA; `using` then disposed that RSA at method exit. Mint #2 imports the same PEM, so the
+        // cache HIT returned the provider still bound to the disposed RSA and threw
+        //   ObjectDisposedException: 'System.Security.Cryptography.RSAOpenSsl'
+        // from WriteToken. Because this service is a SINGLETON and the key never changes, that made
+        // the AI chat work exactly ONCE per process lifetime — every later request became an
+        // HTTP 400 behind the fixed "Asistent trenutno ne moze da obradi zahtev." message.
+        //
+        // Opting out gives each mint its own provider, so per-call RSA ownership is correct. The
+        // alternative (hold one RSA for the process lifetime and let the cache work) would also fix
+        // it, but would make this class IDisposable and tie key lifetime to the container.
+        //
+        // Regression test: AgentTokenServiceTests.CreateAgentToken_can_mint_repeatedly_with_the_same_key
+        var credentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256)
+        {
+            CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false },
+        };
 
         var now = DateTime.UtcNow;
         var token = new JwtSecurityToken(
