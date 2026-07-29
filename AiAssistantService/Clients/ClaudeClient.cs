@@ -30,17 +30,7 @@ public class ClaudeClient : IClaudeAgentClient
         IReadOnlyList<ToolDefinition> tools,
         CancellationToken cancellationToken)
     {
-        var parameters = new MessageCreateParams
-        {
-            Model = _options.Model,
-            MaxTokens = _options.MaxTokens,
-            ToolChoice = new ToolChoiceAuto { DisableParallelToolUse = true },
-            Tools = tools.Select(ToSdkTool).ToList(),
-            Messages = messages.Select(ToSdkMessage).ToList(),
-            System = string.IsNullOrWhiteSpace(_options.SystemPrompt)
-                ? (MessageCreateParamsSystem?)null
-                : _options.SystemPrompt,
-        };
+        var parameters = BuildParams(messages, tools, _options);
 
         var response = await _client.Messages.Create(parameters, cancellationToken: cancellationToken);
 
@@ -60,6 +50,38 @@ public class ClaudeClient : IClaudeAgentClient
     }
 
     // ── domain → SDK ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Builds the Messages request. Extracted (and <c>internal</c> rather than private) so the
+    /// request shape — above all the explicit <c>Thinking</c> setting — is covered by
+    /// <c>ClaudeClientParamsTests</c>; SDK types stay confined to this class.
+    /// </summary>
+    /// <remarks>
+    /// <c>Thinking</c> is set to DISABLED deliberately, and must stay set. On
+    /// <c>claude-sonnet-5</c> an OMITTED <c>thinking</c> parameter runs ADAPTIVE thinking (a silent
+    /// default change from Sonnet 4.6, where omitting it meant off). With thinking on, Claude's
+    /// assistant turn leads with a thinking block whose signature the API validates when the turn is
+    /// echoed back — and <see cref="ChatContentDTO"/> has no "thinking" type, so this loop cannot
+    /// round-trip it. Leaving it unset therefore produced an intermittent 400 on the turn right
+    /// after any tool call. To enable thinking later, first teach <see cref="ChatContentDTO"/> and
+    /// <c>AiChatAgent.AssistantTurn</c> to carry thinking blocks (Signature included).
+    /// </remarks>
+    internal static MessageCreateParams BuildParams(
+        IReadOnlyList<ChatMessageDTO> messages,
+        IReadOnlyList<ToolDefinition> tools,
+        AgentOptions options) => new()
+        {
+            Model = options.Model,
+            MaxTokens = options.MaxTokens,
+            Thinking = new ThinkingConfigDisabled(),
+            ToolChoice = new ToolChoiceAuto { DisableParallelToolUse = true },
+            Tools = tools.Select(ToSdkTool).ToList(),
+            Messages = messages.Select(ToSdkMessage).ToList(),
+            System = string.IsNullOrWhiteSpace(options.SystemPrompt)
+                ? (MessageCreateParamsSystem?)null
+                : options.SystemPrompt,
+        };
+
     private static ToolUnion ToSdkTool(ToolDefinition tool)
     {
         var properties = new Dictionary<string, JsonElement>();

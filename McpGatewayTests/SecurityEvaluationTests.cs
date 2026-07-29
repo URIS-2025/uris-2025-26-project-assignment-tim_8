@@ -329,8 +329,22 @@ public class SecurityEvaluationTests : IClassFixture<WebApplicationFactory<Progr
         Assert.Equal(AuthDecision.Deny, result.Decision);
     }
 
-    [Fact] // R1.16 — an AUTHORIZED write is not executed: it is recorded Proposed (human-in-the-loop).
-    public async Task Elevation_authorized_write_is_proposed_not_executed()
+    // R1.16 — an AUTHORIZED write is audited AS a write, with Confirmation = Proposed, BEFORE it runs.
+    //
+    // Scope of this test, stated precisely because the name previously overclaimed: it exercises
+    // RequestGatekeeper.AuthorizeAndAuditAsync, which by construction never invokes a tool. The
+    // Outcome = NotExecuted assertion below therefore describes the DECISION record only — it is
+    // NOT evidence that the gateway withholds execution. In the real pipeline
+    // (ToolAuthorizationFilter) the early return exists only on the deny path; an allowed write
+    // falls through to `await next(...)` and executes, and the row is then enriched to
+    // Outcome = Success while Confirmation stays Proposed.
+    //
+    // The human gate lives in the AGENT, not here: AiChatAgent auto-executes only tools on the
+    // Agent:ReadTools allow-list. Its proofs are
+    // AiAssistantServiceTests.AiChatAgentTests.Write_tool_is_proposed_not_executed_and_args_are_scrubbed
+    // and ...Unknown_tool_not_on_read_allowlist_is_proposed_not_executed. See THREAT_MODEL.md §2.1.
+    [Fact]
+    public async Task Elevation_authorized_write_is_audited_as_write_and_marked_proposed_before_execution()
     {
         var (gk, audit, key) = BuildGatekeeper("set_box_status");
         var token = TestAuth.MintAgentToken(key, AgentId, DateTime.UtcNow.AddMinutes(5));
@@ -341,7 +355,9 @@ public class SecurityEvaluationTests : IClassFixture<WebApplicationFactory<Progr
         Assert.Equal(AuthDecision.Allow, result.Decision);
         var entry = Assert.Single(audit.Entries);
         Assert.True(entry.IsWrite);
-        Assert.Equal(ConfirmationState.Proposed, entry.Confirmation);   // awaits a human, not auto-run
+        Assert.Equal(ConfirmationState.Proposed, entry.Confirmation);   // marked as awaiting a human
+        // Decision-only record: this method never invokes a tool, so NotExecuted is definitional
+        // here and says nothing about whether the pipeline would execute it. See the note above.
         Assert.Equal(AuditOutcome.NotExecuted, entry.Outcome);
     }
 

@@ -35,6 +35,10 @@ public class AgentTokenService : IAgentTokenService
         // are about to dispose) and hand it back on the NEXT mint — throwing ObjectDisposedException
         // on every subsequent call. Disabling the cache keeps the provider's lifetime inside this
         // method, matching the RSA's.
+        //
+        // Regression test: AgentTokenServiceTests.CreateAgentToken_can_mint_repeatedly_with_the_same_key
+        // (mints three times with ONE key — the existing tests each minted once with a fresh key,
+        // so key material never collided in the cache and none of them could catch this).
         using var rsa = RSA.Create();
         rsa.ImportFromPem(pem);
 
