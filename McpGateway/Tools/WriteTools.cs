@@ -21,8 +21,6 @@ namespace McpGateway.Tools;
 [McpServerToolType]
 public static class WriteTools
 {
-    private const string Todo = "TODO (Faza B-write): not yet implemented";
-
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     [McpServerTool(Name = "set_box_status"), Description("Activate or deactivate a box. Args: type ('problem'|'suggestion'), id, status (0=Active, 1=Inactive).")]
