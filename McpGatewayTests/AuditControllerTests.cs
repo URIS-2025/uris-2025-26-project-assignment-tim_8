@@ -125,6 +125,53 @@ public class AuditControllerTests
         Assert.Equal(AuditOutcome.Error, Assert.Single(byOutcome.Items).Outcome);
     }
 
+    // The tool filter is a SUBSTRING match, not an exact one. The catalog is snake_case with shared
+    // prefixes (list_boxes, get_org_overview, set_box_status, set_box_password), so an operator
+    // reviewing the audit types a fragment — "list_", "set_box" — to see a family of calls. Exact
+    // matching made the filter unusable unless you already knew the full tool name.
+    [Fact]
+    public async Task ToolName_filter_matches_a_prefix_fragment()
+    {
+        var org = Guid.NewGuid();
+        var factory = await Seed(
+            Entry(org, "list_boxes"),
+            Entry(org, "get_org_overview"),
+            Entry(org, "set_box_status"));
+        var controller = ControllerFor(factory, "Admin", null);
+
+        var page = Page(await controller.GetAudit(toolName: "list_"));
+
+        Assert.Equal("list_boxes", Assert.Single(page.Items).ToolName);
+    }
+
+    [Fact]
+    public async Task ToolName_filter_matches_a_shared_fragment_across_several_tools()
+    {
+        var org = Guid.NewGuid();
+        var factory = await Seed(
+            Entry(org, "set_box_status"),
+            Entry(org, "set_box_password"),
+            Entry(org, "list_boxes"));
+        var controller = ControllerFor(factory, "Admin", null);
+
+        var page = Page(await controller.GetAudit(toolName: "set_box"));
+
+        Assert.Equal(2, page.Items.Count);
+        Assert.All(page.Items, i => Assert.StartsWith("set_box", i.ToolName));
+    }
+
+    [Fact]
+    public async Task ToolName_filter_ignores_surrounding_whitespace()
+    {
+        var org = Guid.NewGuid();
+        var factory = await Seed(Entry(org, "list_boxes"), Entry(org, "get_org_overview"));
+        var controller = ControllerFor(factory, "Admin", null);
+
+        var page = Page(await controller.GetAudit(toolName: "  list_  "));
+
+        Assert.Equal("list_boxes", Assert.Single(page.Items).ToolName);
+    }
+
     [Fact]
     public async Task PageSize_is_capped_at_100()
     {
