@@ -4,6 +4,7 @@ using McpGateway.Authorization;
 using McpGateway.Configuration;
 using McpGateway.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ModelContextProtocol.Protocol;
@@ -172,6 +173,44 @@ if (!app.Environment.IsEnvironment("Testing"))
         .GetRequiredService<IDbContextFactory<AuditDbContext>>().CreateDbContext();
     db.Database.Migrate();
 }
+
+// ── Global exception handler ──────────────────────────────────────────────────────
+// Every other service in this repo has one (.claude/rules/program-bootstrap.md §4); the gateway
+// did not, and it runs with ASPNETCORE_ENVIRONMENT=Development in docker-compose — so ASP.NET's
+// developer exception page was active and any unhandled fault on the PUBLICLY routed /api/Audit/
+// returned an HTML stack trace plus a request-header dump, from the one component whose whole
+// premise is not leaking internal detail.
+//
+// DELIBERATE DEVIATION from the repo's canonical block: that one returns
+// `new { message = error.Error.Message }`. Here the message is FIXED and the detail goes to
+// ILogger instead — a SqlException names the server and database, which is exactly the topology
+// disclosure AiChatController already guards against. See .claude/rules/controllers-and-errors.md
+// §7 ("don't leak ex.Message when exceptions carry internal detail"). Response SHAPE still matches
+// the convention: 500 + JSON + a `message` key.
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var feature = context.Features.Get<IExceptionHandlerFeature>();
+        if (feature?.Error is OperationCanceledException)
+        {
+            // Client went away — not an application fault, and the response is already moot.
+            context.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+            return;
+        }
+
+        if (feature is not null)
+        {
+            context.RequestServices.GetRequiredService<ILogger<Program>>()
+                .LogError(feature.Error, "Neuhvaćena greška na {Path}; vraćam fiksnu poruku.",
+                    context.Request.Path);
+        }
+
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { message = "Interna greška gateway-a." });
+    });
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
