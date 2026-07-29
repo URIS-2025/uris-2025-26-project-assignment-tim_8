@@ -184,31 +184,91 @@ const AuditDashboard = () => {
             <Modal isOpen={!!selected} onClose={() => setSelected(null)} title="Audit zapis — detalji">
                 {selected && (
                     <div className="audit-detail">
-                        <Field label="Vreme" value={fmtTime(selected.timestamp)} />
-                        <Field label="Agent" value={selected.agentId} />
-                        <Field label="Korisnik (OBO)" value={`${selected.userId} (${selected.userRole})`} />
-                        <Field label="Organizacija" value={selected.organizationId || '— (globalno)'} />
-                        <Field label="Alat" value={`${selected.toolName} · ${selected.isWrite ? 'Write' : 'Read'}`} />
-                        <Field label="Odluka">
-                            <Pill label={decisionLabel(selected.decision)} tone={decisionTone(selected.decision)} />
-                        </Field>
-                        <Field label="Razlog odluke" value={selected.decisionReason} />
-                        <Field label="Sažetak argumenata" value={selected.argsSummary || '—'} />
-                        {confirmationLabel(selected.confirmation) && (
-                            <Field label="Potvrda (HITL)" value={confirmationLabel(selected.confirmation)} />
-                        )}
-                        <Field label="Ishod">
-                            <Pill label={outcomeLabel(selected.outcome)} tone={outcomeTone(selected.outcome)} />
-                        </Field>
-                        {selected.error && <Field label="Greška" value={selected.error} />}
-                        <Field label="Trajanje" value={selected.durationMs != null ? `${selected.durationMs} ms` : '—'} />
-                        <Field label="Audit Id" value={selected.id} />
+                        {/* Grouped into the four questions a reviewer actually asks of an audit record:
+                            who called, what they asked for, what the gateway decided, what happened.
+                            The captions exist because the raw field values (a user GUID, a reason of
+                            "OK") do not explain themselves to someone reading the screen for the
+                            first time. */}
+                        <Section
+                            title="Ko je pozvao — dva principala"
+                            caption="Gateway zahteva OBA identiteta. Nedostaje li jedan, poziv se odbija."
+                        >
+                            <Field label="Agent (mašinski identitet)" value={selected.agentId} />
+                            <Field label="Korisnik (u čije ime)" value={`${selected.userId} · ${selected.userRole}`} />
+                            <Field
+                                label="Org-scope"
+                                value={selected.organizationId
+                                    || '— globalno (admin nije ograničen na organizaciju)'}
+                            />
+                        </Section>
+
+                        <Section
+                            title="Šta je traženo"
+                            caption="Argumenti se beleže deny-by-default — osetljive vrednosti se maskiraju (npr. password=<len:N>), pa audit dokazuje šta se dogodilo bez kopije podataka."
+                        >
+                            <Field label="Alat" value={selected.toolName} />
+                            <Field
+                                label="Tip"
+                                value={selected.isWrite
+                                    ? 'Write — menja stanje, traži ljudsku potvrdu'
+                                    : 'Read — ne može da menja stanje (SELECT-only nalog)'}
+                            />
+                            <Field label="Argumenti (maskirani)" value={selected.argsSummary || '—'} />
+                        </Section>
+
+                        <Section
+                            title="Odluka gateway-a"
+                            caption="Odluka se donosi PRE izvršenja alata i beleži se u svakom slučaju — i kad je Deny."
+                        >
+                            <Field label="Odluka">
+                                <Pill label={decisionLabel(selected.decision)} tone={decisionTone(selected.decision)} />
+                            </Field>
+                            <Field label="Razlog" value={reasonText(selected)} />
+                            {confirmationLabel(selected.confirmation) && (
+                                <Field
+                                    label="Ljudska potvrda (HITL)"
+                                    value={`${confirmationLabel(selected.confirmation)} — poziv je stigao kao predlog koji je čovek odobrio`}
+                                />
+                            )}
+                        </Section>
+
+                        <Section title="Rezultat izvršenja">
+                            <Field label="Ishod">
+                                <Pill label={outcomeLabel(selected.outcome)} tone={outcomeTone(selected.outcome)} />
+                            </Field>
+                            {selected.error && <Field label="Greška" value={selected.error} />}
+                            <Field label="Trajanje" value={selected.durationMs != null ? `${selected.durationMs} ms` : '—'} />
+                        </Section>
+
+                        <Section title="Zapis">
+                            <Field label="Vreme" value={fmtTime(selected.timestamp)} />
+                            <Field label="Audit Id" value={selected.id} />
+                        </Section>
                     </div>
                 )}
             </Modal>
         </div>
     );
 };
+
+// The gateway stores "OK" as the allow reason, which tells a reader nothing on its own. Spell out
+// what an allow actually asserts; pass any other (deny) reason straight through, since those are
+// written to be read.
+const reasonText = (row) => {
+    const raw = (row.decisionReason || '').trim();
+    if (decisionLabel(row.decision) === 'Allow' && (raw === '' || raw.toUpperCase() === 'OK')) {
+        return 'Politika dozvoljava — agentu je ovaj alat odobren, rola korisnika je dovoljna, org-scope je razrešen na serveru.';
+    }
+    return raw || '—';
+};
+
+const Section = ({ title, caption, children }) => (
+    <section className="audit-detail-section">
+        <h3 className="audit-detail-section-title">{title}</h3>
+        {caption && <p className="audit-detail-caption">{caption}</p>}
+        {children}
+    </section>
+);
 
 const Field = ({ label, value, children }) => (
     <div className="audit-detail-row">
