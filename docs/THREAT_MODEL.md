@@ -127,7 +127,7 @@ Evidence (kod): `McpGateway/Tools/ToolScope.cs`, `McpGateway/Data/SqlReadReposit
 | Agent poziva alat koji mu nije dodeljen | Per-tool authz: `tool ∈ agent.AllowedTools` | `SecurityEvaluationTests.Elevation_agent_without_the_tool_is_denied` |
 | Manager poziva admin-only alat | Per-tool authz: `user.role ∈ tool.AllowedRoles` | `SecurityEvaluationTests.Elevation_manager_on_admin_only_tool_is_denied` |
 | Poziv nepoznatog/neregistrovanog alata | Deny-by-default | `SecurityEvaluationTests.Elevation_unknown_tool_is_denied` |
-| Write se izvrši bez ljudske potvrde | Autorizovan write → `Proposed` (HITL), `Outcome = NotExecuted` — nije auto-izvršen | `SecurityEvaluationTests.Elevation_authorized_write_is_proposed_not_executed` |
+| Write se izvrši bez ljudske potvrde | **Ljudska potvrda je u agentu, ne u gatewayu** (vidi §2.1): `AiChatAgent` auto-izvršava samo alate sa `Agent:ReadTools` allow-liste — write i svaki nepoznat alat → predlog za potvrdu. Gateway *autorizuje i revidira* svaki write i obeleži ga `Confirmation = Proposed`, ali ga — kad je dozvoljen — **i izvrši** (`ToolAuthorizationFilter` rani `return` postoji samo na deny putanji). | `AiAssistantServiceTests.AiChatAgentTests.Write_tool_is_proposed_not_executed_and_args_are_scrubbed`; `…Unknown_tool_not_on_read_allowlist_is_proposed_not_executed` |
 | Agent piše sirovim SQL-om (zaobilazi validaciju) | Write ide isključivo kroz postojeći **REST** (nasleđuje validaciju, audit, T2/T3 fail-closed); SELECT-only nalog fizički ne može pisati | `McpGateway/Tools/WriteTools.cs`; `McpGateway/Sql/02_read_login.sql` |
 | Manager piše u tuđu kutiju/prijavu | Gateway verifikuje org-vlasništvo **pre** write-a; out-of-scope → opaque deny (bez leak-a postojanja) | `WriteTools.BoxInScopeAsync`/`SubmissionInScopeAsync`; `WriteToolsTests` |
 
@@ -147,9 +147,15 @@ da LLM pozove destruktivan alat.
    (agent, korisnik, ime alata) — **nikad argumente**. `argsSummary` ide samo u audit. Injektovana
    instrukcija ne može da promeni ishod autorizacije.
    → `SecurityEvaluationTests.PromptInjection_cannot_trick_agent_into_an_ungranted_write`
-2. **Write nikad ne auto-izvršava** — čak i kad je alat dozvoljen, ostaje `Proposed` (HITL). Read
+2. **Write ne stiže do izvršenja bez ljudske potvrde — ali granica je u agentu, ne u gatewayu.**
+   `AiChatAgent` vraća predlog za svaki alat van `Agent:ReadTools` allow-liste, pa gateway nikad i
+   ne bude pozvan dok čovek ne odobri. Kad odobri, gateway autorizuje, revidira **i izvrši** poziv;
+   revizioni zapis nosi `Confirmation = Proposed` (vidi §2.1 i poznato ograničenje u §5). Read
    nikad ne menja stanje.
+   → `AiAssistantServiceTests.AiChatAgentTests.Write_tool_is_proposed_not_executed_and_args_are_scrubbed`
    → `SecurityEvaluationTests.PromptInjection_granted_write_is_still_gated_and_payload_is_scrubbed`
+     (dokazuje da injekcija ne menja *odluku* autorizacije i da su argumenti scrub-ovani — ne da
+     gateway zadržava izvršenje)
 3. **Fail-safe allow-lista na klijentu** — agent auto-izvršava samo alate sa `Agent:ReadTools`
    allow-liste; sve ostalo (write + svaki nepoznat alat dodat kasnije) → predlog za potvrdu.
    Deny-lista bi tiho driftovala; allow-lista fail-safe.
