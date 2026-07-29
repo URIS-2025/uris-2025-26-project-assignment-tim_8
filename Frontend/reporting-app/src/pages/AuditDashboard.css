@@ -59,7 +59,35 @@
 .audit-detail {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1.25rem;
+}
+
+/* The detail modal is denser than the app's other modals (5 grouped sections), so it opts out of
+   the shared 500px cap. Still bounded by the shared `max-height: 90vh` + scrolling body. */
+.modal-content:has(.audit-detail) {
+    max-width: 640px;
+}
+
+.audit-detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.audit-detail-section-title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+}
+
+.audit-detail-caption {
+    margin: 0 0 0.35rem 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
 }
 
 .audit-detail-row {
