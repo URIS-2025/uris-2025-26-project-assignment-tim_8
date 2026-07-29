@@ -72,7 +72,18 @@ public class AuditController : ControllerBase
         if (orgFilter is Guid org) query = query.Where(e => e.OrganizationId == org);
         if (!string.IsNullOrWhiteSpace(agentId)) query = query.Where(e => e.AgentId == agentId);
         if (!string.IsNullOrWhiteSpace(userId)) query = query.Where(e => e.UserId == userId);
-        if (!string.IsNullOrWhiteSpace(toolName)) query = query.Where(e => e.ToolName == toolName);
+        // Tool name is a SUBSTRING search, not an exact match: the tool catalog uses snake_case
+        // prefixes (list_boxes, get_org_overview, set_box_status), so an operator reviewing the audit
+        // types "list_" or "set_box" to see a family of calls. Exact matching made the filter
+        // unusable unless you already knew the full name. EF translates Contains to SQL LIKE
+        // '%value%'; matching is case-insensitive because the column's collation is
+        // (SQL Server default) case-insensitive — ToLower() here would only defeat index usage.
+        // The value is a parameter, never interpolated, so this is not an injection surface.
+        if (!string.IsNullOrWhiteSpace(toolName))
+        {
+            var needle = toolName.Trim();
+            query = query.Where(e => e.ToolName.Contains(needle));
+        }
         if (decision is AuthDecision d) query = query.Where(e => e.Decision == d);
         if (outcome is AuditOutcome o) query = query.Where(e => e.Outcome == o);
         // Timestamps are stored as UTC; treat an unspecified-kind query bound as UTC too so the
