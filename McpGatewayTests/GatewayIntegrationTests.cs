@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
@@ -99,6 +100,60 @@ public class GatewayIntegrationTests : IClassFixture<WebApplicationFactory<Progr
         using var db = _factory.Services
             .GetRequiredService<IDbContextFactory<AuditDbContext>>().CreateDbContext();
         Assert.Contains(db.AuditEntries, e => e.Decision == AuthDecision.Deny);
+    }
+
+    /// <summary>
+    /// An <see cref="IDbContextFactory{TContext}"/> that always throws, standing in for a real
+    /// AuditDB failure (unreachable server, SQL timeout, migration drift).
+    /// </summary>
+    private sealed class ThrowingAuditContextFactory : IDbContextFactory<AuditDbContext>
+    {
+        // Message deliberately contains the kind of topology a SqlException would carry, so the
+        // assertions below prove it is NOT echoed to the caller.
+        public AuditDbContext CreateDbContext() =>
+            throw new InvalidOperationException(
+                "A network-related error occurred connecting to SQL Server 'sql-server' database 'McpAuditDB'.");
+    }
+
+    // D7 — an unhandled fault on the PUBLICLY routed /api/Audit/ must return a FIXED message, never
+    // internals. The gateway previously had NO global exception handler while running with
+    // ASPNETCORE_ENVIRONMENT=Development in docker-compose, so the developer exception page was
+    // active and any AuditDB hiccup returned an HTML stack trace plus a request-header dump — from
+    // the one component whose premise is not leaking internal detail.
+    //
+    // Scope note: this boots under "Testing", so it verifies the handler's own behaviour and
+    // response shape. In Development the same handler is registered upstream of the endpoint and is
+    // therefore still the innermost handler to see an endpoint fault, so it wins there too — that
+    // ordering is reasoned, not asserted here (a Development boot would need a real SQL Server).
+    [Fact]
+    public async Task Unhandled_fault_returns_a_fixed_message_and_never_leaks_internals()
+    {
+        using var factory = _factory.WithWebHostBuilder(b =>
+        {
+            b.UseEnvironment("Testing");
+            b.ConfigureServices(services =>
+            {
+                services.RemoveAll<IDbContextFactory<AuditDbContext>>();
+                services.AddSingleton<IDbContextFactory<AuditDbContext>, ThrowingAuditContextFactory>();
+            });
+        });
+
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", MintUserToken("Admin", Guid.NewGuid()));
+
+        var response = await client.GetAsync("/api/Audit");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Contains("Interna greška gateway-a.", body);
+
+        // The no-leak assertions — these are the point of the test.
+        Assert.DoesNotContain("sql-server", body);          // no server name
+        Assert.DoesNotContain("McpAuditDB", body);          // no database name
+        Assert.DoesNotContain("InvalidOperationException", body);
+        Assert.DoesNotContain("McpGateway.", body);         // no namespace / stack frames
+        Assert.DoesNotContain("StackTrace", body);
     }
 
     [Fact] // Faza D — a client-supplied X-Correlation-Id is threaded into the audit record
