@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using McpGateway.Authorization;
 using McpGateway.Data;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
 namespace McpGateway.Tools;
@@ -106,8 +107,18 @@ public static class ReadTools
         return Serialize(problems.Concat(suggestions).Take(SearchCap).ToList());
     }
 
+    /// <remarks>
+    /// Returns <see cref="CallToolResult"/> rather than a JSON string so a REFUSAL can carry
+    /// <c>IsError = true</c>. <c>ToolAuthorizationFilter</c> maps <c>IsError</c> to
+    /// <c>Outcome = Error</c>; a plain string return is never <c>IsError</c>, so an out-of-scope read
+    /// was previously audited as <c>Outcome = Success</c> and did not show up under the audit
+    /// dashboard's Deny/Error filters. The org-scope control itself always worked (scope is enforced
+    /// in the SQL <c>WHERE</c>) — this is about the audit trail telling the truth about a refusal.
+    /// The refusal text stays deliberately opaque: "not found" and "out of scope" are indistinguishable
+    /// so existence is never leaked.
+    /// </remarks>
     [McpServerTool(Name = "get_submission_details"), Description("Full details of one problem/suggestion plus its comments (scrubbed). Args: type ('problem'|'suggestion'), id.")]
-    public static async Task<string> GetSubmissionDetails(
+    public static async Task<CallToolResult> GetSubmissionDetails(
         IReadRepository repo, IInvocationContextAccessor ctx,
         [Description("'problem' or 'suggestion'.")] string type,
         [Description("The submission id.")] Guid id,
@@ -128,14 +139,20 @@ public static class ReadTools
                     id, org is Guid so ? await repo.GetSuggestionBoxIdsAsync(so, ct) : null, ct);
                 break;
             default:
-                return Serialize(new { error = "nepoznat tip; očekivano 'problem' ili 'suggestion'" });
+                return Text(
+                    Serialize(new { error = "nepoznat tip; očekivano 'problem' ili 'suggestion'" }),
+                    isError: true);
         }
 
-        // Not found OR outside the caller's org scope — same opaque answer either way (no leak of existence).
+        // Not found OR outside the caller's org scope — same opaque answer either way (no leak of
+        // existence), but flagged IsError so the audit records Outcome = Error, not Success.
         return details is null
-            ? Serialize(new { error = "nije pronađeno ili van dozvoljenog opsega" })
-            : Serialize(details);
+            ? Text(Serialize(new { error = "nije pronađeno ili van dozvoljenog opsega" }), isError: true)
+            : Text(Serialize(details));
     }
+
+    private static CallToolResult Text(string text, bool isError = false) =>
+        new() { IsError = isError, Content = [new TextContentBlock { Text = text }] };
 
     [McpServerTool(Name = "get_global_stats"), Description("Cross-organization aggregate statistics (admin only).")]
     public static async Task<string> GetGlobalStats(

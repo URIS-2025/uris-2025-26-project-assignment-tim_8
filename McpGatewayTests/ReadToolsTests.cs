@@ -2,6 +2,7 @@ using System.Text.Json;
 using McpGateway.Authorization;
 using McpGateway.Data;
 using McpGateway.Tools;
+using ModelContextProtocol.Protocol;
 using Moq;
 using Xunit;
 
@@ -80,28 +81,54 @@ public class ReadToolsTests
         repo.Verify(r => r.ListBoxesAsync(own, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    private static string TextOf(CallToolResult result) =>
+        string.Concat(result.Content.OfType<TextContentBlock>().Select(b => b.Text));
+
+    // A refusal must be IsError = true, not a success-shaped string. ToolAuthorizationFilter maps
+    // IsError → Outcome = Error; a plain string return is never IsError, so an out-of-scope read
+    // used to be audited as Outcome = Success and was invisible under the dashboard's Deny/Error
+    // filters. The org-scope control itself always worked — this is audit fidelity.
     [Fact]
-    public async Task GetSubmissionDetails_out_of_scope_returns_error_and_leaks_nothing()
+    public async Task GetSubmissionDetails_out_of_scope_is_an_error_result_and_leaks_nothing()
     {
         var repo = Repo();
         // repo enforces scope in the query and returns null for a foreign / missing submission.
         repo.Setup(r => r.GetProblemDetailsAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Guid>?>(),
             It.IsAny<CancellationToken>())).ReturnsAsync((SubmissionDetailsDto?)null);
 
-        var json = await ReadTools.GetSubmissionDetails(
+        var result = await ReadTools.GetSubmissionDetails(
             repo.Object, Ctx(Guid.NewGuid(), "Manager"), type: "problem", id: Guid.NewGuid());
 
+        Assert.True(result.IsError, "an out-of-scope read must audit as Outcome=Error, not Success");
+        var json = TextOf(result);
         Assert.Contains("error", json);
         Assert.DoesNotContain("Title", json); // no submission fields leaked
     }
 
     [Fact]
-    public async Task GetSubmissionDetails_unknown_type_returns_error()
+    public async Task GetSubmissionDetails_unknown_type_is_an_error_result()
     {
-        var json = await ReadTools.GetSubmissionDetails(
+        var result = await ReadTools.GetSubmissionDetails(
             Repo().Object, Ctx(Guid.NewGuid(), "Manager"), type: "banana", id: Guid.NewGuid());
 
-        Assert.Contains("error", json);
+        Assert.True(result.IsError);
+        Assert.Contains("error", TextOf(result));
+    }
+
+    [Fact]
+    public async Task GetSubmissionDetails_in_scope_hit_is_a_success_result()
+    {
+        var repo = Repo();
+        repo.Setup(r => r.GetProblemDetailsAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<Guid>?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SubmissionDetailsDto(
+                Guid.NewGuid(), "problem", "Naslov", "Opis", 0, DateTime.UtcNow, []));
+
+        var result = await ReadTools.GetSubmissionDetails(
+            repo.Object, Ctx(Guid.NewGuid(), "Manager"), type: "problem", id: Guid.NewGuid());
+
+        Assert.False(result.IsError);
+        Assert.Contains("Naslov", TextOf(result));
     }
 
     [Fact]
